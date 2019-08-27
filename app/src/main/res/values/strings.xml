@@ -1,0 +1,27 @@
+<resources>
+    <string name="app_name">e4client</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">E4 Client</string>
+    <string name="nav_header_subtitle">github.com/j05t/e4client</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="menu_home">Home</string>
+    <string name="menu_gallery">Gallery</string>
+    <string name="menu_slideshow">Slideshow</string>
+    <string name="menu_tools">Tools</string>
+    <string name="menu_share">Share</string>
+    <string name="menu_send">Send</string>
+
+    <string name="accel">Accelerometers</string>
+    <string name="accel_x">x:</string>
+    <string name="accel_y">y:</string>
+    <string name="accel_z">z:</string>
+    <string name="bvp_label">BVP</string>
+    <string name="eda_label">EDA</string>
+    <string name="ibi_label">IBI</string>
+    <string name="emptyText">-</string>
+    <string name="temp_label">Temperature</string>
+    <string name="battery_label">Battery</string>
+</resources>
