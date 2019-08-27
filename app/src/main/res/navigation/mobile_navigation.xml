@@ -14,7 +14,7 @@
     <fragment
         android:id="@+id/nav_gallery"
         android:name="com.jstappdev.e4client.ui.gallery.GalleryFragment"
-        android:label="@string/menu_gallery"
+        android:label="@string/menu_charts"
         tools:layout="@layout/fragment_gallery" />
 
     <fragment

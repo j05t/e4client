@@ -8,11 +8,11 @@
     <string name="action_settings">Settings</string>
 
     <string name="menu_home">Home</string>
-    <string name="menu_gallery">Gallery</string>
+    <string name="menu_charts">Charts</string>
     <string name="menu_slideshow">Slideshow</string>
     <string name="menu_tools">Tools</string>
-    <string name="menu_share">Share</string>
-    <string name="menu_send">Send</string>
+    <string name="menu_share">Share CSV</string>
+    <string name="menu_send">Sync with Google Fit</string>
 
     <string name="accel">Accelerometers</string>
     <string name="accel_x">x:</string>
@@ -24,4 +24,6 @@
     <string name="emptyText">-</string>
     <string name="temp_label">Temperature</string>
     <string name="battery_label">Battery</string>
+
+    <string name="credits">Icons made by &lt;a href="https://www.flaticon.com/authors/freepik" title="Freepik"&gt;Freepik&lt;/a&gt;, &lt;a href="https://www.flaticon.com/authors/smashicons" title="Smashicons"&gt;Smashicons&lt;/a&gt;, &lt;a href="https://www.flaticon.com/authors/srip" title="srip"&gt;srip&lt;/a&gt; from &lt;a href="https://www.flaticon.com/" title="Flaticon"&gt;www.flaticon.com&lt;/a&gt; is licensed by &lt;a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0"&gt;CC 3.0 BY&lt;/a&gt;</string>
 </resources>
