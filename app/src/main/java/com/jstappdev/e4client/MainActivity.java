@@ -82,8 +82,6 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
-
-
     }
 
     @Override
@@ -167,8 +165,6 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
             // Initialize the Device Manager using your API key. You need to have Internet access at this point.
             deviceManager.authenticateWithAPIKey(EMPATICA_API_KEY);
-
-            Log.d(TAG, "connected with session cookie " + deviceManager.getSessionIdCookie().toString());
         }
     }
 
@@ -244,8 +240,14 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
             ViewModelProviders.of(this).get(SharedViewModel.class).setStatus(status.name() + " - Turn on your device");
 
             // Start scanning
-            deviceManager.startScanning();
-            // The device manager has established a connection
+            try {
+                deviceManager.startScanning();
+                // The device manager has established a connection
+            } catch (NullPointerException e) {
+                // todo: implement error handling
+                Toast.makeText(getApplicationContext(), "Failed to get device manager instance. Check internet connection.", Toast.LENGTH_LONG).show();
+                finish();
+            }
 
             hide();
 
@@ -264,31 +266,11 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
 
     void show() {
-/*
-        runOnUiThread(new Runnable() {
-
-            @Override
-            public void run() {
-
-                //dataCnt.setVisibility(View.VISIBLE);
-            }
-        });
-
- */
+        ViewModelProviders.of(this).get(SharedViewModel.class).setIsConnected(true);
     }
 
     void hide() {
-/*
-        runOnUiThread(new Runnable() {
-
-            @Override
-            public void run() {
-
-                dataCnt.setVisibility(View.INVISIBLE);
-            }
-        });
-
- */
+        ViewModelProviders.of(this).get(SharedViewModel.class).setIsConnected(false);
     }
 
 
@@ -302,10 +284,10 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     public void didUpdateOnWristStatus(@EmpaSensorStatus final int status) {
         if (status == EmpaSensorStatus.ON_WRIST) {
 
-            ViewModelProviders.of(this).get(SharedViewModel.class).setOnWrist("ON WRIST");
+            ViewModelProviders.of(this).get(SharedViewModel.class).setOnWrist(true);
         } else {
 
-            ViewModelProviders.of(this).get(SharedViewModel.class).setOnWrist("NOT ON WRIST");
+            ViewModelProviders.of(this).get(SharedViewModel.class).setOnWrist(false);
         }
 
     }

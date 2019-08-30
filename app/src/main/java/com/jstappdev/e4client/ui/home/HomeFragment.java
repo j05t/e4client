@@ -1,6 +1,7 @@
 package com.jstappdev.e4client.ui.home;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -79,7 +80,11 @@ public class HomeFragment extends Fragment {
         temperatureLabel = getView().findViewById(R.id.temperature);
         batteryLabel = getView().findViewById(R.id.battery);
         deviceNameLabel = getView().findViewById(R.id.deviceName);
+    }
 
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
 
         getView().findViewById(R.id.disconnectButton).setOnClickListener(new View.OnClickListener() {
 
@@ -96,13 +101,9 @@ public class HomeFragment extends Fragment {
         sharedViewModel.getAcc().observe(this, new Observer<List<Integer>>() {
 
             public void onChanged(List<Integer> acc) {
-                int x = acc.get(0);
-                int y = acc.get(1);
-                int z = acc.get(2);
-
-                accel_xLabel.setText(x);
-                accel_yLabel.setText(y);
-                accel_zLabel.setText(z);
+                accel_xLabel.setText(String.format(Locale.getDefault(), "%d", acc.get(0)));
+                accel_yLabel.setText(String.format(Locale.getDefault(), "%d", acc.get(1)));
+                accel_zLabel.setText(String.format(Locale.getDefault(), "%d", acc.get(2)));
             }
         });
 
@@ -118,10 +119,12 @@ public class HomeFragment extends Fragment {
                 statusLabel.setText(status);
             }
         });
-        sharedViewModel.getOnWrist().observe(this, new Observer<String>() {
+        sharedViewModel.getOnWrist().observe(this, new Observer<Boolean>() {
             @Override
-            public void onChanged(String onWrist) {
-                statusLabel.setText(onWrist);
+            public void onChanged(Boolean onWrist) {
+                // todo: maybe indicate on wrist
+                //statusLabel.setText(onWrist);
+                Log.d(TAG, onWrist.toString());
             }
         });
         sharedViewModel.getBattery().observe(this, new Observer<Float>() {
@@ -157,7 +160,7 @@ public class HomeFragment extends Fragment {
         sharedViewModel.getTemp().observe(this, new Observer<Float>() {
             @Override
             public void onChanged(Float temp) {
-                statusLabel.setText(String.format(Locale.getDefault(), "%.0f", temp));
+                temperatureLabel.setText(String.format(Locale.getDefault(), "%.0f", temp));
             }
         });
     }
