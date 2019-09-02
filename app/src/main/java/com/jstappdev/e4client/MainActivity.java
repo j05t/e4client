@@ -20,6 +20,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
+import androidx.core.os.BuildCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.lifecycle.ViewModelProviders;
 import androidx.navigation.NavController;
@@ -43,7 +44,9 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
     private static final int REQUEST_PERMISSION_ACCESS_COARSE_LOCATION = 1;
 
-    private static final String EMPATICA_API_KEY = ""; // TODO insert your API Key here
+    private static final String EMPATICA_API_KEY = BuildConfig.EMPATICA_API_KEY;
+    private static final String SCICHART_LICENSE = BuildConfig.SCICHART_LICENSE;
+
     private static final String TAG = "e4";
     private static EmpaDeviceManager deviceManager = null;
     private AppBarConfiguration mAppBarConfiguration;
