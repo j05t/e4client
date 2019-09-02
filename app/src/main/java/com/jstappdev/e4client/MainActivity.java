@@ -9,10 +9,7 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.text.TextUtils;
-import android.util.Log;
 import android.view.Menu;
-import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -20,7 +17,6 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
-import androidx.core.os.BuildCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.lifecycle.ViewModelProviders;
 import androidx.navigation.NavController;
@@ -35,9 +31,7 @@ import com.empatica.empalink.config.EmpaSensorStatus;
 import com.empatica.empalink.config.EmpaSensorType;
 import com.empatica.empalink.config.EmpaStatus;
 import com.empatica.empalink.delegate.EmpaStatusDelegate;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
-import com.google.android.material.snackbar.Snackbar;
 
 public class MainActivity extends AppCompatActivity implements EmpaStatusDelegate {
     private static final int REQUEST_ENABLE_BT = 1;
@@ -65,6 +59,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        /*
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -73,13 +68,14 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
                         .setAction("Action", null).show();
             }
         });
+         */
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         NavigationView navigationView = findViewById(R.id.nav_view);
         // Passing each menu ID as a set of Ids because each
         // menu should be considered as top level destinations.
         mAppBarConfiguration = new AppBarConfiguration.Builder(
-                R.id.nav_home, R.id.nav_gallery, R.id.nav_slideshow,
-                R.id.nav_tools, R.id.nav_share, R.id.nav_send)
+                R.id.nav_home, R.id.nav_charts, R.id.nav_session,
+                R.id.nav_tools, R.id.nav_share, R.id.nav_sync)
                 .setDrawerLayout(drawer)
                 .build();
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
@@ -149,10 +145,10 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
             requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_PERMISSION_ACCESS_COARSE_LOCATION);
         } else {
 
-            if (TextUtils.isEmpty(EMPATICA_API_KEY)) {
+            if (EMPATICA_API_KEY.contentEquals("INSERT API KEY HERE")) {
                 new AlertDialog.Builder(this)
                         .setTitle("Warning")
-                        .setMessage("Please insert your API KEY")
+                        .setMessage("No API key set. Please insert your API KEY in apikeys.properties and rebuild the project.")
                         .setNegativeButton("Close", new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
                                 // without permission exit is the only way
@@ -163,7 +159,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
                 return;
             }
 
-            // Create a new EmpaDeviceManager. MainActivity is both its data and status delegate.
+            // Create a new EmpaDeviceManager. MainActivity is status delegate, SharedViewModel is data delegate
             deviceManager = new EmpaDeviceManager(getApplicationContext(), ViewModelProviders.of(this).get(SharedViewModel.class), this);
 
             // Initialize the Device Manager using your API key. You need to have Internet access at this point.
@@ -234,7 +230,6 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     @Override
     public void didUpdateStatus(EmpaStatus status) {
         // Update the UI
-        //updateLabel(statusLabel, status.name());
         ViewModelProviders.of(this).get(SharedViewModel.class).setStatus(status.name());
 
         // The device manager is ready for use
@@ -247,32 +242,37 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
                 deviceManager.startScanning();
                 // The device manager has established a connection
             } catch (NullPointerException e) {
-                // todo: implement error handling
-                Toast.makeText(getApplicationContext(), "Failed to get device manager instance. Check internet connection.", Toast.LENGTH_LONG).show();
-                finish();
+                new AlertDialog.Builder(this)
+                        .setTitle("Error")
+                        .setMessage("Unable to get device manager instance. Check your internet connection.")
+                        .setNegativeButton("Close", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                // without device manager exit is the only way
+                                finish();
+                            }
+                        })
+                        .show();
             }
 
-            hide();
+            connectionDisconnected();
 
         } else if (status == EmpaStatus.CONNECTED) {
 
-            show();
+            connectionEstablished();
             // The device manager disconnected from a device
         } else if (status == EmpaStatus.DISCONNECTED) {
             ViewModelProviders.of(this).get(SharedViewModel.class).setDeviceName("");
 
-            //updateLabel(deviceNameLabel, "");
-
-            hide();
+            connectionDisconnected();
         }
     }
 
 
-    void show() {
+    void connectionEstablished() {
         ViewModelProviders.of(this).get(SharedViewModel.class).setIsConnected(true);
     }
 
-    void hide() {
+    void connectionDisconnected() {
         ViewModelProviders.of(this).get(SharedViewModel.class).setIsConnected(false);
     }
 
@@ -280,7 +280,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     @Override
     public void didEstablishConnection() {
 
-        show();
+        connectionEstablished();
     }
 
     @Override

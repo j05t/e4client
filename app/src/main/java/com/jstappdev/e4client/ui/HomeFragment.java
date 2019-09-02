@@ -1,4 +1,4 @@
-package com.jstappdev.e4client.ui.home;
+package com.jstappdev.e4client.ui;
 
 import android.os.Bundle;
 import android.util.Log;
@@ -28,23 +28,14 @@ public class HomeFragment extends Fragment {
     private SharedViewModel sharedViewModel;
 
     private TextView accel_xLabel;
-
     private TextView accel_yLabel;
-
     private TextView accel_zLabel;
-
     private TextView bvpLabel;
-
     private TextView edaLabel;
-
     private TextView ibiLabel;
-
     private TextView temperatureLabel;
-
     private TextView batteryLabel;
-
     private TextView statusLabel;
-
     private TextView deviceNameLabel;
 
     private LinearLayout dataCnt;
@@ -52,8 +43,9 @@ public class HomeFragment extends Fragment {
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        sharedViewModel =
-                ViewModelProviders.of(getActivity()).get(SharedViewModel.class);
+
+        sharedViewModel = ViewModelProviders.of(getActivity()).get(SharedViewModel.class);
+
         View root = inflater.inflate(R.layout.fragment_home, container, false);
         final TextView textView = root.findViewById(R.id.status);
         sharedViewModel.getStatus().observe(this, new Observer<String>() {

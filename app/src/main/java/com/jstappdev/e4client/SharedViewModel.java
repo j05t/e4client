@@ -6,10 +6,7 @@ import androidx.lifecycle.ViewModel;
 
 import com.empatica.empalink.config.EmpaSensorStatus;
 import com.empatica.empalink.delegate.EmpaDataDelegate;
-import com.jstappdev.e4client.ui.SessionData;
 
-import java.nio.channels.SeekableByteChannel;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +27,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     private SessionData sessionData;
 
     public SharedViewModel() {
-        sessionData = new SessionData();
+        sessionData = SessionData.getInstance();
 
         onWrist = new MutableLiveData<Boolean>();
         status = new MutableLiveData<String>();
@@ -48,8 +45,9 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     public MutableLiveData<Boolean> getIsConnected() {
         return isConnected;
     }
+
     public void setIsConnected(boolean isConnected) {
-        this.isConnected.postValue( isConnected);
+        this.isConnected.postValue(isConnected);
     }
 
     public MutableLiveData<List<Integer>> getAcc() {
@@ -80,12 +78,12 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         return onWrist;
     }
 
-    public LiveData<String> getStatus() {
-        return status;
-    }
-
     public void setOnWrist(Boolean onWrist) {
         this.onWrist.postValue(onWrist);
+    }
+
+    public LiveData<String> getStatus() {
+        return status;
     }
 
     public void setStatus(String name) {
@@ -99,6 +97,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         acceleration.add(y);
         acceleration.add(z);
         acc.postValue(new ArrayList<Integer>(acceleration));
+        sessionData.addAcc(acceleration);
     }
 
     @Override
@@ -125,25 +124,25 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     @Override
     public void didReceiveGSR(float gsr, double timestamp) {
-        //updateLabel(edaLabel, "" + gsr);
         this.gsr.postValue(gsr);
+        sessionData.addGsr(gsr);
     }
 
     @Override
     public void didReceiveIBI(float ibi, double timestamp) {
-        //updateLabel(ibiLabel, "" + ibi);
         this.ibi.postValue(ibi);
+        sessionData.addIbi(ibi);
     }
 
     @Override
     public void didReceiveTemperature(float temp, double timestamp) {
-        //updateLabel(temperatureLabel, "" + temp);
         this.temp.postValue(temp);
+        sessionData.addTemp(temp);
     }
 
     @Override
     public void didReceiveTag(double timestamp) {
-
+        sessionData.addTag(timestamp);
     }
 
 

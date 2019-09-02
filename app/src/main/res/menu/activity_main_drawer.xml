@@ -9,11 +9,11 @@
             android:icon="@drawable/ic_menu_home"
             android:title="@string/menu_home" />
         <item
-            android:id="@+id/nav_gallery"
+            android:id="@+id/nav_charts"
             android:icon="@drawable/ic_menu_charts"
             android:title="@string/menu_charts" />
         <item
-            android:id="@+id/nav_slideshow"
+            android:id="@+id/nav_session"
             android:icon="@drawable/ic_menu_slideshow"
             android:title="@string/menu_slideshow" />
         <item
@@ -29,7 +29,7 @@
                 android:icon="@drawable/ic_menu_share"
                 android:title="@string/menu_share" />
             <item
-                android:id="@+id/nav_send"
+                android:id="@+id/nav_sync"
                 android:icon="@drawable/ic_menu_send"
                 android:title="@string/menu_send" />
         </menu>

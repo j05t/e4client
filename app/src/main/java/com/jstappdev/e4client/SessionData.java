@@ -1,10 +1,12 @@
-package com.jstappdev.e4client.ui;
+package com.jstappdev.e4client;
 
 import java.util.LinkedList;
 import java.util.List;
 
 
 public class SessionData {
+    private static SessionData INSTANCE;
+
     private long initialTime;
 
     private List<List<Integer>> acc;
@@ -12,7 +14,7 @@ public class SessionData {
     private List<Float> gsr;
     private List<Float> ibi;
     private List<Float> temp;
-    private List<Long> tags;
+    private List<Double> tags;
 
     private long accTimestamp;
     private long bvpTimestamp;
@@ -21,7 +23,7 @@ public class SessionData {
     private long tempTimestamp;
     private long hrTimestamp;
 
-    public SessionData() {
+    private SessionData() {
         acc = new LinkedList<>();
         bvp = new LinkedList<>();
         gsr = new LinkedList<>();
@@ -30,33 +32,16 @@ public class SessionData {
         tags = new LinkedList<>();
     }
 
+    public static SessionData getInstance() {
+        if (INSTANCE == null) {
+            INSTANCE = new SessionData();
+        }
+        return INSTANCE;
+    }
+
     public List<Float> getHr() {
         // todo: average heart rate extracted from the BVP signal
         return null;
-    }
-
-    public void setAcc(List<List<Integer>> acc) {
-        this.acc = acc;
-    }
-
-    public void setBvp(List<Float> bvp) {
-        this.bvp = bvp;
-    }
-
-    public void setGsr(List<Float> gsr) {
-        this.gsr = gsr;
-    }
-
-    public void setIbi(List<Float> ibi) {
-        this.ibi = ibi;
-    }
-
-    public void setTemp(List<Float> temp) {
-        this.temp = temp;
-    }
-
-    public void setTags(List<Long> tags) {
-        this.tags = tags;
     }
 
     public long getAccTimestamp() {
@@ -119,12 +104,20 @@ public class SessionData {
         return acc;
     }
 
+    public void setAcc(List<List<Integer>> acc) {
+        this.acc = acc;
+    }
+
     public void addAcc(List<Integer> acc) {
         this.acc.add(acc);
     }
 
     public List<Float> getBvp() {
         return bvp;
+    }
+
+    public void setBvp(List<Float> bvp) {
+        this.bvp = bvp;
     }
 
     public void addBvp(float bvp) {
@@ -135,12 +128,20 @@ public class SessionData {
         return gsr;
     }
 
+    public void setGsr(List<Float> gsr) {
+        this.gsr = gsr;
+    }
+
     public void addGsr(float gsr) {
         this.gsr.add(gsr);
     }
 
     public List<Float> getIbi() {
         return ibi;
+    }
+
+    public void setIbi(List<Float> ibi) {
+        this.ibi = ibi;
     }
 
     public void addIbi(float ibi) {
@@ -151,15 +152,23 @@ public class SessionData {
         return temp;
     }
 
+    public void setTemp(List<Float> temp) {
+        this.temp = temp;
+    }
+
     public void addTemp(float temp) {
         this.temp.add(temp);
     }
 
-    public List<Long> getTags() {
+    public List<Double> getTags() {
         return tags;
     }
 
-    public void addTag(long tag) {
+    public void setTags(List<Double> tags) {
+        this.tags = tags;
+    }
+
+    public void addTag(double tag) {
         this.tags.add(tag);
     }
 }
