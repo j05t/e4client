@@ -70,4 +70,8 @@ dependencies {
     implementation (name:'drawing-release', ext:'aar')
     implementation (name:'data-release', ext:'aar')
     implementation (name:'core-release', ext:'aar')
+    implementation (name:'extensions-release', ext:'aar')
+
+    implementation 'com.jakewharton:butterknife:10.1.0'
+    annotationProcessor 'com.jakewharton:butterknife-compiler:10.1.0'
 }

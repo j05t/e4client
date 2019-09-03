@@ -22,14 +22,12 @@
         <TextView
             android:id="@+id/deviceName"
             android:layout_width="match_parent"
-            android:layout_height="36dp"
-            android:layout_below="@id/status" />
+            android:layout_height="36dp" />
 
         <LinearLayout
             android:id="@+id/dataArea"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_below="@id/deviceName"
             android:orientation="vertical"
             android:visibility="visible">
 
@@ -37,14 +35,12 @@
                 android:id="@+id/accel_label"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
                 android:text="@string/accel" />
 
             <LinearLayout
                 android:id="@+id/accel_area"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/accel_label"
                 android:orientation="horizontal">
 
                 <TextView
@@ -89,7 +85,6 @@
                 android:id="@+id/bvp_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/accel_area"
                 android:layout_marginTop="10dp"
                 android:text="@string/bvp_label" />
 
@@ -97,7 +92,6 @@
                 android:id="@+id/bvp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/bvp_label"
                 android:text="@string/emptyText" />
 
             <TextView
@@ -112,14 +106,12 @@
                 android:id="@+id/eda"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/eda_label"
                 android:text="@string/emptyText" />
 
             <TextView
                 android:id="@+id/ibi_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/eda"
                 android:layout_marginTop="10dp"
                 android:text="@string/ibi_label" />
 
@@ -127,14 +119,12 @@
                 android:id="@+id/ibi"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/ibi_label"
                 android:text="@string/emptyText" />
 
             <TextView
                 android:id="@+id/temp_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/ibi"
                 android:layout_marginTop="10dp"
                 android:text="@string/temp_label" />
 
@@ -142,14 +132,12 @@
                 android:id="@+id/temperature"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/temp_label"
                 android:text="@string/emptyText" />
 
             <TextView
                 android:id="@+id/battery_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/temperature"
                 android:layout_marginTop="10dp"
                 android:text="@string/battery_label" />
 
@@ -157,14 +145,12 @@
                 android:id="@+id/battery"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/battery_label"
                 android:text="@string/emptyText" />
 
             <TextView
                 android:id="@+id/wrist_status_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/wrist_status_label"
                 android:text="@string/emptyText" />
 
             <Button

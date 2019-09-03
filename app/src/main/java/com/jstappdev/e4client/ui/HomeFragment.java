@@ -1,25 +1,25 @@
 package com.jstappdev.e4client.ui;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
 
 import com.jstappdev.e4client.MainActivity;
 import com.jstappdev.e4client.R;
+import com.jstappdev.e4client.SessionData;
 import com.jstappdev.e4client.SharedViewModel;
 
-import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 public class HomeFragment extends Fragment {
 
@@ -37,14 +37,15 @@ public class HomeFragment extends Fragment {
     private TextView batteryLabel;
     private TextView statusLabel;
     private TextView deviceNameLabel;
+    private TextView wristStatusLabel;
 
-    private LinearLayout dataCnt;
+    private SessionData sessionData;
 
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
 
-        sharedViewModel = ViewModelProviders.of(getActivity()).get(SharedViewModel.class);
+        sharedViewModel = ViewModelProviders.of(Objects.requireNonNull(getActivity())).get(SharedViewModel.class);
 
         View root = inflater.inflate(R.layout.fragment_home, container, false);
         final TextView textView = root.findViewById(R.id.status);
@@ -60,99 +61,90 @@ public class HomeFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        // Initialize vars that reference UI components
-        statusLabel = getView().findViewById(R.id.status);
-        dataCnt = getView().findViewById(R.id.dataArea);
-        accel_xLabel = getView().findViewById(R.id.accel_x);
-        accel_yLabel = getView().findViewById(R.id.accel_y);
-        accel_zLabel = getView().findViewById(R.id.accel_z);
-        bvpLabel = getView().findViewById(R.id.bvp);
-        edaLabel = getView().findViewById(R.id.eda);
-        ibiLabel = getView().findViewById(R.id.ibi);
-        temperatureLabel = getView().findViewById(R.id.temperature);
-        batteryLabel = getView().findViewById(R.id.battery);
-        deviceNameLabel = getView().findViewById(R.id.deviceName);
+        statusLabel = view.findViewById(R.id.status);
+        accel_xLabel = view.findViewById(R.id.accel_x);
+        accel_yLabel = view.findViewById(R.id.accel_y);
+        accel_zLabel = view.findViewById(R.id.accel_z);
+        bvpLabel = view.findViewById(R.id.bvp);
+        edaLabel = view.findViewById(R.id.eda);
+        ibiLabel = view.findViewById(R.id.ibi);
+        temperatureLabel = view.findViewById(R.id.temperature);
+        batteryLabel = view.findViewById(R.id.battery);
+        deviceNameLabel = view.findViewById(R.id.deviceName);
+        wristStatusLabel = view.findViewById(R.id.wrist_status_label);
+
+        view.findViewById(R.id.disconnectButton).setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                ((MainActivity) getActivity()).disconnect();
+            }
+        });
     }
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        getView().findViewById(R.id.disconnectButton).setOnClickListener(new View.OnClickListener() {
+        sessionData = SessionData.getInstance();
 
-            @Override
-            public void onClick(View v) {
+        final LifecycleOwner owner = getViewLifecycleOwner();
 
-                if (MainActivity.getDeviceManager() != null) {
-
-                    MainActivity.getDeviceManager().disconnect();
-                }
-            }
-        });
-
-        sharedViewModel.getAcc().observe(this, new Observer<List<Integer>>() {
-
-            public void onChanged(List<Integer> acc) {
-                accel_xLabel.setText(String.format(Locale.getDefault(), "%d", acc.get(0)));
-                accel_yLabel.setText(String.format(Locale.getDefault(), "%d", acc.get(1)));
-                accel_zLabel.setText(String.format(Locale.getDefault(), "%d", acc.get(2)));
-            }
-        });
-
-        sharedViewModel.getDeviceName().observe(this, new Observer<String>() {
+        sharedViewModel.getDeviceName().observe(owner, new Observer<String>() {
             @Override
             public void onChanged(String deviceName) {
                 deviceNameLabel.setText(deviceName);
             }
         });
-        sharedViewModel.getStatus().observe(this, new Observer<String>() {
+        sharedViewModel.getStatus().observe(owner, new Observer<String>() {
             @Override
             public void onChanged(String status) {
                 statusLabel.setText(status);
             }
         });
-        sharedViewModel.getOnWrist().observe(this, new Observer<Boolean>() {
+        sharedViewModel.getOnWrist().observe(owner, new Observer<Boolean>() {
             @Override
             public void onChanged(Boolean onWrist) {
-                // todo: maybe indicate on wrist
-                //statusLabel.setText(onWrist);
-                Log.d(TAG, onWrist.toString());
+                wristStatusLabel.setText(onWrist ? "ON WRIST" : "NOT ON WRIST");
             }
         });
-        sharedViewModel.getBattery().observe(this, new Observer<Float>() {
+        sharedViewModel.getBattery().observe(owner, new Observer<Float>() {
             @Override
             public void onChanged(Float battery) {
                 batteryLabel.setText(String.format(Locale.getDefault(), "%.0f %%", battery * 100));
             }
         });
-        sharedViewModel.getGsr().observe(this, new Observer<Float>() {
-            @Override
-            public void onChanged(Float gsr) {
-                edaLabel.setText(String.format(Locale.getDefault(), "%.0f", gsr));
+
+        sharedViewModel.getLastAcc().observe(owner, new Observer<Integer>() {
+
+            public void onChanged(Integer lastAcc) {
+                accel_xLabel.setText(String.format(Locale.getDefault(), "%d", sessionData.getAcc().getLast().get(0)));
+                accel_yLabel.setText(String.format(Locale.getDefault(), "%d", sessionData.getAcc().getLast().get(1)));
+                accel_zLabel.setText(String.format(Locale.getDefault(), "%d", sessionData.getAcc().getLast().get(2)));
             }
         });
-        sharedViewModel.getIbi().observe(this, new Observer<Float>() {
+        sharedViewModel.getLastGsr().observe(owner, new Observer<Integer>() {
             @Override
-            public void onChanged(Float ibi) {
-                ibiLabel.setText(String.format(Locale.getDefault(), "%.0f", ibi));
+            public void onChanged(Integer lastGsr) {
+                edaLabel.setText(String.format(Locale.getDefault(), "%.0f", sessionData.getGsr().getLast()));
             }
         });
-        sharedViewModel.getTemp().observe(this, new Observer<Float>() {
+        sharedViewModel.getLastIbi().observe(owner, new Observer<Integer>() {
             @Override
-            public void onChanged(Float temp) {
-                temperatureLabel.setText(String.format(Locale.getDefault(), "%.0f", temp));
+            public void onChanged(Integer lastIbi) {
+                ibiLabel.setText(String.format(Locale.getDefault(), "%.0f", sessionData.getIbi().getLast()));
             }
         });
-        sharedViewModel.getBvp().observe(this, new Observer<Float>() {
+        sharedViewModel.getLastTemp().observe(owner, new Observer<Integer>() {
             @Override
-            public void onChanged(Float bvp) {
-                bvpLabel.setText(String.format(Locale.getDefault(), "%.0f", bvp));
+            public void onChanged(Integer lastTemp) {
+                temperatureLabel.setText(String.format(Locale.getDefault(), "%.0f", sessionData.getTemp().getLast()));
             }
         });
-        sharedViewModel.getTemp().observe(this, new Observer<Float>() {
+        sharedViewModel.getLastBvp().observe(owner, new Observer<Integer>() {
             @Override
-            public void onChanged(Float temp) {
-                temperatureLabel.setText(String.format(Locale.getDefault(), "%.0f", temp));
+            public void onChanged(Integer lastBvp) {
+                bvpLabel.setText(String.format(Locale.getDefault(), "%.0f", sessionData.getBvp().getLast()));
             }
         });
     }

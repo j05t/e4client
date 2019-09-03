@@ -9,6 +9,7 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.Menu;
 import android.widget.Toast;
 
@@ -33,6 +34,9 @@ import com.empatica.empalink.config.EmpaStatus;
 import com.empatica.empalink.delegate.EmpaStatusDelegate;
 import com.google.android.material.navigation.NavigationView;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 public class MainActivity extends AppCompatActivity implements EmpaStatusDelegate {
     private static final int REQUEST_ENABLE_BT = 1;
 
@@ -42,33 +46,24 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     private static final String SCICHART_LICENSE = BuildConfig.SCICHART_LICENSE;
 
     private static final String TAG = "e4";
-    private static EmpaDeviceManager deviceManager = null;
+    float batteryLevel = 1.0f;
+    private EmpaDeviceManager deviceManager = null;
     private AppBarConfiguration mAppBarConfiguration;
-
-    public static EmpaDeviceManager getDeviceManager() {
-        return deviceManager;
-    }
+    private SharedViewModel sharedViewModel;
+    private SessionData sessionData;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        initEmpaticaDeviceManager();
+        sharedViewModel = ViewModelProviders.of(this).get(SharedViewModel.class);
 
+        initEmpaticaDeviceManager();
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        /*
-        FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
-         */
+
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         NavigationView navigationView = findViewById(R.id.nav_view);
         // Passing each menu ID as a set of Ids because each
@@ -81,6 +76,86 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
+
+        setUpSciChartLicense();
+
+        sessionData = SessionData.getInstance();
+
+        // debug
+        // simulateSensorData();
+    }
+
+    private void simulateSensorData() {
+        // simulate live sensor data
+        sharedViewModel.setIsConnected(true);
+        sharedViewModel.setDeviceName("DEADBEEF");
+        sharedViewModel.setOnWrist(true);
+        sharedViewModel.didUpdateOnWristStatus(EmpaSensorStatus.ON_WRIST);
+        sharedViewModel.didReceiveGSR(0f, 0d);
+        sharedViewModel.didReceiveAcceleration(42, 1, 0, 0d);
+        sharedViewModel.didReceiveBatteryLevel(.98f, 0d);
+        sharedViewModel.didReceiveIBI(12, 0d);
+        sharedViewModel.didReceiveBVP(42f, 0d);
+        sharedViewModel.didReceiveTemperature(37.1337f, 0d);
+        simulateLiveData();
+        simulateTags();
+    }
+    void simulateLiveData() {
+        TimerTask updateDataTask = new TimerTask() {
+            @Override
+            public void run() {
+                double curTimestamp = sessionData.getGsrTimestamps().getLast();
+                curTimestamp += 0.1d;
+                float y = (float) Math.sin(curTimestamp * 0.1);
+
+                sharedViewModel.didReceiveGSR((y + 1f) * 0.7f, curTimestamp);
+                sharedViewModel.didReceiveTemperature(y + 36.5f, curTimestamp);
+                sharedViewModel.didReceiveBVP(70f + y * 6, curTimestamp);
+                sharedViewModel.didReceiveAcceleration((int) (y + 2) * 3, (int) (y + 1) * 3, (int) (y + 1.2) * 13, curTimestamp);
+                sharedViewModel.didReceiveBatteryLevel(batteryLevel, curTimestamp);
+                sharedViewModel.didReceiveIBI(80f + y * 7, curTimestamp);
+
+                if (batteryLevel > 0f)
+                    batteryLevel -= 0.0001f;
+            }
+        };
+
+        Timer timer = new Timer();
+        long delay = 0;
+        long interval = 10;
+        timer.schedule(updateDataTask, delay, interval);
+    }
+    void simulateTags() {
+        TimerTask updateDataTask = new TimerTask() {
+            @Override
+            public void run() {
+                double curTimestamp = sessionData.getGsrTimestamps().getLast();
+                sharedViewModel.didReceiveTag(curTimestamp);
+            }
+        };
+
+        Timer timer = new Timer();
+        long delay = 0;
+        long interval = 2500;
+        timer.schedule(updateDataTask, delay, interval);
+    }
+
+
+    private void setUpSciChartLicense() {
+        try {
+            com.scichart.charting.visuals.SciChartSurface.setRuntimeLicenseKey(SCICHART_LICENSE);
+        } catch (Exception e) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Warning")
+                    .setMessage("Invalid SciChart license. Insert valid license in apikeys.properties and rebuild the project.")
+                    .setNegativeButton("Close", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            // without API key exit is the only way
+                            finish();
+                        }
+                    })
+                    .show();
+        }
     }
 
     @Override
@@ -100,42 +175,39 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
 
-        switch (requestCode) {
-            case REQUEST_PERMISSION_ACCESS_COARSE_LOCATION:
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    // Permission was granted, yay!
-                    initEmpaticaDeviceManager();
-                } else {
-                    // Permission denied, boo!
-                    final boolean needRationale = ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_COARSE_LOCATION);
-                    new AlertDialog.Builder(this)
-                            .setTitle("Permission required")
-                            .setMessage("Without this permission bluetooth low energy devices cannot be found, allow it in order to connect to the device.")
-                            .setPositiveButton("Retry", new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int which) {
-                                    // try again
-                                    if (needRationale) {
-                                        // the "never ask again" flash is not set, try again with permission request
-                                        initEmpaticaDeviceManager();
-                                    } else {
-                                        // the "never ask again" flag is set so the permission requests is disabled, try open app settings to enable the permission
-                                        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                                        Uri uri = Uri.fromParts("package", getPackageName(), null);
-                                        intent.setData(uri);
-                                        startActivity(intent);
-                                    }
+        if (requestCode == REQUEST_PERMISSION_ACCESS_COARSE_LOCATION) {// If request is cancelled, the result arrays are empty.
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission was granted, yay!
+                initEmpaticaDeviceManager();
+            } else {
+                // Permission denied, boo!
+                final boolean needRationale = ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_COARSE_LOCATION);
+                new AlertDialog.Builder(this)
+                        .setTitle("Permission required")
+                        .setMessage("Without this permission bluetooth low energy devices cannot be found, allow it in order to connect to the device.")
+                        .setPositiveButton("Retry", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                // try again
+                                if (needRationale) {
+                                    // the "never ask again" flash is not set, try again with permission request
+                                    initEmpaticaDeviceManager();
+                                } else {
+                                    // the "never ask again" flag is set so the permission requests is disabled, try open app settings to enable the permission
+                                    Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                                    Uri uri = Uri.fromParts("package", getPackageName(), null);
+                                    intent.setData(uri);
+                                    startActivity(intent);
                                 }
-                            })
-                            .setNegativeButton("Exit application", new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog, int which) {
-                                    // without permission exit is the only way
-                                    finish();
-                                }
-                            })
-                            .show();
-                }
-                break;
+                            }
+                        })
+                        .setNegativeButton("Exit application", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                // without permission exit is the only way
+                                finish();
+                            }
+                        })
+                        .show();
+            }
         }
     }
 
@@ -147,11 +219,11 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
             if (EMPATICA_API_KEY.contentEquals("INSERT API KEY HERE")) {
                 new AlertDialog.Builder(this)
-                        .setTitle("Warning")
+                        .setTitle("Error")
                         .setMessage("No API key set. Please insert your API KEY in apikeys.properties and rebuild the project.")
                         .setNegativeButton("Close", new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
-                                // without permission exit is the only way
+                                // without API key exit is the only way
                                 finish();
                             }
                         })
@@ -170,8 +242,10 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     @Override
     protected void onPause() {
         super.onPause();
-        if (deviceManager != null) {
+        if (deviceManager != null) try {
             deviceManager.stopScanning();
+        } catch (Exception e) {
+            Log.e(TAG, "unable to stop scanning");
         }
     }
 
@@ -295,5 +369,10 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
     }
 
+    public void disconnect() {
+        if (deviceManager != null) {
+            deviceManager.disconnect();
+        }
+    }
 
 }

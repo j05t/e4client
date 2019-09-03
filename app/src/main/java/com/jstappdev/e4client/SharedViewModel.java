@@ -7,8 +7,7 @@ import androidx.lifecycle.ViewModel;
 import com.empatica.empalink.config.EmpaSensorStatus;
 import com.empatica.empalink.delegate.EmpaDataDelegate;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedList;
 
 public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
@@ -17,29 +16,33 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     private MutableLiveData<Boolean> isConnected;
     private MutableLiveData<String> deviceName;
     private MutableLiveData<Float> battery;
+    private MutableLiveData<Double> tag;
 
-    private MutableLiveData<List<Integer>> acc;
-    private MutableLiveData<Float> bvp;
-    private MutableLiveData<Float> gsr;
-    private MutableLiveData<Float> ibi;
-    private MutableLiveData<Float> temp;
+    // we just keep track of the position of the last sensor reading
+    private MutableLiveData<Integer> lastAcc;
+    private MutableLiveData<Integer> lastBvp;
+    private MutableLiveData<Integer> lastGsr;
+    private MutableLiveData<Integer> lastIbi;
+    private MutableLiveData<Integer> lastTemp;
 
     private SessionData sessionData;
 
     public SharedViewModel() {
         sessionData = SessionData.getInstance();
 
-        onWrist = new MutableLiveData<Boolean>();
-        status = new MutableLiveData<String>();
-        isConnected = new MutableLiveData<Boolean>();
-        deviceName = new MutableLiveData<String>();
-        battery = new MutableLiveData<Float>();
+        onWrist = new MutableLiveData<>();
+        status = new MutableLiveData<>();
+        isConnected = new MutableLiveData<>();
+        deviceName = new MutableLiveData<>();
+        battery = new MutableLiveData<>();
 
-        acc = new MutableLiveData<List<Integer>>();
-        bvp = new MutableLiveData<Float>();
-        gsr = new MutableLiveData<Float>();
-        ibi = new MutableLiveData<Float>();
-        temp = new MutableLiveData<Float>();
+        lastAcc = new MutableLiveData<>();
+        lastBvp = new MutableLiveData<>();
+        lastGsr = new MutableLiveData<>();
+        lastIbi = new MutableLiveData<>();
+        lastTemp = new MutableLiveData<>();
+        tag = new MutableLiveData<Double>();
+
     }
 
     public MutableLiveData<Boolean> getIsConnected() {
@@ -50,28 +53,32 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         this.isConnected.postValue(isConnected);
     }
 
-    public MutableLiveData<List<Integer>> getAcc() {
-        return acc;
+    public MutableLiveData<Integer> getLastAcc() {
+        return lastAcc;
     }
 
-    public MutableLiveData<Float> getBvp() {
-        return bvp;
+    public MutableLiveData<Integer> getLastBvp() {
+        return lastBvp;
     }
 
     public MutableLiveData<Float> getBattery() {
         return battery;
     }
 
-    public MutableLiveData<Float> getGsr() {
-        return gsr;
+    public MutableLiveData<Integer> getLastGsr() {
+        return lastGsr;
     }
 
-    public MutableLiveData<Float> getIbi() {
-        return ibi;
+    public MutableLiveData<Integer> getLastIbi() {
+        return lastIbi;
     }
 
-    public MutableLiveData<Float> getTemp() {
-        return temp;
+    public MutableLiveData<Integer> getLastTemp() {
+        return lastTemp;
+    }
+
+    public MutableLiveData<Double> getTag() {
+        return tag;
     }
 
     public LiveData<Boolean> getOnWrist() {
@@ -90,19 +97,28 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         this.status.postValue(name);
     }
 
+    public LiveData<String> getDeviceName() {
+        return deviceName;
+    }
+
+    public void setDeviceName(String deviceName) {
+        this.deviceName.postValue(deviceName);
+    }
+
     @Override
     public void didReceiveAcceleration(int x, int y, int z, double timestamp) {
-        List<Integer> acceleration = new ArrayList<Integer>();
+        LinkedList<Integer> acceleration = new LinkedList<Integer>();
         acceleration.add(x);
         acceleration.add(y);
         acceleration.add(z);
-        acc.postValue(new ArrayList<Integer>(acceleration));
-        sessionData.addAcc(acceleration);
+        sessionData.addAcc(acceleration, timestamp);
+        lastAcc.postValue(sessionData.getAcc().size() - 1);
     }
 
     @Override
     public void didReceiveBVP(float bvp, double timestamp) {
-        this.bvp.postValue(bvp);
+        sessionData.addBvp(bvp, timestamp);
+        this.lastBvp.postValue(sessionData.getBvp().size() - 1);
     }
 
     //@Override
@@ -124,33 +140,27 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     @Override
     public void didReceiveGSR(float gsr, double timestamp) {
-        this.gsr.postValue(gsr);
-        sessionData.addGsr(gsr);
+        sessionData.addGsr(gsr, timestamp);
+        this.lastGsr.postValue(sessionData.getGsr().size() - 1);
     }
 
     @Override
     public void didReceiveIBI(float ibi, double timestamp) {
-        this.ibi.postValue(ibi);
-        sessionData.addIbi(ibi);
+        sessionData.addIbi(ibi, timestamp);
+        this.lastIbi.postValue(sessionData.getIbi().size() - 1);
     }
 
     @Override
     public void didReceiveTemperature(float temp, double timestamp) {
-        this.temp.postValue(temp);
-        sessionData.addTemp(temp);
+        sessionData.addTemp(temp, timestamp);
+        this.lastTemp.postValue(sessionData.getTemp().size() - 1);
     }
 
     @Override
     public void didReceiveTag(double timestamp) {
         sessionData.addTag(timestamp);
+        this.tag.postValue(timestamp);
     }
 
 
-    public LiveData<String> getDeviceName() {
-        return deviceName;
-    }
-
-    public void setDeviceName(String deviceName) {
-        this.deviceName.postValue(deviceName);
-    }
 }

@@ -1,27 +1,31 @@
 package com.jstappdev.e4client;
 
+import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 
 
 public class SessionData {
+
     private static SessionData INSTANCE;
 
     private long initialTime;
 
-    private List<List<Integer>> acc;
-    private List<Float> bvp;
-    private List<Float> gsr;
-    private List<Float> ibi;
-    private List<Float> temp;
-    private List<Double> tags;
+    private LinkedList<List<Integer>> acc;
+    private LinkedList<Float> bvp;
+    private LinkedList<Float> gsr;
+    private LinkedList<Float> ibi;
+    private LinkedList<Float> temp;
+    private LinkedList<Double> tags;
 
-    private long accTimestamp;
-    private long bvpTimestamp;
-    private long gsrTimestamp;
-    private long ibiTimestamp;
-    private long tempTimestamp;
-    private long hrTimestamp;
+    private LinkedList<Double> accTimestamps;
+    private LinkedList<Double> bvpTimestamps;
+    private LinkedList<Double> gsrTimestamps;
+    private LinkedList<Double> ibiTimestamps;
+    private LinkedList<Double> tempTimestamps;
+    private LinkedList<Double> hrTimestamps;
+
+    private Deque<Float> lastIbis = new LinkedList<Float>();
 
     private SessionData() {
         acc = new LinkedList<>();
@@ -30,6 +34,13 @@ public class SessionData {
         ibi = new LinkedList<>();
         temp = new LinkedList<>();
         tags = new LinkedList<>();
+
+        accTimestamps = new LinkedList<>();
+        bvpTimestamps = new LinkedList<>();
+        gsrTimestamps = new LinkedList<>();
+        ibiTimestamps = new LinkedList<>();
+        tempTimestamps = new LinkedList<>();
+        hrTimestamps = new LinkedList<>();
     }
 
     public static SessionData getInstance() {
@@ -39,57 +50,61 @@ public class SessionData {
         return INSTANCE;
     }
 
-    public List<Float> getHr() {
-        // todo: average heart rate extracted from the BVP signal
-        return null;
+    public float getHr() {
+        // todo: return better estimate of current heart rate
+        float hr = 0f;
+
+        for (float ibi : lastIbis) {
+            hr += ibi;
+        }
+
+        hr /= 60.0f / hr / lastIbis.size();
+
+        return hr;
     }
 
-    public long getAccTimestamp() {
-        return accTimestamp;
+    public LinkedList<Double> getAccTimestamps() {
+        return accTimestamps;
     }
 
-    public void setAccTimestamp(long accTimestamp) {
-        this.accTimestamp = accTimestamp;
+    public LinkedList<Double> getBvpTimestamps() {
+        return bvpTimestamps;
     }
 
-    public long getBvpTimestamp() {
-        return bvpTimestamp;
+    public void setBvpTimestamps(LinkedList<Double> bvpTimestamps) {
+        this.bvpTimestamps = bvpTimestamps;
     }
 
-    public void setBvpTimestamp(long bvpTimestamp) {
-        this.bvpTimestamp = bvpTimestamp;
+    public LinkedList<Double> getGsrTimestamps() {
+        return gsrTimestamps;
     }
 
-    public long getGsrTimestamp() {
-        return gsrTimestamp;
+    public void setGsrTimestamps(LinkedList<Double> gsrTimestamps) {
+        this.gsrTimestamps = gsrTimestamps;
     }
 
-    public void setGsrTimestamp(long gsrTimestamp) {
-        this.gsrTimestamp = gsrTimestamp;
+    public LinkedList<Double> getIbiTimestamps() {
+        return ibiTimestamps;
     }
 
-    public long getIbiTimestamp() {
-        return ibiTimestamp;
+    public void setIbiTimestamps(LinkedList<Double> ibiTimestamps) {
+        this.ibiTimestamps = ibiTimestamps;
     }
 
-    public void setIbiTimestamp(long ibiTimestamp) {
-        this.ibiTimestamp = ibiTimestamp;
+    public LinkedList<Double> getTempTimestamps() {
+        return tempTimestamps;
     }
 
-    public long getTempTimestamp() {
-        return tempTimestamp;
+    public void setTempTimestamps(LinkedList<Double> tempTimestamps) {
+        this.tempTimestamps = tempTimestamps;
     }
 
-    public void setTempTimestamp(long tempTimestamp) {
-        this.tempTimestamp = tempTimestamp;
+    public LinkedList<Double> getHrTimestamps() {
+        return hrTimestamps;
     }
 
-    public long getHrTimestamp() {
-        return hrTimestamp;
-    }
-
-    public void setHrTimestamp(long hrTimestamp) {
-        this.hrTimestamp = hrTimestamp;
+    public void setHrTimestamps(LinkedList<Double> hrTimestamps) {
+        this.hrTimestamps = hrTimestamps;
     }
 
     public long getInitialTime() {
@@ -100,71 +115,83 @@ public class SessionData {
         this.initialTime = initialTime;
     }
 
-    public List<List<Integer>> getAcc() {
+    public LinkedList<List<Integer>> getAcc() {
         return acc;
     }
 
-    public void setAcc(List<List<Integer>> acc) {
+    public void setAcc(LinkedList<List<Integer>> acc) {
         this.acc = acc;
     }
 
-    public void addAcc(List<Integer> acc) {
+    public void addAcc(LinkedList<Integer> acc, double timestamp) {
         this.acc.add(acc);
+        this.accTimestamps.add(timestamp);
     }
 
-    public List<Float> getBvp() {
+    public LinkedList<Float> getBvp() {
         return bvp;
     }
 
-    public void setBvp(List<Float> bvp) {
+    public void setBvp(LinkedList<Float> bvp) {
         this.bvp = bvp;
     }
 
-    public void addBvp(float bvp) {
+    public void addBvp(float bvp, double timestamp) {
         this.bvp.add(bvp);
+        this.bvpTimestamps.add(timestamp);
     }
 
-    public List<Float> getGsr() {
+    public LinkedList<Float> getGsr() {
         return gsr;
     }
 
-    public void setGsr(List<Float> gsr) {
+    public void setGsr(LinkedList<Float> gsr) {
         this.gsr = gsr;
     }
 
-    public void addGsr(float gsr) {
+    public void addGsr(float gsr, double timestamp) {
         this.gsr.add(gsr);
+        this.gsrTimestamps.add(timestamp);
     }
 
-    public List<Float> getIbi() {
+    public LinkedList<Float> getIbi() {
         return ibi;
     }
 
-    public void setIbi(List<Float> ibi) {
+    public void setIbi(LinkedList<Float> ibi) {
         this.ibi = ibi;
     }
 
-    public void addIbi(float ibi) {
+    public void addIbi(float ibi, double timestamp) {
+
+        // last 20 ibis used to calulate heart rate
+        if (lastIbis.size() > 20)
+            lastIbis.removeFirst();
+
+        lastIbis.addLast(ibi);
+
         this.ibi.add(ibi);
+        this.ibiTimestamps.add(timestamp);
     }
 
-    public List<Float> getTemp() {
+    public LinkedList<Float> getTemp() {
         return temp;
     }
 
-    public void setTemp(List<Float> temp) {
+    public void setTemp(LinkedList<Float> temp) {
         this.temp = temp;
     }
 
-    public void addTemp(float temp) {
+    public void addTemp(float temp, double timestamp) {
         this.temp.add(temp);
+        this.tempTimestamps.add(timestamp);
     }
 
-    public List<Double> getTags() {
+    public LinkedList<Double> getTags() {
         return tags;
     }
 
-    public void setTags(List<Double> tags) {
+    public void setTags(LinkedList<Double> tags) {
         this.tags = tags;
     }
 
