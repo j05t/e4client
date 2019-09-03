@@ -82,14 +82,13 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         sessionData = SessionData.getInstance();
 
         // debug
-        // simulateSensorData();
+        simulateSensorData();
     }
 
     private void simulateSensorData() {
         // simulate live sensor data
         sharedViewModel.setIsConnected(true);
         sharedViewModel.setDeviceName("DEADBEEF");
-        sharedViewModel.setOnWrist(true);
         sharedViewModel.didUpdateOnWristStatus(EmpaSensorStatus.ON_WRIST);
         sharedViewModel.didReceiveGSR(0f, 0d);
         sharedViewModel.didReceiveAcceleration(42, 1, 0, 0d);

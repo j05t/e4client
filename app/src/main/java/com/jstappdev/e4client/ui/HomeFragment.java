@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -39,7 +40,10 @@ public class HomeFragment extends Fragment {
     private TextView deviceNameLabel;
     private TextView wristStatusLabel;
 
+    private ImageView batteryImageView;
+
     private SessionData sessionData;
+    private int currentBatteryDrawableId = R.drawable.ic_battery_full;
 
 
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -72,6 +76,7 @@ public class HomeFragment extends Fragment {
         batteryLabel = view.findViewById(R.id.battery);
         deviceNameLabel = view.findViewById(R.id.deviceName);
         wristStatusLabel = view.findViewById(R.id.wrist_status_label);
+        batteryImageView = view.findViewById(R.id.batteryImageView);
 
         view.findViewById(R.id.disconnectButton).setOnClickListener(new View.OnClickListener() {
 
@@ -112,6 +117,21 @@ public class HomeFragment extends Fragment {
             @Override
             public void onChanged(Float battery) {
                 batteryLabel.setText(String.format(Locale.getDefault(), "%.0f %%", battery * 100));
+                int id = currentBatteryDrawableId;
+
+                if (battery > .87f)
+                    id = R.drawable.ic_battery_full;
+                else if(battery < .87f && battery > .49f )
+                    id = R.drawable.ic_battery66;
+                else if(battery < .49f && battery > .1f )
+                    id = R.drawable.ic_battery33;
+                else if(battery < .1f )
+                    id = R.drawable.ic_battery_empty;
+
+                if (id != currentBatteryDrawableId) {
+                    batteryImageView.setImageResource(id);
+                    currentBatteryDrawableId = id;
+                }
             }
         });
 
