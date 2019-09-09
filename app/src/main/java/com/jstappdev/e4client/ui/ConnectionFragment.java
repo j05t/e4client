@@ -22,7 +22,7 @@ import com.jstappdev.e4client.SharedViewModel;
 import java.util.Locale;
 import java.util.Objects;
 
-public class HomeFragment extends Fragment {
+public class ConnectionFragment extends Fragment {
 
     private static final String TAG = "e4";
 
@@ -51,7 +51,7 @@ public class HomeFragment extends Fragment {
 
         sharedViewModel = ViewModelProviders.of(Objects.requireNonNull(getActivity())).get(SharedViewModel.class);
 
-        View root = inflater.inflate(R.layout.fragment_home, container, false);
+        View root = inflater.inflate(R.layout.fragment_connection, container, false);
         final TextView textView = root.findViewById(R.id.status);
         sharedViewModel.getStatus().observe(this, new Observer<String>() {
             @Override
@@ -121,11 +121,11 @@ public class HomeFragment extends Fragment {
 
                 if (battery > .87f)
                     id = R.drawable.ic_battery_full;
-                else if(battery < .87f && battery > .49f )
+                else if (battery < .87f && battery > .49f)
                     id = R.drawable.ic_battery66;
-                else if(battery < .49f && battery > .1f )
+                else if (battery < .49f && battery > .1f)
                     id = R.drawable.ic_battery33;
-                else if(battery < .1f )
+                else if (battery < .1f)
                     id = R.drawable.ic_battery_empty;
 
                 if (id != currentBatteryDrawableId) {

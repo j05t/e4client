@@ -69,8 +69,8 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         // Passing each menu ID as a set of Ids because each
         // menu should be considered as top level destinations.
         mAppBarConfiguration = new AppBarConfiguration.Builder(
-                R.id.nav_home, R.id.nav_charts, R.id.nav_session,
-                R.id.nav_tools, R.id.nav_share, R.id.nav_sync)
+                R.id.nav_connection, R.id.nav_charts, R.id.nav_session,
+                R.id.nav_settings, R.id.nav_share_csv, R.id.nav_sync)
                 .setDrawerLayout(drawer)
                 .build();
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         sessionData = SessionData.getInstance();
 
         // debug
-        simulateSensorData();
+        // simulateSensorData();
     }
 
     private void simulateSensorData() {
@@ -99,6 +99,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         simulateLiveData();
         simulateTags();
     }
+
     void simulateLiveData() {
         TimerTask updateDataTask = new TimerTask() {
             @Override
@@ -124,6 +125,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         long interval = 10;
         timer.schedule(updateDataTask, delay, interval);
     }
+
     void simulateTags() {
         TimerTask updateDataTask = new TimerTask() {
             @Override

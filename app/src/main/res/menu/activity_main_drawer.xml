@@ -5,9 +5,9 @@
 
     <group android:checkableBehavior="single">
         <item
-            android:id="@+id/nav_home"
+            android:id="@+id/nav_connection"
             android:icon="@drawable/ic_menu_home"
-            android:title="@string/menu_home" />
+            android:title="@string/menu_connection" />
         <item
             android:id="@+id/nav_charts"
             android:icon="@drawable/ic_menu_charts"
@@ -17,7 +17,7 @@
             android:icon="@drawable/ic_menu_slideshow"
             android:title="@string/menu_slideshow" />
         <item
-            android:id="@+id/nav_tools"
+            android:id="@+id/nav_settings"
             android:icon="@drawable/ic_menu_manage"
             android:title="@string/menu_tools" />
     </group>
@@ -25,7 +25,7 @@
     <item android:title="Communicate">
         <menu>
             <item
-                android:id="@+id/nav_share"
+                android:id="@+id/nav_share_csv"
                 android:icon="@drawable/ic_menu_share"
                 android:title="@string/menu_share" />
             <item

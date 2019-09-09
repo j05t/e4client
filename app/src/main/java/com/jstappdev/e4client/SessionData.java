@@ -26,6 +26,7 @@ public class SessionData {
     private LinkedList<Double> hrTimestamps;
 
     private Deque<Float> lastIbis = new LinkedList<Float>();
+    private float hr = 0f;
 
     private SessionData() {
         acc = new LinkedList<>();
@@ -51,15 +52,6 @@ public class SessionData {
     }
 
     public float getHr() {
-        // todo: return better estimate of current heart rate
-        float hr = 0f;
-
-        for (float ibi : lastIbis) {
-            hr += ibi;
-        }
-
-        hr /= 60.0f / hr / lastIbis.size();
-
         return hr;
     }
 
@@ -169,6 +161,18 @@ public class SessionData {
             lastIbis.removeFirst();
 
         lastIbis.addLast(ibi);
+
+        // update average heart rate
+        // todo: calculate better estimate of current heart rate
+        if (lastIbis.size() > 5) {
+            float cur_hr = 0f;
+
+            for (float lastIbi : lastIbis) {
+                cur_hr += lastIbi;
+            }
+            cur_hr /= lastIbis.size();
+            hr = cur_hr;
+        }
 
         this.ibi.add(ibi);
         this.ibiTimestamps.add(timestamp);

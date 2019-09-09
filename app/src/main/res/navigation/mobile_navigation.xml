@@ -3,19 +3,19 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mobile_navigation"
-    app:startDestination="@+id/nav_home">
+    app:startDestination="@+id/nav_connection">
 
     <fragment
-        android:id="@+id/nav_home"
-        android:name="com.jstappdev.e4client.ui.HomeFragment"
-        android:label="@string/menu_home"
-        tools:layout="@layout/fragment_home" />
+        android:id="@+id/nav_connection"
+        android:name="com.jstappdev.e4client.ui.ConnectionFragment"
+        android:label="@string/menu_connection"
+        tools:layout="@layout/fragment_connection" />
 
     <fragment
         android:id="@+id/nav_charts"
-        android:name="com.jstappdev.e4client.ui.ChartFragment"
+        android:name="com.jstappdev.e4client.ui.ChartsFragment"
         android:label="@string/menu_charts"
-        tools:layout="@layout/fragment_chart" />
+        tools:layout="@layout/fragment_charts" />
 
     <fragment
         android:id="@+id/nav_session"
@@ -24,13 +24,13 @@
         tools:layout="@layout/fragment_sessions" />
 
     <fragment
-        android:id="@+id/nav_tools"
+        android:id="@+id/nav_settings"
         android:name="com.jstappdev.e4client.ui.ToolsFragment"
         android:label="@string/menu_tools"
         tools:layout="@layout/fragment_tools" />
 
     <fragment
-        android:id="@+id/nav_share"
+        android:id="@+id/nav_share_csv"
         android:name="com.jstappdev.e4client.ui.ShareFragment"
         android:label="@string/menu_share"
         tools:layout="@layout/fragment_share" />
