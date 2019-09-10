@@ -1,6 +1,7 @@
 package com.jstappdev.e4client.ui;
 
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,9 +16,13 @@ import androidx.lifecycle.ViewModelProviders;
 import com.jstappdev.e4client.R;
 import com.jstappdev.e4client.SessionData;
 import com.jstappdev.e4client.SharedViewModel;
+import com.scichart.charting.Direction2D;
 import com.scichart.charting.model.AnnotationCollection;
 import com.scichart.charting.model.dataSeries.XyDataSeries;
 import com.scichart.charting.visuals.SciChartSurface;
+import com.scichart.charting.visuals.annotations.AnnotationCoordinateMode;
+import com.scichart.charting.visuals.annotations.AxisMarkerAnnotation;
+import com.scichart.charting.visuals.annotations.VerticalLineAnnotation;
 import com.scichart.charting.visuals.axes.AutoRange;
 import com.scichart.charting.visuals.axes.IAxis;
 import com.scichart.charting.visuals.renderableSeries.IRenderableSeries;
@@ -53,6 +58,12 @@ public class ChartsFragment extends Fragment {
     private SharedViewModel sharedViewModel;
     private SciChartBuilder sciChartBuilder;
 
+    public static final int DEFAULT_POINT_COUNT = 150;
+    public static final int SMA_SERIES_COLOR = 0xFFFFA500;
+    public static final int STROKE_UP_COLOR = 0xFF00AA00;
+    public static final int STROKE_DOWN_COLOR = 0xFFFF0000;
+
+    private static float averageHr = -1.0f;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -89,6 +100,8 @@ public class ChartsFragment extends Fragment {
         // Create a numeric X axis
         final IAxis xAxis = sciChartBuilder.newNumericAxis()
                 .withVisibleRange(sharedXRange)
+                .withDrawMinorGridLines(false)
+                .withGrowBy(0, 0.1)
                 .withVisibility(isFirstPane ? View.VISIBLE : View.GONE)
                 .build();
 
@@ -129,6 +142,10 @@ public class ChartsFragment extends Fragment {
         //final XyDataSeries<Double, Float> ibiLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
         final XyDataSeries<Double, Float> tempLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
 
+        final AxisMarkerAnnotation hrAxisMarker = sciChartBuilder.newAxisMarkerAnnotation()
+                .withY1(0d).withBackgroundColor(SMA_SERIES_COLOR).build();
+        final AxisMarkerAnnotation tempAxisMarker = sciChartBuilder.newAxisMarkerAnnotation()
+                .withY1(0d).withBackgroundColor(SMA_SERIES_COLOR).build();
 
         setupChart(edaChart, "EDA uS", edaLineData, true);
         setupChart(hrChart, "HR", hrLineData, false);
@@ -136,6 +153,18 @@ public class ChartsFragment extends Fragment {
         //setupChart(ibiChart, "IBI", ibiLineData);
         setupChart(tempChart, "Temp", tempLineData, false);
 
+        // axis marker showing current value
+        Collections.addAll(hrChart.getAnnotations(), hrAxisMarker);
+        Collections.addAll(tempChart.getAnnotations(), tempAxisMarker);
+
+        // modifiers for main chart
+        // todo: enable zoom and pan when not displaying live data
+        if (false)
+            Collections.addAll(edaChart.getChartModifiers(), sciChartBuilder.newModifierGroup()
+                    .withXAxisDragModifier().build()
+                    .withZoomPanModifier().withReceiveHandledEvents(true).withXyDirection(Direction2D.XDirection).build()
+                    .withZoomExtentsModifier().build()
+                    .build());
 
         sharedViewModel.getLastGsr().observe(owner, new Observer<Integer>() {
             @Override
@@ -155,23 +184,29 @@ public class ChartsFragment extends Fragment {
             @Override
             public void onChanged(Integer lastTemp) {
                 tempLineData.append(sessionData.getTempTimestamps().getLast(), sessionData.getTemp().get(lastTemp));
+                tempAxisMarker.setY1(sessionData.getTemp().get(lastTemp));
                 tempChart.zoomExtents();
             }
         });
+
         sharedViewModel.getLastIbi().observe(owner, new Observer<Integer>() {
             @Override
-            public void onChanged(Integer lastBvp) {
-                final float hr = sessionData.getHr();
+            public void onChanged(Integer lastIbi) {
+                final float currentHr = 60.0f / sessionData.getIbi().getLast();
+
+                // heart rate may theoretically reach 600, but we assume 300 max
+                // https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3273956/
+                if (averageHr != 0.0f && currentHr < 300f) {
+                    averageHr = 0.8f * averageHr + 0.2f * currentHr;
+                }
 
                 //ibiLineData.append(sessionData.getIbiTimestamps().getLast(), sessionData.getIbi().get(lastBvp));
-                hrLineData.append(sessionData.getIbiTimestamps().getLast(), hr);
+                hrLineData.append(sessionData.getIbiTimestamps().getLast(), currentHr);
+                hrAxisMarker.setY1(averageHr);
                 hrChart.zoomExtents();
             }
         });
 
-
-        // tags - todo: maybe show as scatter data
-        /*
         sharedViewModel.getTag().observe(owner, new Observer<Double>() {
             @Override
             public void onChanged(Double tag) {
@@ -185,7 +220,7 @@ public class ChartsFragment extends Fragment {
                 Collections.addAll(edaChart.getAnnotations(), verticalLine);
             }
         });
-*/
+
 
         verticalGroup.addSurfaceToGroup(edaChart);
         verticalGroup.addSurfaceToGroup(bvpChart);

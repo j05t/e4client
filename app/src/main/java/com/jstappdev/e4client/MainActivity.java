@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         sessionData = SessionData.getInstance();
 
         // debug
-        // simulateSensorData();
+        //simulateSensorData();
     }
 
     private void simulateSensorData() {

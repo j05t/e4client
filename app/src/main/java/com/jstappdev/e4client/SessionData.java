@@ -1,6 +1,5 @@
 package com.jstappdev.e4client;
 
-import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -16,6 +15,7 @@ public class SessionData {
     private LinkedList<Float> gsr;
     private LinkedList<Float> ibi;
     private LinkedList<Float> temp;
+    private LinkedList<Float> hr;
     private LinkedList<Double> tags;
 
     private LinkedList<Double> accTimestamps;
@@ -25,8 +25,6 @@ public class SessionData {
     private LinkedList<Double> tempTimestamps;
     private LinkedList<Double> hrTimestamps;
 
-    private Deque<Float> lastIbis = new LinkedList<Float>();
-    private float hr = 0f;
 
     private SessionData() {
         acc = new LinkedList<>();
@@ -34,14 +32,15 @@ public class SessionData {
         gsr = new LinkedList<>();
         ibi = new LinkedList<>();
         temp = new LinkedList<>();
+        hr = new LinkedList<>();
         tags = new LinkedList<>();
 
         accTimestamps = new LinkedList<>();
         bvpTimestamps = new LinkedList<>();
         gsrTimestamps = new LinkedList<>();
         ibiTimestamps = new LinkedList<>();
-        tempTimestamps = new LinkedList<>();
         hrTimestamps = new LinkedList<>();
+        tempTimestamps = new LinkedList<>();
     }
 
     public static SessionData getInstance() {
@@ -49,10 +48,6 @@ public class SessionData {
             INSTANCE = new SessionData();
         }
         return INSTANCE;
-    }
-
-    public float getHr() {
-        return hr;
     }
 
     public LinkedList<Double> getAccTimestamps() {
@@ -156,26 +151,13 @@ public class SessionData {
 
     public void addIbi(float ibi, double timestamp) {
 
-        // last 20 ibis used to calulate heart rate
-        if (lastIbis.size() > 20)
-            lastIbis.removeFirst();
-
-        lastIbis.addLast(ibi);
-
-        // update average heart rate
-        // todo: calculate better estimate of current heart rate
-        if (lastIbis.size() > 5) {
-            float cur_hr = 0f;
-
-            for (float lastIbi : lastIbis) {
-                cur_hr += lastIbi;
-            }
-            cur_hr /= lastIbis.size();
-            hr = cur_hr;
-        }
+        final float currentHr = 60.0f / ibi;
 
         this.ibi.add(ibi);
         this.ibiTimestamps.add(timestamp);
+
+        this.hr.add(currentHr);
+        this.hrTimestamps.add(timestamp);
     }
 
     public LinkedList<Float> getTemp() {
@@ -202,4 +184,5 @@ public class SessionData {
     public void addTag(double tag) {
         this.tags.add(tag);
     }
+
 }
