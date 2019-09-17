@@ -25,9 +25,9 @@
 
     <fragment
         android:id="@+id/nav_settings"
-        android:name="com.jstappdev.e4client.ui.ToolsFragment"
+        android:name="com.jstappdev.e4client.ui.SettingsFragment"
         android:label="@string/menu_tools"
-        tools:layout="@layout/fragment_tools" />
+        tools:layout="@layout/fragment_settings" />
 
     <fragment
         android:id="@+id/nav_share_csv"

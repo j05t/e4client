@@ -3,8 +3,10 @@ package com.jstappdev.e4client;
 import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -52,6 +54,11 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     private SharedViewModel sharedViewModel;
     private SessionData sessionData;
 
+
+    public static final String PREFS_NAME = "preferences";
+    public static final String PREF_UNAME = "Username";
+    public static final String PREF_PASSWORD = "Password";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -79,10 +86,22 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
         setUpSciChartLicense();
 
+        loadPreferences();
+
         sessionData = SessionData.getInstance();
 
         // debug
         //simulateSensorData();
+    }
+
+    private void loadPreferences() {
+        final SharedPreferences settings = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+
+        sharedViewModel.setUsername(settings.getString(MainActivity.PREF_UNAME, ""));
+        sharedViewModel.setPassword(settings.getString(MainActivity.PREF_PASSWORD, ""));
+
+        //Log.d(TAG, "loaded credentials for " + sharedViewModel.getUsername() + " with pass" + sharedViewModel.getPassword());
+
     }
 
     private void simulateSensorData() {
