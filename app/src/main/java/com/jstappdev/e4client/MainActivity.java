@@ -40,14 +40,14 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity implements EmpaStatusDelegate {
-    private static final int REQUEST_ENABLE_BT = 1;
+    public static final String TAG = "e4";
 
+    private static final int REQUEST_ENABLE_BT = 1;
     private static final int REQUEST_PERMISSION_ACCESS_COARSE_LOCATION = 1;
 
     private static final String EMPATICA_API_KEY = BuildConfig.EMPATICA_API_KEY;
     private static final String SCICHART_LICENSE = BuildConfig.SCICHART_LICENSE;
 
-    private static final String TAG = "e4";
     float batteryLevel = 1.0f;
     private EmpaDeviceManager deviceManager = null;
     private AppBarConfiguration mAppBarConfiguration;
