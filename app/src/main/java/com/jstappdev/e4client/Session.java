@@ -22,6 +22,17 @@ public class Session {
         this.exit_code = exit_code;
     }
 
+    public String getFilename() {
+        return "e4_session_" + getStart_time() + "_" + getId() + ".zip";
+    }
+    public String getStartDate() {
+        return Utils.getDate(this.getStart_time());
+    }
+
+    public String getDurationAsString() {
+        return Utils.getDuration(this.getStart_time());
+    }
+
     public String getId() {
         return id;
     }

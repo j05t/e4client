@@ -1,6 +1,8 @@
 package com.jstappdev.e4client;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -58,11 +60,77 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         return new MyViewHolder(v);
     }
 
-    private static final View.OnClickListener onClickListener = new View.OnClickListener() {
+    private final View.OnClickListener onClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            String tag = v.getTag().toString();
-            Toast.makeText(v.getContext(), "tag: " + tag, Toast.LENGTH_LONG).show();
+            final int position = (int) v.getTag();
+            final Session session = sessions.get(position);
+            final String sessionId = session.getId();
+
+            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(v.getContext());
+
+            alertDialogBuilder.setTitle("Session " + sessionId);
+            alertDialogBuilder.setIcon(android.R.drawable.ic_dialog_info);
+
+            // set dialog message
+            alertDialogBuilder
+                    .setMessage("Session Start: " + session.getStartDate() + "\nDuration: " + session.getDurationAsString())
+                    .setCancelable(true)
+                    .setPositiveButton("Share", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            Toast.makeText(v.getContext(), "Share session " + sessionId, Toast.LENGTH_SHORT).show();
+                        }
+                    })
+                    .setNeutralButton("View", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            Toast.makeText(v.getContext(), "View session " + sessionId, Toast.LENGTH_SHORT).show();
+                        }
+                    })
+                    .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            dialog.cancel();
+                        }
+                    });
+
+            // create alert dialog
+            AlertDialog alertDialog = alertDialogBuilder.create();
+
+            alertDialog.show();
+        }
+    };
+
+    private final View.OnLongClickListener onLongClickListener = new View.OnLongClickListener() {
+        @Override
+        public boolean onLongClick(View v) {
+            final int position = (int) v.getTag();
+            final Session session = sessions.get(position);
+            final String sessionId = session.getId();
+
+            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(v.getContext());
+
+            alertDialogBuilder.setTitle("Delete Session " + sessionId);
+            alertDialogBuilder.setIcon(android.R.drawable.ic_delete);
+
+            alertDialogBuilder
+                    .setMessage("Session Start: " + session.getStartDate() + "\nDuration: " + session.getDurationAsString())
+                    .setCancelable(true)
+                    .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            Toast.makeText(v.getContext(), "Deleted session " + sessionId, Toast.LENGTH_SHORT).show();
+                        }
+                    })
+                    .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            dialog.cancel();
+                        }
+                    });
+
+            // create alert dialog
+            AlertDialog alertDialog = alertDialogBuilder.create();
+
+            alertDialog.show();
+
+            return false;
         }
     };
 
@@ -72,11 +140,12 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         Session s = sessions.get(position);
 
         holder.itemView.setOnClickListener(onClickListener);
-        holder.itemView.setTag(s.getId());
+        holder.itemView.setOnLongClickListener(onLongClickListener);
+        holder.itemView.setTag(position);
 
         holder.id.setText(s.getId());
-        holder.start_time.setText(Long.toString(s.getStart_time()));
-        holder.duration.setText(Long.toString(s.getDuration()));
+        holder.start_time.setText(s.getStartDate());
+        holder.duration.setText(s.getDurationAsString());
         holder.device_id.setText(s.getDevice_id());
         holder.label.setText(s.getLabel());
         holder.device.setText(s.getDevice());

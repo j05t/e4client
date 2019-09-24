@@ -260,7 +260,7 @@ public class SessionsFragment extends Fragment {
         protected String doInBackground(Void... voids) {
             for (Session session : sessions) {
                 final String sessionId = session.getId();
-                final String filename = Utils.getFileName(session);
+                final String filename = session.getFilename();
 
                 final File file = new File(requireActivity().getFilesDir(), filename);
                 if (file.exists()) {
