@@ -24,6 +24,11 @@ android {
         }
     }
 
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
     splits {
 
         // Configures multiple APKs based on ABI.
@@ -36,7 +41,7 @@ android {
             reset()
 
             // Specifies a list of ABIs that Gradle should create APKs for.
-            include 'armeabi-v7a', 'x86', 'x86_64' // de-comment this to test on emulator
+            include 'armeabi-v7a', 'x86', 'x86_64'
 
             // Specifies that we do not want to also generate a universal APK that includes all ABIs.
             universalApk false
@@ -73,9 +78,11 @@ dependencies {
     implementation (name:'extensions-release', ext:'aar')
 
     //noinspection AnnotationProcessorOnCompilePath
-    implementation 'com.jakewharton:butterknife:10.1.0'
-    annotationProcessor 'com.jakewharton:butterknife-compiler:10.1.0'
+    implementation 'com.jakewharton:butterknife:10.2.0'
+    annotationProcessor 'com.jakewharton:butterknife-compiler:10.2.0'
 
     // http client
     implementation "com.squareup.okhttp3:okhttp-urlconnection:4.2.0"
+
+    implementation 'net.lingala.zip4j:zip4j:2.1.4'
 }

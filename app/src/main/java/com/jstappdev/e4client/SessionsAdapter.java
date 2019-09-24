@@ -1,10 +1,12 @@
 package com.jstappdev.e4client;
 
+import android.annotation.SuppressLint;
 import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -56,9 +58,21 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         return new MyViewHolder(v);
     }
 
+    private static final View.OnClickListener onClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            String tag = v.getTag().toString();
+            Toast.makeText(v.getContext(), "tag: " + tag, Toast.LENGTH_LONG).show();
+        }
+    };
+
+    @SuppressLint("SetTextI18n")
     @Override
     public void onBindViewHolder(@NonNull MyViewHolder holder, int position) {
         Session s = sessions.get(position);
+
+        holder.itemView.setOnClickListener(onClickListener);
+        holder.itemView.setTag(s.getId());
 
         holder.id.setText(s.getId());
         holder.start_time.setText(Long.toString(s.getStart_time()));

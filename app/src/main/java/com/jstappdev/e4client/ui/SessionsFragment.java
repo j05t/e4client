@@ -22,6 +22,7 @@ import com.jstappdev.e4client.R;
 import com.jstappdev.e4client.Session;
 import com.jstappdev.e4client.SessionsAdapter;
 import com.jstappdev.e4client.SharedViewModel;
+import com.jstappdev.e4client.Utils;
 import com.squareup.okhttp.Callback;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
@@ -259,8 +260,7 @@ public class SessionsFragment extends Fragment {
         protected String doInBackground(Void... voids) {
             for (Session session : sessions) {
                 final String sessionId = session.getId();
-                final String startTime = getDate(session.getStart_time());
-                final String filename = "e4_session_" + startTime + "_" + sessionId + ".zip";
+                final String filename = Utils.getFileName(session);
 
                 final File file = new File(requireActivity().getFilesDir(), filename);
                 if (file.exists()) {
@@ -320,9 +320,5 @@ public class SessionsFragment extends Fragment {
     }
 
 
-    private String getDate(final long time) {
-        Calendar cal = Calendar.getInstance(Locale.ENGLISH);
-        cal.setTimeInMillis(time * 1000);
-        return DateFormat.format("yyyy-MM-dd", cal).toString();
-    }
+
 }

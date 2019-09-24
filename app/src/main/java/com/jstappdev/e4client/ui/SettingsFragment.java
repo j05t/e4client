@@ -3,7 +3,8 @@ package com.jstappdev.e4client.ui;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.util.Log;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,11 +27,24 @@ public class SettingsFragment extends Fragment {
     private EditText edt_username;
     private EditText edt_password;
 
-
-    private final View.OnFocusChangeListener onFocusChangeListener = new View.OnFocusChangeListener() {
+    private final TextWatcher textWatcher = new TextWatcher() {
         @Override
-        public void onFocusChange(View v, boolean hasFocus) {
-            savePreferences();
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+        }
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+        }
+
+        @Override
+        public void afterTextChanged(Editable s) {
+            final String user = edt_username.getText().toString();
+            final String pass = edt_password.getText().toString();
+
+            sharedViewModel.setUsername(user);
+            sharedViewModel.setPassword(pass);
         }
     };
 
@@ -39,13 +53,13 @@ public class SettingsFragment extends Fragment {
 
         sharedViewModel = ViewModelProviders.of(Objects.requireNonNull(getActivity())).get(SharedViewModel.class);
 
-        View root = inflater.inflate(R.layout.fragment_settings, container, false);
+        final View root = inflater.inflate(R.layout.fragment_settings, container, false);
 
         edt_username = root.findViewById(R.id.e4username);
         edt_password = root.findViewById(R.id.e4password);
 
-        edt_username.setOnFocusChangeListener(onFocusChangeListener);
-        edt_password.setOnFocusChangeListener(onFocusChangeListener);
+        edt_username.addTextChangedListener(textWatcher);
+        edt_password.addTextChangedListener(textWatcher);
 
         return root;
     }
@@ -59,7 +73,7 @@ public class SettingsFragment extends Fragment {
 
     private void loadPreferences() {
 
-        SharedPreferences settings = requireContext().getSharedPreferences(MainActivity.PREFS_NAME,
+        final SharedPreferences settings = requireContext().getSharedPreferences(MainActivity.PREFS_NAME,
                 Context.MODE_PRIVATE);
 
         sharedViewModel.setUsername(settings.getString(MainActivity.PREF_UNAME, ""));
@@ -80,14 +94,8 @@ public class SettingsFragment extends Fragment {
                 Context.MODE_PRIVATE);
         final SharedPreferences.Editor editor = settings.edit();
 
-        final String user = edt_username.getText().toString();
-        final String pass = edt_password.getText().toString();
-
-        sharedViewModel.setUsername(user);
-        sharedViewModel.setPassword(pass);
-
-        editor.putString(MainActivity.PREF_UNAME, user);
-        editor.putString(MainActivity.PREF_PASSWORD, pass);
+        editor.putString(MainActivity.PREF_UNAME, sharedViewModel.getUsername());
+        editor.putString(MainActivity.PREF_PASSWORD, sharedViewModel.getPassword());
 
         editor.apply();
     }
