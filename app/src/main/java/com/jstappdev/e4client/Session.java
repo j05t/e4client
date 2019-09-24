@@ -3,15 +3,15 @@ package com.jstappdev.e4client;
 public class Session {
 
     private String id;
-    private String start_time;
-    private String duration;
+    private long start_time;
+    private long duration;
     private String device_id;
     private String label;
     private String device;
     private String status;
     private String exit_code;
 
-    public Session(String id, String start_time, String duration, String device_id, String label, String device, String status, String exit_code) {
+    public Session(String id, Long start_time, Long duration, String device_id, String label, String device, String status, String exit_code) {
         this.id = id;
         this.start_time = start_time;
         this.duration = duration;
@@ -38,19 +38,19 @@ public class Session {
         this.label = label;
     }
 
-    public String getStart_time() {
+    public long getStart_time() {
         return start_time;
     }
 
-    public void setStart_time(String start_time) {
+    public void setStart_time(long start_time) {
         this.start_time = start_time;
     }
 
-    public String getDuration() {
+    public long getDuration() {
         return duration;
     }
 
-    public void setDuration(String duration) {
+    public void setDuration(long duration) {
         this.duration = duration;
     }
 

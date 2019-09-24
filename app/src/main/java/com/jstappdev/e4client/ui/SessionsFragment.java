@@ -3,11 +3,11 @@ package com.jstappdev.e4client.ui;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -22,6 +22,7 @@ import com.jstappdev.e4client.R;
 import com.jstappdev.e4client.Session;
 import com.jstappdev.e4client.SessionsAdapter;
 import com.jstappdev.e4client.SharedViewModel;
+import com.squareup.okhttp.Callback;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
@@ -30,6 +31,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,8 +40,11 @@ import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.net.HttpCookie;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -57,19 +62,14 @@ public class SessionsFragment extends Fragment {
     private RecyclerView.LayoutManager layoutManager;
     private String userid;
 
-    private Button downloadAllSessionsButton;
-    private Button syncWithGoogleFitButton;
-
     private List<Session> sessions = new ArrayList<>();
+
+    private OkHttpClient okHttpClient;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
 
         sharedViewModel = ViewModelProviders.of(Objects.requireNonNull(getActivity())).get(SharedViewModel.class);
-
-        mCookieManager = new CookieManager();
-        mCookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
-        CookieHandler.setDefault(mCookieManager);
 
         View root = inflater.inflate(R.layout.fragment_sessions, container, false);
         statusTextView = root.findViewById(R.id.text_sessions);
@@ -84,30 +84,16 @@ public class SessionsFragment extends Fragment {
         layoutManager = new LinearLayoutManager(requireContext());
         recyclerView.setLayoutManager(layoutManager);
 
-        updateSessions();
-
-        downloadAllSessionsButton = root.findViewById(R.id.button_download_all);
-        syncWithGoogleFitButton = root.findViewById(R.id.button_sync);
-
-        downloadAllSessionsButton.setOnClickListener(new View.OnClickListener() {
+        root.findViewById(R.id.button_download_all).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
                 if (sessions.size() > 0) {
-                    ArrayList<String> sessionIds = new ArrayList<String>();
-
-                    for (Session session : sessions)
-                        sessionIds.add(session.getId());
-
-                    Log.d(MainActivity.TAG, sessions.toString());
-                    Log.d(MainActivity.TAG, sessionIds.toString());
-
-
-                    new DownloadAllSessions().execute(sessionIds.toArray(new String[0]));
+                    new DownloadAllSessions().execute();
                 }
             }
         });
-        syncWithGoogleFitButton.setOnClickListener(new View.OnClickListener() {
+        root.findViewById(R.id.button_sync).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
@@ -115,7 +101,27 @@ public class SessionsFragment extends Fragment {
             }
         });
 
+        updateSessions();
+
         return root;
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        mCookieManager = new CookieManager();
+        mCookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
+        CookieHandler.setDefault(mCookieManager);
+
+        okHttpClient = new OkHttpClient();
+        okHttpClient.setFollowRedirects(true);
+        okHttpClient.setFollowSslRedirects(true);
+        okHttpClient.setRetryOnConnectionFailure(true);
+        okHttpClient.setConnectTimeout(120, TimeUnit.SECONDS);
+        okHttpClient.setReadTimeout(120, TimeUnit.SECONDS);
+        okHttpClient.setWriteTimeout(120, TimeUnit.SECONDS);
+        okHttpClient.setCookieHandler(mCookieManager);
     }
 
 
@@ -150,75 +156,87 @@ public class SessionsFragment extends Fragment {
         return cookieValue;
     }
 
-    private class GetAllSessions extends AsyncTask<String, Void, String> {
+    private boolean login() {
+        final String url = "https://www.empatica.com/connect/authenticate.php";
+
+        final com.squareup.okhttp.RequestBody formBody = new com.squareup.okhttp.FormEncodingBuilder()
+                .add("username", sharedViewModel.getUsername())
+                .add("password", sharedViewModel.getPassword())
+                .build();
+
+        final Request request = new Request.Builder().url(url).post(formBody).build();
+
+        final Response loginResponse;
+        try {
+            loginResponse = okHttpClient.newCall(request).execute();
+            loginResponse.body().close();
+        } catch (IOException e) {
+            return false;
+        }
+
+        return loginResponse.isSuccessful();
+    }
+
+    private class LoginAndGetAllSessions extends AsyncTask<Void, Void, String> {
 
         @Override
-        protected String doInBackground(String... urls) {
+        protected String doInBackground(Void... voids) {
 
-            OkHttpClient client = new OkHttpClient();
-
-            com.squareup.okhttp.RequestBody formBody = new com.squareup.okhttp.FormEncodingBuilder()
-                    .add("username", sharedViewModel.getUsername())
-                    .add("password", sharedViewModel.getPassword())
-                    .build();
-
-            Request request = new Request.Builder().url(urls[0]).post(formBody).build();
-
-            try {
-                if ((client.newCall(request).execute()).isSuccessful()) {
+            if (login()) {
+                try {
                     final String sessionOverview = "https://www.empatica.com/connect/sessions.php";
-                    Request r = new Request.Builder().url(sessionOverview).build();
-                    Response sessionResponse = client.newCall(r).execute();
-                    String res = sessionResponse.body().string();
+                    final Request r = new Request.Builder().url(sessionOverview).build();
+                    final Response sessionResponse = okHttpClient.newCall(r).execute();
+                    final String res = sessionResponse.body().string();
 
-                    Pattern pattern = Pattern.compile("var userId = (.*?);");
-                    Matcher matcher = pattern.matcher(res);
+                    final Pattern pattern = Pattern.compile("var userId = (.*?);");
+                    final Matcher matcher = pattern.matcher(res);
                     if (matcher.find()) {
                         Log.d("e4", "found userid: " + matcher.group(1));
                         userid = matcher.group(1);
                     }
 
-                    String loadAllSessions = "https://www.empatica.com/connect/connect.php/users/"
+                    final String loadAllSessions = "https://www.empatica.com/connect/connect.php/users/"
                             + userid
                             + "/sessions?from=0&to=999999999999";
 
-                    Request s = new Request.Builder().url(loadAllSessions).build();
-                    String sessionsJSON = client.newCall(s).execute().body().string();
+                    final Request s = new Request.Builder().url(loadAllSessions).build();
+                    final String sessionsJSON = okHttpClient.newCall(s).execute().body().string();
 
-                    JSONArray jArray = new JSONArray(sessionsJSON);
+                    final JSONArray jArray = new JSONArray(sessionsJSON);
                     for (int i = 0; i < jArray.length(); i++) {
                         try {
                             JSONObject oneObject = jArray.getJSONObject(i);
 
-                            String id = oneObject.getString("id");
-                            String start_time = oneObject.getString("start_time");
-                            String duration = oneObject.getString("duration");
-                            String device_id = oneObject.getString("device_id");
-                            String label = oneObject.getString("label");
-                            String device = oneObject.getString("device");
-                            String status = oneObject.getString("status");
-                            String exit_code = oneObject.getString("exit_code");
+                            final String id = oneObject.getString("id");
+                            final Long start_time = oneObject.getLong("start_time");
+                            final Long duration = oneObject.getLong("duration");
+                            final String device_id = oneObject.getString("device_id");
+                            final String label = oneObject.getString("label");
+                            final String device = oneObject.getString("device");
+                            final String status = oneObject.getString("status");
+                            final String exit_code = oneObject.getString("exit_code");
 
-                            Session session = new Session(id, start_time, duration, device_id, label, device, status, exit_code);
+                            final Session session = new Session(id, start_time, duration, device_id, label, device, status, exit_code);
                             sessions.add(session);
                         } catch (JSONException e) {
                             // Oops
                         }
                     }
 
-                    return sessionsJSON;
+                    return "Synchronization successful";
 
+                } catch (JSONException | IOException e) {
+                    e.printStackTrace();
                 }
-            } catch (IOException | JSONException e) {
-                e.printStackTrace();
             }
-            return "Download failed";
+
+            return "Synchronization failed";
         }
 
         @Override
         protected void onPostExecute(String result) {
-            statusTextView.setText("Synchronized with Empatica Cloud Account");
-
+            statusTextView.setText(result);
             mAdapter = new SessionsAdapter(sessions);
             recyclerView.setAdapter(mAdapter);
         }
@@ -230,62 +248,66 @@ public class SessionsFragment extends Fragment {
             return;
         }
 
-        GetAllSessions task = new GetAllSessions();
-        task.execute("https://www.empatica.com/connect/authenticate.php");
+        new LoginAndGetAllSessions().execute();
     }
 
 
-    private class DownloadAllSessions extends AsyncTask<String, String, String> {
+    private class DownloadAllSessions extends AsyncTask<Void, String, String> {
         final String url = "https://www.empatica.com/connect/download.php?id=";
 
         @Override
-        protected String doInBackground(String... ids) {
+        protected String doInBackground(Void... voids) {
+            for (Session session : sessions) {
+                final String sessionId = session.getId();
+                final String startTime = getDate(session.getStart_time());
+                final String filename = "e4_session_" + startTime + "_" + sessionId + ".zip";
 
-            OkHttpClient client = new OkHttpClient();
+                final File file = new File(requireActivity().getFilesDir(), filename);
+                if (file.exists()) {
+                    publishProgress("File " + filename + " already downloaded.");
+                    continue;
+                }
 
-            for (String sessionId : ids) {
-
-                // todo: check if already downloaded and skip
-                String filename = "session_" + sessionId + ".zip";
-                Request request = new Request.Builder().url(url + sessionId).build();
+                final Request request = new Request.Builder().url(url + sessionId).build();
 
                 publishProgress("Downloading Session " + sessionId);
 
-                Response response = null;
-                InputStream inputStream = null;
-
-                try {
-                    response = client.newCall(request).execute();
-
-                    if (response.isSuccessful()) {
-
-                        inputStream = response.body().byteStream();
-                        FileOutputStream out = Objects.requireNonNull(getActivity()).openFileOutput(filename, Context.MODE_PRIVATE);
-
-                        byte[] buf = new byte[1024];
-                        int len;
-                        while ((len = inputStream.read(buf)) > 0) {
-                            out.write(buf, 0, len);
-                        }
-
-                        publishProgress("Downloaded " + filename);
-                    } else {
+                okHttpClient.newCall(request).enqueue(new Callback() {
+                    @Override
+                    public void onFailure(Request request, IOException e) {
                         publishProgress("Download failed for " + filename);
+
+                        Log.d(MainActivity.TAG, "Failed Download for " + filename + " " + e.getMessage());
                     }
 
-                    response.body().close();
+                    @Override
+                    public void onResponse(Response response) throws IOException {
+                        if (response.isSuccessful()) {
+                            InputStream inputStream = response.body().byteStream();
+                            FileOutputStream out = requireActivity().openFileOutput(filename, Context.MODE_PRIVATE);
 
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                            byte[] buf = new byte[1024];
+                            int len;
+                            while ((len = inputStream.read(buf)) > 0) {
+                                out.write(buf, 0, len);
+                            }
 
+                            publishProgress("Downloaded " + filename);
+                            Log.d(MainActivity.TAG, "Downloaded " + filename);
+                        } else {
+                            Log.d(MainActivity.TAG, "unsuccessful download, redirect: " + response.isRedirect());
+                            Log.d(MainActivity.TAG, response.toString());
+                            Log.d(MainActivity.TAG, response.headers().toString());
+                            if (response.body() != null)
+                                Log.d(MainActivity.TAG, response.body().toString());
+                        }
+
+                        if (response.body() != null)
+                            response.body().close();
+                    }
+                });
             }
-            return "All Sessions Downloaded";
-        }
-
-        @Override
-        protected void onPostExecute(String result) {
-            statusTextView.setText(result);
+            return "Downloads enqueued";
         }
 
         @Override
@@ -295,5 +317,12 @@ public class SessionsFragment extends Fragment {
             if (values.length > 0)
                 statusTextView.setText(values[0]);
         }
+    }
+
+
+    private String getDate(final long time) {
+        Calendar cal = Calendar.getInstance(Locale.ENGLISH);
+        cal.setTimeInMillis(time * 1000);
+        return DateFormat.format("yyyy-MM-dd", cal).toString();
     }
 }

@@ -17,6 +17,8 @@ import com.jstappdev.e4client.MainActivity;
 import com.jstappdev.e4client.R;
 import com.jstappdev.e4client.SharedViewModel;
 
+import java.util.Objects;
+
 public class SettingsFragment extends Fragment {
 
     private SharedViewModel sharedViewModel;
@@ -25,15 +27,25 @@ public class SettingsFragment extends Fragment {
     private EditText edt_password;
 
 
+    private final View.OnFocusChangeListener onFocusChangeListener = new View.OnFocusChangeListener() {
+        @Override
+        public void onFocusChange(View v, boolean hasFocus) {
+            savePreferences();
+        }
+    };
+
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
 
-        sharedViewModel = ViewModelProviders.of(getActivity()).get(SharedViewModel.class);
+        sharedViewModel = ViewModelProviders.of(Objects.requireNonNull(getActivity())).get(SharedViewModel.class);
 
         View root = inflater.inflate(R.layout.fragment_settings, container, false);
 
         edt_username = root.findViewById(R.id.e4username);
         edt_password = root.findViewById(R.id.e4password);
+
+        edt_username.setOnFocusChangeListener(onFocusChangeListener);
+        edt_password.setOnFocusChangeListener(onFocusChangeListener);
 
         return root;
     }
@@ -77,7 +89,6 @@ public class SettingsFragment extends Fragment {
         editor.putString(MainActivity.PREF_UNAME, user);
         editor.putString(MainActivity.PREF_PASSWORD, pass);
 
-        Log.d("e4", "committed credentials for " + user + " with pass " + pass);
-        editor.commit();
+        editor.apply();
     }
 }

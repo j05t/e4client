@@ -61,8 +61,8 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         Session s = sessions.get(position);
 
         holder.id.setText(s.getId());
-        holder.start_time.setText(s.getStart_time());
-        holder.duration.setText(s.getDuration());
+        holder.start_time.setText(Long.toString(s.getStart_time()));
+        holder.duration.setText(Long.toString(s.getDuration()));
         holder.device_id.setText(s.getDevice_id());
         holder.label.setText(s.getLabel());
         holder.device.setText(s.getDevice());
