@@ -35,6 +35,7 @@ import com.empatica.empalink.config.EmpaSensorType;
 import com.empatica.empalink.config.EmpaStatus;
 import com.empatica.empalink.delegate.EmpaStatusDelegate;
 import com.google.android.material.navigation.NavigationView;
+import com.jstappdev.e4client.data.SessionData;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -53,6 +54,8 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     private AppBarConfiguration mAppBarConfiguration;
     private SharedViewModel sharedViewModel;
     private SessionData sessionData;
+
+    public static Context context;
 
 
     public static final String PREFS_NAME = "preferences";
@@ -89,6 +92,8 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         loadPreferences();
 
         sessionData = SessionData.getInstance();
+
+        context = getApplicationContext();
 
         // debug
         //simulateSensorData();

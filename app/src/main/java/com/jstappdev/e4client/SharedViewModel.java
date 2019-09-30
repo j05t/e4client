@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel;
 
 import com.empatica.empalink.config.EmpaSensorStatus;
 import com.empatica.empalink.delegate.EmpaDataDelegate;
+import com.jstappdev.e4client.data.SessionData;
 
 import java.util.LinkedList;
 

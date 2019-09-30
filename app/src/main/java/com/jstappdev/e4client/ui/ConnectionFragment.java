@@ -16,7 +16,7 @@ import androidx.lifecycle.ViewModelProviders;
 
 import com.jstappdev.e4client.MainActivity;
 import com.jstappdev.e4client.R;
-import com.jstappdev.e4client.SessionData;
+import com.jstappdev.e4client.data.SessionData;
 import com.jstappdev.e4client.SharedViewModel;
 
 import java.util.Locale;

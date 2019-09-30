@@ -2,8 +2,10 @@ package com.jstappdev.e4client;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,11 +15,18 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.jstappdev.e4client.data.Session;
+import com.jstappdev.e4client.ui.SessionsFragment;
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.Response;
+
+import java.io.IOException;
 import java.util.List;
 
 public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.Adapter<SessionsAdapter.MyViewHolder> {
 
-    private List<com.jstappdev.e4client.Session> sessions;
+    private List<Session> sessions;
 
 
     public SessionsAdapter(List<Session> sessions) {
@@ -116,7 +125,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                     .setCancelable(true)
                     .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
-                            Toast.makeText(v.getContext(), "Deleted session " + sessionId, Toast.LENGTH_SHORT).show();
+                            new Utils.DeleteSession(v.getContext(), SessionsFragment.okHttpClient).execute(sessionId);
                         }
                     })
                     .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -134,6 +143,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         }
     };
 
+
     @SuppressLint("SetTextI18n")
     @Override
     public void onBindViewHolder(@NonNull MyViewHolder holder, int position) {
@@ -150,8 +160,8 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         holder.label.setText(s.getLabel());
         holder.device.setText(s.getDevice());
 
-        if (position % 2 != 0)
-            holder.itemView.setBackgroundColor(Color.LTGRAY);
+        //if (position % 2 != 0)
+        //    holder.itemView.setBackgroundColor(Color.LTGRAY);
     }
 
     @Override

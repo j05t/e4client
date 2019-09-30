@@ -1,4 +1,4 @@
-package com.jstappdev.e4client;
+package com.jstappdev.e4client.data;
 
 import java.util.LinkedList;
 import java.util.List;

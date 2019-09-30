@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:backgroundTint="@color/colorPrimary">
@@ -11,8 +12,18 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        app:layout_constraintGuide_percent="0.45" />
+        app:layout_constraintGuide_percent="0.55" />
 
+    <TextView
+        android:id="@+id/session_start_time"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:ems="10"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toStartOf="@+id/guideline"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
         android:id="@+id/session_id"
@@ -23,18 +34,8 @@
         android:ems="10"
         app:layout_constraintEnd_toStartOf="@+id/guideline"
         app:layout_constraintStart_toEndOf="@+id/label_id"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/session_start_time"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        android:ems="10"
-        app:layout_constraintEnd_toStartOf="@+id/guideline"
-        app:layout_constraintStart_toEndOf="@+id/label_start"
-        app:layout_constraintTop_toBottomOf="@+id/session_id" />
+        app:layout_constraintTop_toBottomOf="@+id/session_start_time"
+        />
 
     <TextView
         android:id="@+id/session_duration"
@@ -45,7 +46,7 @@
         android:ems="10"
         app:layout_constraintEnd_toStartOf="@+id/guideline"
         app:layout_constraintStart_toEndOf="@+id/label_duration"
-        app:layout_constraintTop_toBottomOf="@+id/session_start_time" />
+        app:layout_constraintTop_toBottomOf="@+id/session_id" />
 
     <TextView
         android:id="@+id/session_device_id"
@@ -91,22 +92,13 @@
         app:layout_constraintTop_toTopOf="@+id/session_id" />
 
     <TextView
-        android:id="@+id/label_start"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Start:"
-        android:textStyle="bold"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/session_start_time" />
-
-    <TextView
         android:id="@+id/label_duration"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Duration:"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/label_start" />
+        app:layout_constraintTop_toBottomOf="@+id/label_id" />
 
     <TextView
         android:id="@+id/label_device_id"

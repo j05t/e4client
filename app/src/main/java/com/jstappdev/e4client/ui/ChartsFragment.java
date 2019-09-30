@@ -14,13 +14,12 @@ import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
 
 import com.jstappdev.e4client.R;
-import com.jstappdev.e4client.SessionData;
+import com.jstappdev.e4client.data.SessionData;
 import com.jstappdev.e4client.SharedViewModel;
 import com.scichart.charting.Direction2D;
 import com.scichart.charting.model.AnnotationCollection;
 import com.scichart.charting.model.dataSeries.XyDataSeries;
 import com.scichart.charting.visuals.SciChartSurface;
-import com.scichart.charting.visuals.annotations.AnnotationCoordinateMode;
 import com.scichart.charting.visuals.annotations.AxisMarkerAnnotation;
 import com.scichart.charting.visuals.annotations.VerticalLineAnnotation;
 import com.scichart.charting.visuals.axes.AutoRange;

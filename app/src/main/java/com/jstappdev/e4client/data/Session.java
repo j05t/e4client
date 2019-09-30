@@ -1,4 +1,6 @@
-package com.jstappdev.e4client;
+package com.jstappdev.e4client.data;
+
+import com.jstappdev.e4client.Utils;
 
 public class Session {
 
@@ -25,12 +27,13 @@ public class Session {
     public String getFilename() {
         return "e4_session_" + getStart_time() + "_" + getId() + ".zip";
     }
+
     public String getStartDate() {
-        return Utils.getDate(this.getStart_time());
+        return Utils.getDate(this.start_time);
     }
 
     public String getDurationAsString() {
-        return Utils.getDuration(this.getStart_time());
+        return Utils.getDuration(this.duration);
     }
 
     public String getId() {

@@ -3,7 +3,6 @@ package com.jstappdev.e4client.ui;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,15 +13,15 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProviders;
+import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.jstappdev.e4client.MainActivity;
 import com.jstappdev.e4client.R;
-import com.jstappdev.e4client.Session;
 import com.jstappdev.e4client.SessionsAdapter;
 import com.jstappdev.e4client.SharedViewModel;
-import com.jstappdev.e4client.Utils;
+import com.jstappdev.e4client.data.Session;
 import com.squareup.okhttp.Callback;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
@@ -41,13 +40,14 @@ import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.net.HttpCookie;
 import java.util.ArrayList;
-import java.util.Calendar;
+import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static androidx.core.content.ContextCompat.getDrawable;
 
 
 public class SessionsFragment extends Fragment {
@@ -65,14 +65,14 @@ public class SessionsFragment extends Fragment {
 
     private List<Session> sessions = new ArrayList<>();
 
-    private OkHttpClient okHttpClient;
+    public static OkHttpClient okHttpClient;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
 
         sharedViewModel = ViewModelProviders.of(Objects.requireNonNull(getActivity())).get(SharedViewModel.class);
 
-        View root = inflater.inflate(R.layout.fragment_sessions, container, false);
+        final View root = inflater.inflate(R.layout.fragment_sessions, container, false);
         statusTextView = root.findViewById(R.id.text_sessions);
         recyclerView = root.findViewById(R.id.recyclerview);
 
@@ -84,6 +84,11 @@ public class SessionsFragment extends Fragment {
         // use a linear layout manager
         layoutManager = new LinearLayoutManager(requireContext());
         recyclerView.setLayoutManager(layoutManager);
+
+        // vertical separator
+        final DividerItemDecoration itemDecorator = new DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL);
+        itemDecorator.setDrawable(Objects.requireNonNull(getDrawable(requireContext(), R.drawable.divider)));
+        recyclerView.addItemDecoration(itemDecorator);
 
         root.findViewById(R.id.button_download_all).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -195,6 +200,8 @@ public class SessionsFragment extends Fragment {
                     if (matcher.find()) {
                         Log.d("e4", "found userid: " + matcher.group(1));
                         userid = matcher.group(1);
+                    } else {
+                        return "Error: User ID not found.";
                     }
 
                     final String loadAllSessions = "https://www.empatica.com/connect/connect.php/users/"
@@ -203,11 +210,11 @@ public class SessionsFragment extends Fragment {
 
                     final Request s = new Request.Builder().url(loadAllSessions).build();
                     final String sessionsJSON = okHttpClient.newCall(s).execute().body().string();
-
                     final JSONArray jArray = new JSONArray(sessionsJSON);
+
                     for (int i = 0; i < jArray.length(); i++) {
                         try {
-                            JSONObject oneObject = jArray.getJSONObject(i);
+                            final JSONObject oneObject = jArray.getJSONObject(i);
 
                             final String id = oneObject.getString("id");
                             final Long start_time = oneObject.getLong("start_time");
@@ -224,6 +231,8 @@ public class SessionsFragment extends Fragment {
                             // Oops
                         }
                     }
+
+                    Collections.reverse(sessions);
 
                     return "Synchronization successful";
 
@@ -318,7 +327,6 @@ public class SessionsFragment extends Fragment {
                 statusTextView.setText(values[0]);
         }
     }
-
 
 
 }
