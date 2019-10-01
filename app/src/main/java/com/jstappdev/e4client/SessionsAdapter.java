@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -113,13 +114,13 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
             final Session session = sessions.get(position);
             final String sessionId = session.getId();
 
-            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(v.getContext());
+            final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(v.getContext());
 
             alertDialogBuilder.setTitle("Delete Session " + sessionId);
             alertDialogBuilder.setIcon(android.R.drawable.ic_delete);
 
             alertDialogBuilder
-                    .setMessage("Session Start: " + session.getStartDate() + "\nDuration: " + session.getDurationAsString())
+                    .setMessage(String.format("Start: %s\nDuration: %s", session.getStartDate(), session.getDurationAsString()))
                     .setCancelable(true)
                     .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
@@ -132,10 +133,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                         }
                     });
 
-            // create alert dialog
-            AlertDialog alertDialog = alertDialogBuilder.create();
-
-            alertDialog.show();
+            alertDialogBuilder.create().show();
 
             return false;
         }
@@ -144,8 +142,8 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
 
     @SuppressLint("SetTextI18n")
     @Override
-    public void onBindViewHolder(@NonNull MyViewHolder holder, int position) {
-        Session s = sessions.get(position);
+    public void onBindViewHolder(@NonNull MyViewHolder holder, final int position) {
+        final Session s = sessions.get(position);
 
         holder.itemView.setOnClickListener(onClickListener);
         holder.itemView.setOnLongClickListener(onLongClickListener);
@@ -154,12 +152,13 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         holder.id.setText(s.getId());
         holder.start_time.setText(s.getStartDate());
         holder.duration.setText(s.getDurationAsString());
-        holder.device_id.setText(s.getDevice_id());
+        holder.device_id.setText(s.getDeviceId());
         holder.label.setText(s.getLabel());
         holder.device.setText(s.getDevice());
 
-        //if (position % 2 != 0)
-        //    holder.itemView.setBackgroundColor(Color.LTGRAY);
+        if (Utils.isSessionDownloaded(s)) {
+            holder.itemView.setBackgroundColor(Color.parseColor("#1cdefce0"));
+        }
     }
 
     @Override
@@ -184,7 +183,6 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
 
             final String sessionId = ids[0];
             final String url = "https://www.empatica.com/connect/connect.php/sessions/" + sessionId;
-
             final Request request = new Request.Builder().url(url).delete().build();
 
             try {

@@ -21,6 +21,7 @@ import com.jstappdev.e4client.MainActivity;
 import com.jstappdev.e4client.R;
 import com.jstappdev.e4client.SessionsAdapter;
 import com.jstappdev.e4client.SharedViewModel;
+import com.jstappdev.e4client.Utils;
 import com.jstappdev.e4client.data.Session;
 import com.squareup.okhttp.Callback;
 import com.squareup.okhttp.OkHttpClient;
@@ -31,7 +32,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,7 +39,6 @@ import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.net.HttpCookie;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -59,6 +58,8 @@ public class SessionsFragment extends Fragment {
     private TextView statusTextView;
 
     private RecyclerView recyclerView;
+
+    private SessionsAdapter mAdapter;
 
     public static OkHttpClient okHttpClient;
 
@@ -240,7 +241,8 @@ public class SessionsFragment extends Fragment {
         @Override
         protected void onPostExecute(String result) {
             statusTextView.setText(result);
-            recyclerView.setAdapter(new SessionsAdapter(sharedViewModel.getSessions()));
+            mAdapter = new SessionsAdapter(sharedViewModel.getSessions());
+            recyclerView.setAdapter(mAdapter);
         }
     }
 
@@ -254,8 +256,7 @@ public class SessionsFragment extends Fragment {
                 final String sessionId = session.getId();
                 final String filename = session.getFilename();
 
-                final File file = new File(requireActivity().getFilesDir(), filename);
-                if (file.exists()) {
+                if (Utils.isSessionDownloaded(session)) {
                     publishProgress("File " + filename + " already downloaded.");
                     continue;
                 }
@@ -286,6 +287,7 @@ public class SessionsFragment extends Fragment {
 
                             publishProgress("Downloaded " + filename);
                             Log.d(MainActivity.TAG, "Downloaded " + filename);
+
                         } else {
                             Log.d(MainActivity.TAG, "unsuccessful download, redirect: " + response.isRedirect());
                             Log.d(MainActivity.TAG, response.toString());
@@ -308,6 +310,8 @@ public class SessionsFragment extends Fragment {
 
             if (values.length > 0)
                 statusTextView.setText(values[0]);
+
+            mAdapter.notifyDataSetChanged();
         }
     }
 

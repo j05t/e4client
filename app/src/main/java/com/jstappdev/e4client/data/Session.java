@@ -5,19 +5,19 @@ import com.jstappdev.e4client.Utils;
 public class Session {
 
     private String id;
-    private long start_time;
+    private long startTime;
     private long duration;
-    private String device_id;
+    private String deviceId;
     private String label;
     private String device;
     private String status;
     private String exit_code;
 
-    public Session(String id, Long start_time, Long duration, String device_id, String label, String device, String status, String exit_code) {
+    public Session(String id, Long startTime, Long duration, String deviceId, String label, String device, String status, String exit_code) {
         this.id = id;
-        this.start_time = start_time;
+        this.startTime = startTime;
         this.duration = duration;
-        this.device_id = device_id;
+        this.deviceId = deviceId;
         this.label = label;
         this.device = device;
         this.status = status;
@@ -25,11 +25,11 @@ public class Session {
     }
 
     public String getFilename() {
-        return "e4_session_" + getStart_time() + "_" + getId() + ".zip";
+        return getStartTime() + "_" + getId() + ".zip";
     }
 
     public String getStartDate() {
-        return Utils.getDate(this.start_time);
+        return Utils.getDate(this.startTime);
     }
 
     public String getDurationAsString() {
@@ -52,12 +52,12 @@ public class Session {
         this.label = label;
     }
 
-    public long getStart_time() {
-        return start_time;
+    public long getStartTime() {
+        return startTime;
     }
 
-    public void setStart_time(long start_time) {
-        this.start_time = start_time;
+    public void setStartTime(long startTime) {
+        this.startTime = startTime;
     }
 
     public long getDuration() {
@@ -68,12 +68,12 @@ public class Session {
         this.duration = duration;
     }
 
-    public String getDevice_id() {
-        return device_id;
+    public String getDeviceId() {
+        return deviceId;
     }
 
-    public void setDevice_id(String device_id) {
-        this.device_id = device_id;
+    public void setDeviceId(String deviceId) {
+        this.deviceId = deviceId;
     }
 
     public String getDevice() {

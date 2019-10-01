@@ -1,14 +1,10 @@
 package com.jstappdev.e4client;
 
-import android.content.Context;
-import android.os.AsyncTask;
 import android.text.format.DateFormat;
-import android.widget.Toast;
 
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
+import com.jstappdev.e4client.data.Session;
 
-import java.io.IOException;
+import java.io.File;
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -27,6 +23,11 @@ public class Utils {
         cal.setTimeZone(TimeZone.getTimeZone("UTC"));
         cal.setTimeInMillis(time * 1000);
         return DateFormat.format("HH:mm:ss", cal).toString();
+    }
+
+    public static boolean isSessionDownloaded(final Session session) {
+        final File file = new File(MainActivity.context.getFilesDir(), session.getFilename());
+        return file.exists();
     }
 
 }

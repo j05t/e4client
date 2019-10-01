@@ -1,6 +1,7 @@
 package com.jstappdev.e4client;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
@@ -55,8 +56,8 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     private SharedViewModel sharedViewModel;
     private SessionData sessionData;
 
+    @SuppressLint("StaticFieldLeak")
     public static Context context;
-
 
     public static final String PREFS_NAME = "preferences";
     public static final String PREF_UNAME = "Username";
