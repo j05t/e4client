@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Color;
 import android.os.AsyncTask;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,8 +17,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.jstappdev.e4client.data.Session;
-import com.jstappdev.e4client.ui.SessionsFragment;
-import com.squareup.okhttp.OkHttpClient;
+import com.jstappdev.e4client.data.SessionData;
 import com.squareup.okhttp.Request;
 
 import java.io.IOException;
@@ -91,7 +91,13 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                     })
                     .setNeutralButton("View", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
-                            Toast.makeText(v.getContext(), "View session " + sessionId, Toast.LENGTH_SHORT).show();
+
+                            SessionData d = Utils.loadSessionData(session);
+
+                            if (d != null)
+                                Log.d(MainActivity.TAG, d.toString());
+
+                            Toast.makeText(v.getContext(), "Loaded session " + sessionId, Toast.LENGTH_SHORT).show();
                         }
                     })
                     .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -179,14 +185,12 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
 
         @Override
         protected Boolean doInBackground(String... ids) {
-            OkHttpClient okHttpClient = SessionsFragment.okHttpClient;
-
             final String sessionId = ids[0];
             final String url = "https://www.empatica.com/connect/connect.php/sessions/" + sessionId;
             final Request request = new Request.Builder().url(url).delete().build();
 
             try {
-                return okHttpClient.newCall(request).execute().isSuccessful();
+                return MainActivity.okHttpClient.newCall(request).execute().isSuccessful();
 
             } catch (IOException e) {
                 e.printStackTrace();

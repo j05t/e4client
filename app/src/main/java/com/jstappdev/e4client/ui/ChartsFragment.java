@@ -156,14 +156,26 @@ public class ChartsFragment extends Fragment {
         Collections.addAll(hrChart.getAnnotations(), hrAxisMarker);
         Collections.addAll(tempChart.getAnnotations(), tempAxisMarker);
 
+        verticalGroup.addSurfaceToGroup(edaChart);
+        verticalGroup.addSurfaceToGroup(bvpChart);
+        verticalGroup.addSurfaceToGroup(hrChart);
+        verticalGroup.addSurfaceToGroup(tempChart);
+
+
         // modifiers for main chart
         // todo: enable zoom and pan when not displaying live data
-        if (false)
+        if (!sessionData.isLive()) {
             Collections.addAll(edaChart.getChartModifiers(), sciChartBuilder.newModifierGroup()
                     .withXAxisDragModifier().build()
                     .withZoomPanModifier().withReceiveHandledEvents(true).withXyDirection(Direction2D.XDirection).build()
                     .withZoomExtentsModifier().build()
                     .build());
+
+            edaLineData.append(sessionData.getGsrTimestamps(), sessionData.getGsr());
+
+            return;
+        }
+
 
         sharedViewModel.getLastGsr().observe(owner, new Observer<Integer>() {
             @Override
@@ -221,10 +233,7 @@ public class ChartsFragment extends Fragment {
         });
 
 
-        verticalGroup.addSurfaceToGroup(edaChart);
-        verticalGroup.addSurfaceToGroup(bvpChart);
-        verticalGroup.addSurfaceToGroup(hrChart);
-        verticalGroup.addSurfaceToGroup(tempChart);
+
 
     }
 

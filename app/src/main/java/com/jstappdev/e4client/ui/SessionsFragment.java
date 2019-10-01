@@ -24,7 +24,6 @@ import com.jstappdev.e4client.SharedViewModel;
 import com.jstappdev.e4client.Utils;
 import com.jstappdev.e4client.data.Session;
 import com.squareup.okhttp.Callback;
-import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
 
@@ -35,14 +34,8 @@ import org.json.JSONObject;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.CookieHandler;
-import java.net.CookieManager;
-import java.net.CookiePolicy;
-import java.net.HttpCookie;
 import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -52,16 +45,10 @@ import static androidx.core.content.ContextCompat.getDrawable;
 public class SessionsFragment extends Fragment {
 
     private SharedViewModel sharedViewModel;
-
-    private CookieManager mCookieManager = null;
-
     private TextView statusTextView;
-
     private RecyclerView recyclerView;
-
     private SessionsAdapter mAdapter;
 
-    public static OkHttpClient okHttpClient;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -98,7 +85,7 @@ public class SessionsFragment extends Fragment {
             @Override
             public void onClick(View v) {
 
-                // todo: implement
+                // todo: implement google fit synchronization
             }
         });
 
@@ -109,56 +96,6 @@ public class SessionsFragment extends Fragment {
         }
 
         return root;
-    }
-
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        mCookieManager = new CookieManager();
-        mCookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
-        CookieHandler.setDefault(mCookieManager);
-
-        okHttpClient = new OkHttpClient();
-        okHttpClient.setFollowRedirects(true);
-        okHttpClient.setFollowSslRedirects(true);
-        okHttpClient.setRetryOnConnectionFailure(true);
-        okHttpClient.setConnectTimeout(120, TimeUnit.SECONDS);
-        okHttpClient.setReadTimeout(120, TimeUnit.SECONDS);
-        okHttpClient.setWriteTimeout(120, TimeUnit.SECONDS);
-        okHttpClient.setCookieHandler(mCookieManager);
-    }
-
-
-    private List<HttpCookie> getCookies() {
-        if (mCookieManager == null)
-            return null;
-        else
-            return mCookieManager.getCookieStore().getCookies();
-    }
-
-    public void clearCookies() {
-        if (mCookieManager != null)
-            mCookieManager.getCookieStore().removeAll();
-    }
-
-    public boolean isCookieManagerEmpty() {
-        if (mCookieManager == null)
-            return true;
-        else
-            return mCookieManager.getCookieStore().getCookies().isEmpty();
-    }
-
-
-    public String getCookieValues() {
-        String cookieValue = "";
-
-        if (!isCookieManagerEmpty()) {
-            for (HttpCookie eachCookie : getCookies())
-                cookieValue = cookieValue + String.format("%s=%s; ", eachCookie.getName(), eachCookie.getValue());
-        }
-
-        return cookieValue;
     }
 
     private class LoginAndGetAllSessions extends AsyncTask<Void, Void, String> {
@@ -176,7 +113,7 @@ public class SessionsFragment extends Fragment {
 
             final Response loginResponse;
             try {
-                loginResponse = okHttpClient.newCall(request).execute();
+                loginResponse = MainActivity.okHttpClient.newCall(request).execute();
                 loginResponse.body().close();
             } catch (IOException e) {
                 return "Failed to log in to Empatica cloud account.";
@@ -186,7 +123,7 @@ public class SessionsFragment extends Fragment {
                 try {
                     final String sessionOverview = "https://www.empatica.com/connect/sessions.php";
                     final Request r = new Request.Builder().url(sessionOverview).build();
-                    final Response sessionResponse = okHttpClient.newCall(r).execute();
+                    final Response sessionResponse = MainActivity.okHttpClient.newCall(r).execute();
                     final String res = sessionResponse.body().string();
 
                     final Pattern pattern = Pattern.compile("var userId = (.*?);");
@@ -203,7 +140,7 @@ public class SessionsFragment extends Fragment {
                             + "/sessions?from=0&to=999999999999";
 
                     final Request s = new Request.Builder().url(loadAllSessions).build();
-                    final String sessionsJSON = okHttpClient.newCall(s).execute().body().string();
+                    final String sessionsJSON = MainActivity.okHttpClient.newCall(s).execute().body().string();
                     final JSONArray jArray = new JSONArray(sessionsJSON);
 
                     for (int i = 0; i < jArray.length(); i++) {
@@ -226,7 +163,7 @@ public class SessionsFragment extends Fragment {
                         }
                     }
 
-                    Collections.reverse(sharedViewModel.getSessions());
+                    Collections.sort(sharedViewModel.getSessions());
 
                     return "Synchronization successful";
 
@@ -265,7 +202,7 @@ public class SessionsFragment extends Fragment {
 
                 publishProgress("Downloading Session " + sessionId);
 
-                okHttpClient.newCall(request).enqueue(new Callback() {
+                MainActivity.okHttpClient.newCall(request).enqueue(new Callback() {
                     @Override
                     public void onFailure(Request request, IOException e) {
                         publishProgress("Download failed for " + filename);
@@ -276,8 +213,8 @@ public class SessionsFragment extends Fragment {
                     @Override
                     public void onResponse(Response response) throws IOException {
                         if (response.isSuccessful()) {
-                            InputStream inputStream = response.body().byteStream();
-                            FileOutputStream out = requireActivity().openFileOutput(filename, Context.MODE_PRIVATE);
+                            final InputStream inputStream = response.body().byteStream();
+                            final FileOutputStream out = requireActivity().openFileOutput(filename, Context.MODE_PRIVATE);
 
                             byte[] buf = new byte[1024];
                             int len;

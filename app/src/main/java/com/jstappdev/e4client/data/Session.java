@@ -2,7 +2,7 @@ package com.jstappdev.e4client.data;
 
 import com.jstappdev.e4client.Utils;
 
-public class Session {
+public class Session implements Comparable<Session> {
 
     private String id;
     private long startTime;
@@ -12,6 +12,7 @@ public class Session {
     private String device;
     private String status;
     private String exit_code;
+    private SessionData sessionData;
 
     public Session(String id, Long startTime, Long duration, String deviceId, String label, String device, String status, String exit_code) {
         this.id = id;
@@ -88,9 +89,7 @@ public class Session {
         return status;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
-    }
+    public void setStatus(String status) { this.status = status; }
 
     public String getExit_code() {
         return exit_code;
@@ -99,5 +98,15 @@ public class Session {
     public void setExit_code(String exit_code) {
         this.exit_code = exit_code;
     }
+
+    public SessionData getSessionData() { return sessionData; }
+
+    public void setSessionData(SessionData sessionData) { this.sessionData = sessionData; }
+
+    @Override
+    public int compareTo(Session o) {
+        return (int) (o.getStartTime() - this.getStartTime());
+    }
+
 
 }

@@ -37,9 +37,14 @@ import com.empatica.empalink.config.EmpaStatus;
 import com.empatica.empalink.delegate.EmpaStatusDelegate;
 import com.google.android.material.navigation.NavigationView;
 import com.jstappdev.e4client.data.SessionData;
+import com.squareup.okhttp.OkHttpClient;
 
+import java.net.CookieHandler;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity implements EmpaStatusDelegate {
     public static final String TAG = "e4";
@@ -62,6 +67,8 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     public static final String PREFS_NAME = "preferences";
     public static final String PREF_UNAME = "Username";
     public static final String PREF_PASSWORD = "Password";
+
+    public static OkHttpClient okHttpClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,6 +102,19 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         sessionData = SessionData.getInstance();
 
         context = getApplicationContext();
+
+        final CookieManager mCookieManager = new CookieManager();
+        mCookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
+        CookieHandler.setDefault(mCookieManager);
+
+        MainActivity.okHttpClient = new OkHttpClient();
+        MainActivity.okHttpClient.setFollowRedirects(true);
+        MainActivity.okHttpClient.setFollowSslRedirects(true);
+        MainActivity.okHttpClient.setRetryOnConnectionFailure(true);
+        MainActivity.okHttpClient.setConnectTimeout(120, TimeUnit.SECONDS);
+        MainActivity.okHttpClient.setReadTimeout(120, TimeUnit.SECONDS);
+        MainActivity.okHttpClient.setWriteTimeout(120, TimeUnit.SECONDS);
+        MainActivity.okHttpClient.setCookieHandler(mCookieManager);
 
         // debug
         //simulateSensorData();
