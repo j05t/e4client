@@ -6,9 +6,12 @@ import androidx.lifecycle.ViewModel;
 
 import com.empatica.empalink.config.EmpaSensorStatus;
 import com.empatica.empalink.delegate.EmpaDataDelegate;
+import com.jstappdev.e4client.data.Session;
 import com.jstappdev.e4client.data.SessionData;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 
 public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
@@ -26,10 +29,13 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     private MutableLiveData<Integer> lastIbi;
     private MutableLiveData<Integer> lastTemp;
 
+
+    private List<Session> sessions = new ArrayList<>();
     private SessionData sessionData;
 
     private String username;
     private String password;
+    private String userId;
 
     public String getUsername() {
         return username;
@@ -183,5 +189,20 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         this.tag.postValue(timestamp);
     }
 
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public List<Session> getSessions() {
+        return sessions;
+    }
+
+    public void setSessions(List<Session> sessions) {
+        this.sessions = sessions;
+    }
 
 }

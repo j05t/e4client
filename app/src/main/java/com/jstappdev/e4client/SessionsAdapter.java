@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.graphics.Color;
 import android.os.AsyncTask;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,15 +18,14 @@ import com.jstappdev.e4client.data.Session;
 import com.jstappdev.e4client.ui.SessionsFragment;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
-import com.squareup.okhttp.Response;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.List;
 
 public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.Adapter<SessionsAdapter.MyViewHolder> {
 
     private List<Session> sessions;
-
 
     public SessionsAdapter(List<Session> sessions) {
         this.sessions = sessions;
@@ -83,7 +81,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
 
             // set dialog message
             alertDialogBuilder
-                    .setMessage("Session Start: " + session.getStartDate() + "\nDuration: " + session.getDurationAsString())
+                    .setMessage("Start: " + session.getStartDate() + "\nDuration: " + session.getDurationAsString())
                     .setCancelable(true)
                     .setPositiveButton("Share", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
@@ -125,7 +123,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                     .setCancelable(true)
                     .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
-                            new Utils.DeleteSession(v.getContext(), SessionsFragment.okHttpClient).execute(sessionId);
+                            new DeleteSession(v.getContext(), position).execute(sessionId);
                         }
                     })
                     .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -167,5 +165,53 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
     @Override
     public int getItemCount() {
         return sessions.size();
+    }
+
+
+    private class DeleteSession extends AsyncTask<String, Void, Boolean> {
+
+        private WeakReference<Context> context;
+        private int position;
+
+        DeleteSession(final Context context, int position) {
+            this.context = new WeakReference<>(context);
+            this.position = position;
+        }
+
+        @Override
+        protected Boolean doInBackground(String... ids) {
+            OkHttpClient okHttpClient = SessionsFragment.okHttpClient;
+
+            final String sessionId = ids[0];
+            final String url = "https://www.empatica.com/connect/connect.php/sessions/" + sessionId;
+
+            final Request request = new Request.Builder().url(url).delete().build();
+
+            try {
+                return okHttpClient.newCall(request).execute().isSuccessful();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean success) {
+            String s;
+
+            if (success) {
+                s = "Deleted session.";
+                sessions.remove(position);
+                notifyItemRemoved(position);
+                notifyItemRangeChanged(position, sessions.size());
+            } else {
+                s = "FAILED to delete session.";
+            }
+
+            Toast.makeText(context.get(), s, Toast.LENGTH_SHORT).show();
+        }
+
     }
 }

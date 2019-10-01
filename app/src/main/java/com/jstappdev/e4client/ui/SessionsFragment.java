@@ -59,11 +59,6 @@ public class SessionsFragment extends Fragment {
     private TextView statusTextView;
 
     private RecyclerView recyclerView;
-    private RecyclerView.Adapter mAdapter;
-    private RecyclerView.LayoutManager layoutManager;
-    private String userid;
-
-    private List<Session> sessions = new ArrayList<>();
 
     public static OkHttpClient okHttpClient;
 
@@ -82,8 +77,7 @@ public class SessionsFragment extends Fragment {
         recyclerView.setHasFixedSize(true);
 
         // use a linear layout manager
-        layoutManager = new LinearLayoutManager(requireContext());
-        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
 
         // vertical separator
         final DividerItemDecoration itemDecorator = new DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL);
@@ -94,7 +88,7 @@ public class SessionsFragment extends Fragment {
             @Override
             public void onClick(View v) {
 
-                if (sessions.size() > 0) {
+                if (sharedViewModel.getSessions().size() > 0) {
                     new DownloadAllSessions().execute();
                 }
             }
@@ -107,7 +101,11 @@ public class SessionsFragment extends Fragment {
             }
         });
 
-        updateSessions();
+        if (sharedViewModel.getUsername().isEmpty() || sharedViewModel.getPassword().isEmpty()) {
+            Toast.makeText(requireContext(), "Please insert your Empatica account credentials first.", Toast.LENGTH_LONG).show();
+        } else {
+            new LoginAndGetAllSessions().execute();
+        }
 
         return root;
     }
@@ -162,33 +160,28 @@ public class SessionsFragment extends Fragment {
         return cookieValue;
     }
 
-    private boolean login() {
-        final String url = "https://www.empatica.com/connect/authenticate.php";
-
-        final com.squareup.okhttp.RequestBody formBody = new com.squareup.okhttp.FormEncodingBuilder()
-                .add("username", sharedViewModel.getUsername())
-                .add("password", sharedViewModel.getPassword())
-                .build();
-
-        final Request request = new Request.Builder().url(url).post(formBody).build();
-
-        final Response loginResponse;
-        try {
-            loginResponse = okHttpClient.newCall(request).execute();
-            loginResponse.body().close();
-        } catch (IOException e) {
-            return false;
-        }
-
-        return loginResponse.isSuccessful();
-    }
-
     private class LoginAndGetAllSessions extends AsyncTask<Void, Void, String> {
 
         @Override
         protected String doInBackground(Void... voids) {
+            final String url = "https://www.empatica.com/connect/authenticate.php";
 
-            if (login()) {
+            final com.squareup.okhttp.RequestBody formBody = new com.squareup.okhttp.FormEncodingBuilder()
+                    .add("username", sharedViewModel.getUsername())
+                    .add("password", sharedViewModel.getPassword())
+                    .build();
+
+            final Request request = new Request.Builder().url(url).post(formBody).build();
+
+            final Response loginResponse;
+            try {
+                loginResponse = okHttpClient.newCall(request).execute();
+                loginResponse.body().close();
+            } catch (IOException e) {
+                return "Failed to log in to Empatica cloud account.";
+            }
+
+            if (loginResponse.isSuccessful()) {
                 try {
                     final String sessionOverview = "https://www.empatica.com/connect/sessions.php";
                     final Request r = new Request.Builder().url(sessionOverview).build();
@@ -199,13 +192,13 @@ public class SessionsFragment extends Fragment {
                     final Matcher matcher = pattern.matcher(res);
                     if (matcher.find()) {
                         Log.d("e4", "found userid: " + matcher.group(1));
-                        userid = matcher.group(1);
+                        sharedViewModel.setUserId(matcher.group(1));
                     } else {
                         return "Error: User ID not found.";
                     }
 
                     final String loadAllSessions = "https://www.empatica.com/connect/connect.php/users/"
-                            + userid
+                            + sharedViewModel.getUserId()
                             + "/sessions?from=0&to=999999999999";
 
                     final Request s = new Request.Builder().url(loadAllSessions).build();
@@ -226,13 +219,13 @@ public class SessionsFragment extends Fragment {
                             final String exit_code = oneObject.getString("exit_code");
 
                             final Session session = new Session(id, start_time, duration, device_id, label, device, status, exit_code);
-                            sessions.add(session);
+                            sharedViewModel.getSessions().add(session);
                         } catch (JSONException e) {
                             // Oops
                         }
                     }
 
-                    Collections.reverse(sessions);
+                    Collections.reverse(sharedViewModel.getSessions());
 
                     return "Synchronization successful";
 
@@ -247,27 +240,17 @@ public class SessionsFragment extends Fragment {
         @Override
         protected void onPostExecute(String result) {
             statusTextView.setText(result);
-            mAdapter = new SessionsAdapter(sessions);
-            recyclerView.setAdapter(mAdapter);
+            recyclerView.setAdapter(new SessionsAdapter(sharedViewModel.getSessions()));
         }
     }
-
-    private void updateSessions() {
-        if (sharedViewModel.getUsername().isEmpty() || sharedViewModel.getPassword().isEmpty()) {
-            Toast.makeText(requireContext(), "Please insert your Empatica account credentials first.", Toast.LENGTH_LONG).show();
-            return;
-        }
-
-        new LoginAndGetAllSessions().execute();
-    }
-
 
     private class DownloadAllSessions extends AsyncTask<Void, String, String> {
-        final String url = "https://www.empatica.com/connect/download.php?id=";
 
         @Override
         protected String doInBackground(Void... voids) {
-            for (Session session : sessions) {
+            final String url = "https://www.empatica.com/connect/download.php?id=";
+
+            for (Session session : sharedViewModel.getSessions()) {
                 final String sessionId = session.getId();
                 final String filename = session.getFilename();
 
