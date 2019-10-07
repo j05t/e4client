@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Color;
 import android.os.AsyncTask;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,7 +16,6 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.jstappdev.e4client.data.Session;
-import com.jstappdev.e4client.data.SessionData;
 import com.squareup.okhttp.Request;
 
 import java.io.IOException;
@@ -89,15 +87,16 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                             Toast.makeText(v.getContext(), "Share session " + sessionId, Toast.LENGTH_SHORT).show();
                         }
                     })
-                    .setNeutralButton("View", new DialogInterface.OnClickListener() {
+                    .setNeutralButton("Load Data", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
 
-                            SessionData d = Utils.loadSessionData(session);
+                            if (Utils.isSessionDownloaded(session)) {
+                                Utils.loadSessionData(session);
+                                Toast.makeText(v.getContext(), "Loaded session " + sessionId, Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(v.getContext(), "Session data not downloaded!", Toast.LENGTH_SHORT).show();
+                            }
 
-                            if (d != null)
-                                Log.d(MainActivity.TAG, d.toString());
-
-                            Toast.makeText(v.getContext(), "Loaded session " + sessionId, Toast.LENGTH_SHORT).show();
                         }
                     })
                     .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {

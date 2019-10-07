@@ -11,12 +11,13 @@ import java.io.InputStreamReader;
 import java.util.LinkedList;
 
 public class CSVFile {
-    private InputStream inputStream;
 
     private LinkedList<Double> x = new LinkedList<>();
     private LinkedList<Float> y = new LinkedList<>();
 
     private double initialTime;
+
+    // same file format for EDA, HR, BVP, TEMP
 
     public CSVFile(InputStream inputStream) {
 
@@ -33,7 +34,6 @@ public class CSVFile {
                 x.add(initialTime + (60d / samplingRate * lineNumber++));
                 y.add(Float.parseFloat(csvLine));
             }
-
         } catch (IOException ex) {
             throw new RuntimeException("Error in reading CSV file: " + ex);
         } finally {
@@ -43,9 +43,6 @@ public class CSVFile {
                 throw new RuntimeException("Error while closing input stream: " + e);
             }
         }
-
-        Log.d(MainActivity.TAG, "added data from CSV: " + y.toString());
-        Log.d(MainActivity.TAG, "added timestamps: " + x.toString());
     }
 
 

@@ -8,7 +8,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -31,9 +30,11 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -46,7 +47,6 @@ public class SessionsFragment extends Fragment {
 
     private SharedViewModel sharedViewModel;
     private TextView statusTextView;
-    private RecyclerView recyclerView;
     private SessionsAdapter mAdapter;
 
 
@@ -57,7 +57,7 @@ public class SessionsFragment extends Fragment {
 
         final View root = inflater.inflate(R.layout.fragment_sessions, container, false);
         statusTextView = root.findViewById(R.id.text_sessions);
-        recyclerView = root.findViewById(R.id.recyclerview);
+        final RecyclerView recyclerView = root.findViewById(R.id.recyclerview);
 
 
         // use this setting to improve performance if you know that changes
@@ -72,16 +72,22 @@ public class SessionsFragment extends Fragment {
         itemDecorator.setDrawable(Objects.requireNonNull(getDrawable(requireContext(), R.drawable.divider)));
         recyclerView.addItemDecoration(itemDecorator);
 
+        root.findViewById(R.id.button_sync_empatica).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                syncEmpatica();
+            }
+        });
         root.findViewById(R.id.button_download_all).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
                 if (sharedViewModel.getSessions().size() > 0) {
-                    new DownloadAllSessions().execute();
+                    new DownloadSessions().execute(sharedViewModel.getSessions());
                 }
             }
         });
-        root.findViewById(R.id.button_sync).setOnClickListener(new View.OnClickListener() {
+        root.findViewById(R.id.button_sync_google).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
@@ -89,13 +95,72 @@ public class SessionsFragment extends Fragment {
             }
         });
 
-        if (sharedViewModel.getUsername().isEmpty() || sharedViewModel.getPassword().isEmpty()) {
-            Toast.makeText(requireContext(), "Please insert your Empatica account credentials first.", Toast.LENGTH_LONG).show();
-        } else {
-            new LoginAndGetAllSessions().execute();
-        }
+        mAdapter = new SessionsAdapter(sharedViewModel.getSessions());
+        recyclerView.setAdapter(mAdapter);
 
         return root;
+    }
+
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        if (sharedViewModel.getUsername().isEmpty() || sharedViewModel.getPassword().isEmpty()) {
+            statusTextView.setText("Please edit your Empatica account settings.");
+            return;
+        }
+
+        final File directory = new File(requireContext().getFilesDir().getPath());
+        final File[] files = directory.listFiles();
+
+        if (files == null || files.length == 0) {
+            Log.d(MainActivity.TAG, "no downloaded files found");
+
+            statusTextView.setText("No sessions in local storage.");
+            return;
+        }
+
+        for (File file : files) {
+            final String filename = file.getName();
+
+            Log.d(MainActivity.TAG, "In files directory: " + filename);
+
+            final String[] split = filename.split("_");
+
+            Log.d(MainActivity.TAG, "Split length " + split.length);
+
+            if (split.length < 8) continue;
+
+            final Long start_time = Long.valueOf(split[0]);
+            final String id = split[1];
+            final Long duration = Long.valueOf(split[2]);
+            final String device_id = split[3];
+            final String label = split[4];
+            final String device = split[5];
+            final String status = split[6];
+            final String exit_code = split[7];
+
+            final Session session = new Session(id, start_time, duration, device_id, label, device, status, exit_code);
+
+            statusTextView.setText(String.format("Found %s", session));
+            Log.d(MainActivity.TAG, "Already downloaded: " + session);
+
+            if (!sharedViewModel.getSessions().contains(session))
+                sharedViewModel.getSessions().add(session);
+        }
+        statusTextView.setText("Sessions in local storage: " + sharedViewModel.getSessions().size());
+
+        Collections.sort(sharedViewModel.getSessions());
+
+        mAdapter.notifyDataSetChanged();
+    }
+
+    private void syncEmpatica() {
+
+        statusTextView.setText("Syncing with Empatica cloud account.");
+        new LoginAndGetAllSessions().execute();
+
     }
 
     private class LoginAndGetAllSessions extends AsyncTask<Void, Void, String> {
@@ -157,13 +222,14 @@ public class SessionsFragment extends Fragment {
                             final String exit_code = oneObject.getString("exit_code");
 
                             final Session session = new Session(id, start_time, duration, device_id, label, device, status, exit_code);
-                            sharedViewModel.getSessions().add(session);
+
+                            if (!sharedViewModel.getSessions().contains(session))
+                                sharedViewModel.getSessions().add(session);
+
                         } catch (JSONException e) {
                             // Oops
                         }
                     }
-
-                    Collections.sort(sharedViewModel.getSessions());
 
                     return "Synchronization successful";
 
@@ -178,18 +244,21 @@ public class SessionsFragment extends Fragment {
         @Override
         protected void onPostExecute(String result) {
             statusTextView.setText(result);
-            mAdapter = new SessionsAdapter(sharedViewModel.getSessions());
-            recyclerView.setAdapter(mAdapter);
+            // mAdapter = new SessionsAdapter(sharedViewModel.getSessions());
+            mAdapter.notifyDataSetChanged();
         }
+
     }
 
-    private class DownloadAllSessions extends AsyncTask<Void, String, String> {
+    private class DownloadSessions extends AsyncTask<ArrayList<Session>, String, String> {
 
         @Override
-        protected String doInBackground(Void... voids) {
+        protected String doInBackground(ArrayList<Session>... listsOfSessions) {
+
             final String url = "https://www.empatica.com/connect/download.php?id=";
 
-            for (Session session : sharedViewModel.getSessions()) {
+            for (final Session session : listsOfSessions[0]) {
+
                 final String sessionId = session.getId();
                 final String filename = session.getFilename();
 
@@ -250,6 +319,18 @@ public class SessionsFragment extends Fragment {
 
             mAdapter.notifyDataSetChanged();
         }
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+
+            Collections.sort(sharedViewModel.getSessions());
+
+            mAdapter.notifyDataSetChanged();
+
+            statusTextView.setText(s);
+        }
+
     }
 
 

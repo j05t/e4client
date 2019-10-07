@@ -34,13 +34,14 @@ public class Utils {
     }
 
     public static boolean isSessionDownloaded(final Session session) {
-        final File file = new File(MainActivity.context.getFilesDir(), session.getFilename());
-        return file.exists();
+        return new File(MainActivity.context.getFilesDir(), session.getFilename()).exists();
     }
 
 
-    public static SessionData loadSessionData(final Session session) {
+    // we cannot afford to load BVP and ACC data into memory for sessions longer than about 8 hours
+    static void loadSessionData(final Session session) {
         SessionData sessionData = SessionData.getInstance();
+        sessionData.setIsLive(false);
 
         if (isSessionDownloaded(session)) {
 
@@ -57,27 +58,47 @@ public class Utils {
 
                 basePath += File.separator;
 
-                final String edaFileName = basePath + "EDA.csv";
-                final String tempFileName = basePath + "TEMP.csv";
-                final String ibiFileName = basePath + "IBI.csv";
-                final String hrFileName = basePath + "HR.csv";
+                /*
+                final File ibiFile = new File(basePath + "IBI.csv");
+                final File accFile = new File(basePath + "ACC.csv");
+                final File tagFile = new File(basePath + "tags.csv");
+*/
 
+                // same file format for EDA, HR, BVP, TEMP
+                final File edaFile = new File(basePath + "EDA.csv");
+                final File tempFile = new File(basePath + "TEMP.csv");
+                //   final File bvpFile = new File(basePath + "BVP.csv");
+                final File hrFile = new File(basePath + "HR.csv");
 
-                final String accFileName = basePath + "ACC.csv";
-                final String tagFileName = basePath + "tags.csv";
+                CSVFile data;
 
-                final File edaFile = new File(edaFileName);
-                Log.d(MainActivity.TAG, edaFileName);
-                Log.d(MainActivity.TAG, String.valueOf(edaFile.exists()));
+                data = new CSVFile(new FileInputStream(edaFile));
+                sessionData.setInitialTime((long) data.getInitialTime());
+                sessionData.setGsrTimestamps(data.getX());
+                sessionData.setGsr(data.getY());
+                edaFile.delete();
 
+                data = new CSVFile(new FileInputStream(tempFile));
+                sessionData.setTempTimestamps(data.getX());
+                sessionData.setTemp(data.getY());
+                tempFile.delete();
+/*
+                data = new CSVFile(new FileInputStream(bvpFile));
+                sessionData.setBvpTimestamps(data.getX());
+                sessionData.setBvp(data.getY());
+                bvpFile.delete();
+*/
+                data = new CSVFile(new FileInputStream(hrFile));
+                sessionData.setHrTimestamps(data.getX());
+                sessionData.setHr(data.getY());
+                hrFile.delete();
 
-                CSVFile edaData = new CSVFile(new FileInputStream(edaFile));
-
-                sessionData.setGsrTimestamps(edaData.getX());
-                sessionData.setGsr(edaData.getY());
-
-                sessionData.setInitialTime((long) edaData.getInitialTime());
-
+/*
+                data = new CSVFile(new FileInputStream(ibiFile));
+                sessionData.setIbiTimestamps(data.getX());
+                sessionData.setIbi(data.getY());
+                ibiFile.delete();
+*/
             } catch (FileNotFoundException | ZipException e) {
                 e.printStackTrace();
             }
@@ -85,7 +106,6 @@ public class Utils {
 
         sessionData.setInitialTime(session.getStartTime());
 
-        return sessionData;
     }
 
 }

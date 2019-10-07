@@ -26,6 +26,8 @@ public class ConnectionFragment extends Fragment {
 
     private static final String TAG = "e4";
 
+    private static final int CALIBRATION_SAMPLES = 400;
+
     private SharedViewModel sharedViewModel;
 
     private TextView accel_xLabel;
@@ -138,6 +140,8 @@ public class ConnectionFragment extends Fragment {
         sharedViewModel.getLastAcc().observe(owner, new Observer<Integer>() {
 
             public void onChanged(Integer lastAcc) {
+                if(lastAcc < CALIBRATION_SAMPLES) return;
+
                 accel_xLabel.setText(String.format(Locale.getDefault(), "%d", sessionData.getAcc().getLast().get(0)));
                 accel_yLabel.setText(String.format(Locale.getDefault(), "%d", sessionData.getAcc().getLast().get(1)));
                 accel_zLabel.setText(String.format(Locale.getDefault(), "%d", sessionData.getAcc().getLast().get(2)));
@@ -146,24 +150,32 @@ public class ConnectionFragment extends Fragment {
         sharedViewModel.getLastGsr().observe(owner, new Observer<Integer>() {
             @Override
             public void onChanged(Integer lastGsr) {
+                if(lastGsr < CALIBRATION_SAMPLES) return;
+
                 edaLabel.setText(String.format(Locale.getDefault(), "%.0f", sessionData.getGsr().getLast()));
             }
         });
         sharedViewModel.getLastIbi().observe(owner, new Observer<Integer>() {
             @Override
             public void onChanged(Integer lastIbi) {
+                if(lastIbi < CALIBRATION_SAMPLES) return;
+
                 ibiLabel.setText(String.format(Locale.getDefault(), "%.0f", sessionData.getIbi().getLast()));
             }
         });
         sharedViewModel.getLastTemp().observe(owner, new Observer<Integer>() {
             @Override
             public void onChanged(Integer lastTemp) {
+                if(lastTemp < CALIBRATION_SAMPLES) return;
+
                 temperatureLabel.setText(String.format(Locale.getDefault(), "%.0f", sessionData.getTemp().getLast()));
             }
         });
         sharedViewModel.getLastBvp().observe(owner, new Observer<Integer>() {
             @Override
             public void onChanged(Integer lastBvp) {
+                if(lastBvp < CALIBRATION_SAMPLES) return;
+
                 bvpLabel.setText(String.format(Locale.getDefault(), "%.0f", sessionData.getBvp().getLast()));
             }
         });

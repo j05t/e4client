@@ -1,6 +1,10 @@
 package com.jstappdev.e4client.data;
 
+import android.annotation.SuppressLint;
+
 import com.jstappdev.e4client.Utils;
+
+import java.util.Objects;
 
 public class Session implements Comparable<Session> {
 
@@ -25,8 +29,9 @@ public class Session implements Comparable<Session> {
         this.exit_code = exit_code;
     }
 
+    @SuppressLint("DefaultLocale")
     public String getFilename() {
-        return getStartTime() + "_" + getId() + ".zip";
+        return String.format("%s_%s_%s_%s_%s_%s_%s_%s.zip", getStartTime(), getId(), getDuration(), getDeviceId(), getLabel(), getDevice(), getStatus(), getExit_code());
     }
 
     public String getStartDate() {
@@ -89,7 +94,9 @@ public class Session implements Comparable<Session> {
         return status;
     }
 
-    public void setStatus(String status) { this.status = status; }
+    public void setStatus(String status) {
+        this.status = status;
+    }
 
     public String getExit_code() {
         return exit_code;
@@ -99,9 +106,18 @@ public class Session implements Comparable<Session> {
         this.exit_code = exit_code;
     }
 
-    public SessionData getSessionData() { return sessionData; }
+    public SessionData getSessionData() {
+        return sessionData;
+    }
 
-    public void setSessionData(SessionData sessionData) { this.sessionData = sessionData; }
+    public void setSessionData(SessionData sessionData) {
+        this.sessionData = sessionData;
+    }
+
+    @Override
+    public String toString() {
+        return "Session " + getFilename();
+    }
 
     @Override
     public int compareTo(Session o) {
@@ -109,4 +125,18 @@ public class Session implements Comparable<Session> {
     }
 
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Session session = (Session) o;
+        return startTime == session.startTime &&
+                duration == session.duration &&
+                id.equals(session.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, startTime, duration);
+    }
 }

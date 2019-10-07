@@ -14,8 +14,8 @@ import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
 
 import com.jstappdev.e4client.R;
-import com.jstappdev.e4client.data.SessionData;
 import com.jstappdev.e4client.SharedViewModel;
+import com.jstappdev.e4client.data.SessionData;
 import com.scichart.charting.Direction2D;
 import com.scichart.charting.model.AnnotationCollection;
 import com.scichart.charting.model.dataSeries.XyDataSeries;
@@ -50,17 +50,15 @@ public class ChartsFragment extends Fragment {
     @BindView(R.id.tempChart)
     SciChartSurface tempChart;
 
-    @BindView(R.id.bvpChart)
-    SciChartSurface bvpChart;
+    // @BindView(R.id.bvpChart)
+    //SciChartSurface bvpChart;
 
     private SessionData sessionData;
     private SharedViewModel sharedViewModel;
     private SciChartBuilder sciChartBuilder;
 
-    public static final int DEFAULT_POINT_COUNT = 150;
-    public static final int SMA_SERIES_COLOR = 0xFFFFA500;
-    public static final int STROKE_UP_COLOR = 0xFF00AA00;
-    public static final int STROKE_DOWN_COLOR = 0xFFFF0000;
+    public static final int AXIS_MARKER_COLOR = 0xFFFFA500;
+
 
     private static float averageHr = -1.0f;
 
@@ -73,7 +71,7 @@ public class ChartsFragment extends Fragment {
 
         ButterKnife.bind(this, root);
 
-        SciChartBuilder.init(getActivity());
+        SciChartBuilder.init(requireActivity());
         sciChartBuilder = SciChartBuilder.instance();
 
         return root;
@@ -137,34 +135,33 @@ public class ChartsFragment extends Fragment {
         // Create a couple of DataSeries for numeric data
         final XyDataSeries<Double, Float> edaLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
         final XyDataSeries<Double, Float> hrLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
-        final XyDataSeries<Double, Float> bvpLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
-        //final XyDataSeries<Double, Float> ibiLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
+        //  final XyDataSeries<Double, Float> bvpLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
         final XyDataSeries<Double, Float> tempLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
+        //final XyDataSeries<Double, Float> ibiLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
 
         final AxisMarkerAnnotation hrAxisMarker = sciChartBuilder.newAxisMarkerAnnotation()
-                .withY1(0d).withBackgroundColor(SMA_SERIES_COLOR).build();
+                .withY1(0d).withBackgroundColor(AXIS_MARKER_COLOR).build();
         final AxisMarkerAnnotation tempAxisMarker = sciChartBuilder.newAxisMarkerAnnotation()
-                .withY1(0d).withBackgroundColor(SMA_SERIES_COLOR).build();
+                .withY1(0d).withBackgroundColor(AXIS_MARKER_COLOR).build();
 
         setupChart(edaChart, "EDA uS", edaLineData, true);
         setupChart(hrChart, "HR", hrLineData, false);
-        setupChart(bvpChart, "BVP", bvpLineData, false);
-        //setupChart(ibiChart, "IBI", ibiLineData);
+        // setupChart(bvpChart, "BVP", bvpLineData, false);
         setupChart(tempChart, "Temp", tempLineData, false);
+        //setupChart(ibiChart, "IBI", ibiLineData);
 
         // axis marker showing current value
         Collections.addAll(hrChart.getAnnotations(), hrAxisMarker);
         Collections.addAll(tempChart.getAnnotations(), tempAxisMarker);
 
         verticalGroup.addSurfaceToGroup(edaChart);
-        verticalGroup.addSurfaceToGroup(bvpChart);
         verticalGroup.addSurfaceToGroup(hrChart);
         verticalGroup.addSurfaceToGroup(tempChart);
+        //verticalGroup.addSurfaceToGroup(bvpChart);
 
 
         // modifiers for main chart
-        // todo: enable zoom and pan when not displaying live data
-        if (!sessionData.isLive()) {
+        if (!sharedViewModel.getIsConnected().getValue()) {
             Collections.addAll(edaChart.getChartModifiers(), sciChartBuilder.newModifierGroup()
                     .withXAxisDragModifier().build()
                     .withZoomPanModifier().withReceiveHandledEvents(true).withXyDirection(Direction2D.XDirection).build()
@@ -172,6 +169,9 @@ public class ChartsFragment extends Fragment {
                     .build());
 
             edaLineData.append(sessionData.getGsrTimestamps(), sessionData.getGsr());
+            hrLineData.append(sessionData.getHrTimestamps(), sessionData.getHr());
+            tempLineData.append(sessionData.getTempTimestamps(), sessionData.getTemp());
+            //   bvpLineData.append(sessionData.getBvpTimestamps(), sessionData.getBvp());
 
             return;
         }
@@ -184,6 +184,7 @@ public class ChartsFragment extends Fragment {
                 edaChart.zoomExtents();
             }
         });
+        /*
         sharedViewModel.getLastBvp().observe(owner, new Observer<Integer>() {
             @Override
             public void onChanged(Integer lastBvp) {
@@ -191,6 +192,7 @@ public class ChartsFragment extends Fragment {
                 bvpChart.zoomExtents();
             }
         });
+         */
         sharedViewModel.getLastTemp().observe(owner, new Observer<Integer>() {
             @Override
             public void onChanged(Integer lastTemp) {
@@ -231,8 +233,6 @@ public class ChartsFragment extends Fragment {
                 Collections.addAll(edaChart.getAnnotations(), verticalLine);
             }
         });
-
-
 
 
     }

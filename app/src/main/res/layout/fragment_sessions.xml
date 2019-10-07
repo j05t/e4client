@@ -11,7 +11,6 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
-        android:text="Synchronizing with Empatica Cloud Account"
         android:textAlignment="center"
         android:textSize="12sp"
         app:layout_constraintEnd_toEndOf="parent"
@@ -30,25 +29,46 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/button_download_all" />
 
+
     <Button
-        android:id="@+id/button_sync"
-        android:layout_width="wrap_content"
+        android:id="@+id/button_sync_empatica"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
         android:layout_marginTop="4dp"
         android:layout_marginEnd="8dp"
-        android:text="Sync with Google Fit"
-        android:textSize="12sp"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:text="Sync with Empatica"
+        android:textSize="11sp"
+        app:layout_constraintEnd_toStartOf="@+id/button_download_all"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/text_sessions" />
 
     <Button
         android:id="@+id/button_download_all"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginTop="4dp"
+        android:layout_marginEnd="8dp"
         android:text="Download All"
-        android:textSize="12sp"
-        app:layout_constraintStart_toStartOf="parent"
+        android:textSize="11sp"
+        app:layout_constraintEnd_toStartOf="@+id/button_sync_google"
+        app:layout_constraintStart_toEndOf="@+id/button_sync_empatica"
         app:layout_constraintTop_toBottomOf="@+id/text_sessions" />
+
+    <Button
+        android:id="@+id/button_sync_google"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="8dp"
+        android:text="Upload to Google Fit"
+        android:textSize="11sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/button_download_all"
+        app:layout_constraintTop_toBottomOf="@+id/text_sessions" />
+
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>

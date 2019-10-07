@@ -19,7 +19,6 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.lifecycle.ViewModelProviders;
@@ -73,17 +72,20 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+
+        sessionData = SessionData.getInstance();
 
         sharedViewModel = ViewModelProviders.of(this).get(SharedViewModel.class);
 
+        // debug
+       // simulateSensorData();
+
+        setContentView(R.layout.activity_main);
+
         initEmpaticaDeviceManager();
 
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-
-        DrawerLayout drawer = findViewById(R.id.drawer_layout);
-        NavigationView navigationView = findViewById(R.id.nav_view);
+        final DrawerLayout drawer = findViewById(R.id.drawer_layout);
+        final NavigationView navigationView = findViewById(R.id.nav_view);
         // Passing each menu ID as a set of Ids because each
         // menu should be considered as top level destinations.
         mAppBarConfiguration = new AppBarConfiguration.Builder(
@@ -91,15 +93,13 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
                 R.id.nav_settings, R.id.nav_share_csv, R.id.nav_sync)
                 .setDrawerLayout(drawer)
                 .build();
-        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
-        NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
+        final NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
         NavigationUI.setupWithNavController(navigationView, navController);
 
         setUpSciChartLicense();
 
         loadPreferences();
 
-        sessionData = SessionData.getInstance();
 
         context = getApplicationContext();
 
@@ -116,8 +116,6 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         MainActivity.okHttpClient.setWriteTimeout(120, TimeUnit.SECONDS);
         MainActivity.okHttpClient.setCookieHandler(mCookieManager);
 
-        // debug
-        //simulateSensorData();
     }
 
     private void loadPreferences() {
@@ -131,16 +129,25 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     }
 
     private void simulateSensorData() {
-        // simulate live sensor data
+
         sharedViewModel.setIsConnected(true);
         sharedViewModel.setDeviceName("DEADBEEF");
         sharedViewModel.didUpdateOnWristStatus(EmpaSensorStatus.ON_WRIST);
+
+        /*
+             Caused by: java.util.NoSuchElementException
+        at java.util.LinkedList.getLast(LinkedList.java:257)
+        at com.jstappdev.e4client.ui.ConnectionFragment$7.onChanged(ConnectionFragment.java:145)
+         */
+
         sharedViewModel.didReceiveGSR(0f, 0d);
         sharedViewModel.didReceiveAcceleration(42, 1, 0, 0d);
         sharedViewModel.didReceiveBatteryLevel(.98f, 0d);
         sharedViewModel.didReceiveIBI(12, 0d);
         sharedViewModel.didReceiveBVP(42f, 0d);
         sharedViewModel.didReceiveTemperature(37.1337f, 0d);
+
+
         simulateLiveData();
         simulateTags();
     }
@@ -167,7 +174,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
         Timer timer = new Timer();
         long delay = 0;
-        long interval = 10;
+        long interval = 5;
         timer.schedule(updateDataTask, delay, interval);
     }
 
@@ -278,7 +285,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
             }
 
             // Create a new EmpaDeviceManager. MainActivity is status delegate, SharedViewModel is data delegate
-            deviceManager = new EmpaDeviceManager(getApplicationContext(), ViewModelProviders.of(this).get(SharedViewModel.class), this);
+            deviceManager = new EmpaDeviceManager(getApplicationContext(), sharedViewModel, this);
 
             // Initialize the Device Manager using your API key. You need to have Internet access at this point.
             deviceManager.authenticateWithAPIKey(EMPATICA_API_KEY);

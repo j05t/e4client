@@ -30,7 +30,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     private MutableLiveData<Integer> lastTemp;
 
 
-    private List<Session> sessions = new ArrayList<>();
+    private ArrayList<Session> sessions = new ArrayList<>();
     private SessionData sessionData;
 
     private String username;
@@ -70,13 +70,16 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         lastTemp = new MutableLiveData<>();
         tag = new MutableLiveData<Double>();
 
+        isConnected.setValue(false);
     }
 
     public MutableLiveData<Boolean> getIsConnected() {
         return isConnected;
     }
 
-    public void setIsConnected(boolean isConnected) {
+    void setIsConnected(boolean isConnected) {
+        if(isConnected) SessionData.clear();
+
         this.isConnected.postValue(isConnected);
     }
 
@@ -112,7 +115,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         return onWrist;
     }
 
-    public void setOnWrist(Boolean onWrist) {
+    void setOnWrist(Boolean onWrist) {
         this.onWrist.postValue(onWrist);
     }
 
@@ -120,7 +123,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         return status;
     }
 
-    public void setStatus(String name) {
+    void setStatus(String name) {
         this.status.postValue(name);
     }
 
@@ -128,7 +131,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         return deviceName;
     }
 
-    public void setDeviceName(String deviceName) {
+    void setDeviceName(String deviceName) {
         this.deviceName.postValue(deviceName);
     }
 
@@ -149,7 +152,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     }
 
     //@Override
-    public void didUpdateOnWristStatus(@EmpaSensorStatus final int status) {
+    void didUpdateOnWristStatus(@EmpaSensorStatus final int status) {
 
         if (status == EmpaSensorStatus.ON_WRIST) {
 
@@ -197,11 +200,11 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         this.userId = userId;
     }
 
-    public List<Session> getSessions() {
+    public ArrayList<Session> getSessions() {
         return sessions;
     }
 
-    public void setSessions(List<Session> sessions) {
+    public void setSessions(ArrayList<Session> sessions) {
         this.sessions = sessions;
     }
 

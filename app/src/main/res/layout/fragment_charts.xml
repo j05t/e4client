@@ -30,11 +30,5 @@
             android:minHeight="100dp"
             android:layout_weight="1" />
 
-        <com.scichart.charting.visuals.SciChartSurface
-            android:id="@+id/bvpChart"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:minHeight="100dp"
-            android:layout_weight="1" />
     </LinearLayout>
 </LinearLayout>

@@ -52,6 +52,10 @@ public class SessionData {
         return INSTANCE;
     }
 
+    public static void clear() {
+        INSTANCE = new SessionData();
+    }
+
     public boolean isLive() {
         return isLive;
     }
@@ -71,6 +75,11 @@ public class SessionData {
     public void setBvpTimestamps(LinkedList<Double> bvpTimestamps) {
         this.bvpTimestamps = bvpTimestamps;
     }
+
+    public void setHr(LinkedList<Float> hr) {
+        this.hr = hr;
+    }
+
 
     public LinkedList<Double> getGsrTimestamps() {
         return gsrTimestamps;
@@ -102,6 +111,10 @@ public class SessionData {
 
     public void setHrTimestamps(LinkedList<Double> hrTimestamps) {
         this.hrTimestamps = hrTimestamps;
+    }
+
+    public LinkedList<Float> getHr() {
+        return this.hr;
     }
 
     public long getInitialTime() {
@@ -194,5 +207,6 @@ public class SessionData {
     public void addTag(double tag) {
         this.tags.add(tag);
     }
+
 
 }
