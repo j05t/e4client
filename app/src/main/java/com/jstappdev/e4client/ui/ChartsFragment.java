@@ -15,7 +15,6 @@ import androidx.lifecycle.ViewModelProviders;
 
 import com.jstappdev.e4client.R;
 import com.jstappdev.e4client.SharedViewModel;
-import com.jstappdev.e4client.data.SessionData;
 import com.scichart.charting.Direction2D;
 import com.scichart.charting.model.AnnotationCollection;
 import com.scichart.charting.model.dataSeries.XyDataSeries;
@@ -53,11 +52,10 @@ public class ChartsFragment extends Fragment {
     // @BindView(R.id.bvpChart)
     //SciChartSurface bvpChart;
 
-    private SessionData sessionData;
     private SharedViewModel sharedViewModel;
     private SciChartBuilder sciChartBuilder;
 
-    public static final int AXIS_MARKER_COLOR = 0xFFFFA500;
+    private static final int AXIS_MARKER_COLOR = 0xFFFFA500;
 
 
     private static float averageHr = -1.0f;
@@ -67,7 +65,7 @@ public class ChartsFragment extends Fragment {
 
         sharedViewModel = ViewModelProviders.of(Objects.requireNonNull(getActivity())).get(SharedViewModel.class);
 
-        View root = inflater.inflate(R.layout.fragment_charts, container, false);
+        final View root = inflater.inflate(R.layout.fragment_charts, container, false);
 
         ButterKnife.bind(this, root);
 
@@ -129,7 +127,6 @@ public class ChartsFragment extends Fragment {
     }
 
     private void setupCharts() {
-        sessionData = SessionData.getInstance();
         final LifecycleOwner owner = getViewLifecycleOwner();
 
         // Create a couple of DataSeries for numeric data
@@ -168,10 +165,10 @@ public class ChartsFragment extends Fragment {
                     .withZoomExtentsModifier().build()
                     .build());
 
-            edaLineData.append(sessionData.getGsrTimestamps(), sessionData.getGsr());
-            hrLineData.append(sessionData.getHrTimestamps(), sessionData.getHr());
-            tempLineData.append(sessionData.getTempTimestamps(), sessionData.getTemp());
-            //   bvpLineData.append(sessionData.getBvpTimestamps(), sessionData.getBvp());
+            edaLineData.append(sharedViewModel.getSesssionData().getGsrTimestamps(), sharedViewModel.getSesssionData().getGsr());
+            hrLineData.append(sharedViewModel.getSesssionData().getHrTimestamps(), sharedViewModel.getSesssionData().getHr());
+            tempLineData.append(sharedViewModel.getSesssionData().getTempTimestamps(), sharedViewModel.getSesssionData().getTemp());
+            //   bvpLineData.append(sharedViewModel.getSesssionData().getBvpTimestamps(), sharedViewModel.getSesssionData().getBvp());
 
             return;
         }
@@ -180,7 +177,7 @@ public class ChartsFragment extends Fragment {
         sharedViewModel.getLastGsr().observe(owner, new Observer<Integer>() {
             @Override
             public void onChanged(Integer lastGsr) {
-                edaLineData.append(sessionData.getGsrTimestamps().getLast(), sessionData.getGsr().get(lastGsr));
+                edaLineData.append(sharedViewModel.getSesssionData().getGsrTimestamps().getLast(), sharedViewModel.getSesssionData().getGsr().get(lastGsr));
                 edaChart.zoomExtents();
             }
         });
@@ -188,7 +185,7 @@ public class ChartsFragment extends Fragment {
         sharedViewModel.getLastBvp().observe(owner, new Observer<Integer>() {
             @Override
             public void onChanged(Integer lastBvp) {
-                bvpLineData.append(sessionData.getBvpTimestamps().getLast(), sessionData.getBvp().get(lastBvp));
+                bvpLineData.append(sharedViewModel.getSesssionData().getBvpTimestamps().getLast(), sharedViewModel.getSesssionData().getBvp().get(lastBvp));
                 bvpChart.zoomExtents();
             }
         });
@@ -196,8 +193,8 @@ public class ChartsFragment extends Fragment {
         sharedViewModel.getLastTemp().observe(owner, new Observer<Integer>() {
             @Override
             public void onChanged(Integer lastTemp) {
-                tempLineData.append(sessionData.getTempTimestamps().getLast(), sessionData.getTemp().get(lastTemp));
-                tempAxisMarker.setY1(sessionData.getTemp().get(lastTemp));
+                tempLineData.append(sharedViewModel.getSesssionData().getTempTimestamps().getLast(), sharedViewModel.getSesssionData().getTemp().get(lastTemp));
+                tempAxisMarker.setY1(sharedViewModel.getSesssionData().getTemp().get(lastTemp));
                 tempChart.zoomExtents();
             }
         });
@@ -205,7 +202,7 @@ public class ChartsFragment extends Fragment {
         sharedViewModel.getLastIbi().observe(owner, new Observer<Integer>() {
             @Override
             public void onChanged(Integer lastIbi) {
-                final float currentHr = 60.0f / sessionData.getIbi().getLast();
+                final float currentHr = 60.0f / sharedViewModel.getSesssionData().getIbi().getLast();
 
                 // heart rate may theoretically reach 600, but we assume 300 max
                 // https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3273956/
@@ -213,8 +210,8 @@ public class ChartsFragment extends Fragment {
                     averageHr = 0.8f * averageHr + 0.2f * currentHr;
                 }
 
-                //ibiLineData.append(sessionData.getIbiTimestamps().getLast(), sessionData.getIbi().get(lastBvp));
-                hrLineData.append(sessionData.getIbiTimestamps().getLast(), currentHr);
+                //ibiLineData.append(sharedViewModel.getSesssionData().getIbiTimestamps().getLast(), sharedViewModel.getSesssionData().getIbi().get(lastBvp));
+                hrLineData.append(sharedViewModel.getSesssionData().getIbiTimestamps().getLast(), currentHr);
                 hrAxisMarker.setY1(averageHr);
                 hrChart.zoomExtents();
             }

@@ -1,7 +1,6 @@
 package com.jstappdev.e4client;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
@@ -54,14 +53,13 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     private static final String EMPATICA_API_KEY = BuildConfig.EMPATICA_API_KEY;
     private static final String SCICHART_LICENSE = BuildConfig.SCICHART_LICENSE;
 
-    float batteryLevel = 1.0f;
+    private float batteryLevel = 1.0f;
     private EmpaDeviceManager deviceManager = null;
     private AppBarConfiguration mAppBarConfiguration;
     private SharedViewModel sharedViewModel;
     private SessionData sessionData;
 
-    @SuppressLint("StaticFieldLeak")
-    public static Context context;
+    public static MainActivity context;
 
     public static final String PREFS_NAME = "preferences";
     public static final String PREF_UNAME = "Username";
@@ -73,12 +71,14 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        context = this;
+
         sessionData = SessionData.getInstance();
 
         sharedViewModel = ViewModelProviders.of(this).get(SharedViewModel.class);
 
         // debug
-       // simulateSensorData();
+        // simulateSensorData();
 
         setContentView(R.layout.activity_main);
 
@@ -101,20 +101,18 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         loadPreferences();
 
 
-        context = getApplicationContext();
-
         final CookieManager mCookieManager = new CookieManager();
         mCookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
         CookieHandler.setDefault(mCookieManager);
 
-        MainActivity.okHttpClient = new OkHttpClient();
-        MainActivity.okHttpClient.setFollowRedirects(true);
-        MainActivity.okHttpClient.setFollowSslRedirects(true);
-        MainActivity.okHttpClient.setRetryOnConnectionFailure(true);
-        MainActivity.okHttpClient.setConnectTimeout(120, TimeUnit.SECONDS);
-        MainActivity.okHttpClient.setReadTimeout(120, TimeUnit.SECONDS);
-        MainActivity.okHttpClient.setWriteTimeout(120, TimeUnit.SECONDS);
-        MainActivity.okHttpClient.setCookieHandler(mCookieManager);
+        okHttpClient = new OkHttpClient();
+        okHttpClient.setFollowRedirects(true);
+        okHttpClient.setFollowSslRedirects(true);
+        okHttpClient.setRetryOnConnectionFailure(true);
+        okHttpClient.setConnectTimeout(120, TimeUnit.SECONDS);
+        okHttpClient.setReadTimeout(120, TimeUnit.SECONDS);
+        okHttpClient.setWriteTimeout(120, TimeUnit.SECONDS);
+        okHttpClient.setCookieHandler(mCookieManager);
 
     }
 
@@ -123,9 +121,6 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
         sharedViewModel.setUsername(settings.getString(MainActivity.PREF_UNAME, ""));
         sharedViewModel.setPassword(settings.getString(MainActivity.PREF_PASSWORD, ""));
-
-        //Log.d(TAG, "loaded credentials for " + sharedViewModel.getUsername() + " with pass" + sharedViewModel.getPassword());
-
     }
 
     private void simulateSensorData() {
@@ -182,7 +177,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         TimerTask updateDataTask = new TimerTask() {
             @Override
             public void run() {
-                double curTimestamp = sessionData.getGsrTimestamps().getLast();
+                double curTimestamp = sharedViewModel.getSesssionData().getGsrTimestamps().getLast();
                 sharedViewModel.didReceiveTag(curTimestamp);
             }
         };
@@ -322,7 +317,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
                 // Connect to the device
                 deviceManager.connectDevice(bluetoothDevice);
                 //updateLabel(deviceNameLabel, "To: " + deviceName);
-                ViewModelProviders.of(this).get(SharedViewModel.class).setDeviceName("To: " + deviceName);
+                sharedViewModel.setDeviceName("To: " + deviceName);
 
             } catch (ConnectionNotAllowedException e) {
                 // This should happen only if you try to connect when allowed == false.
@@ -357,12 +352,12 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     @Override
     public void didUpdateStatus(EmpaStatus status) {
         // Update the UI
-        ViewModelProviders.of(this).get(SharedViewModel.class).setStatus(status.name());
+        sharedViewModel.setStatus(status.name());
 
         // The device manager is ready for use
         if (status == EmpaStatus.READY) {
             //updateLabel(statusLabel, status.name() + " - Turn on your device");
-            ViewModelProviders.of(this).get(SharedViewModel.class).setStatus(status.name() + " - Turn on your device");
+            sharedViewModel.setStatus(status.name() + " - Turn on your device");
 
             // Start scanning
             try {
@@ -388,7 +383,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
             connectionEstablished();
             // The device manager disconnected from a device
         } else if (status == EmpaStatus.DISCONNECTED) {
-            ViewModelProviders.of(this).get(SharedViewModel.class).setDeviceName("");
+            sharedViewModel.setDeviceName("");
 
             connectionDisconnected();
         }
@@ -396,11 +391,11 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
 
     void connectionEstablished() {
-        ViewModelProviders.of(this).get(SharedViewModel.class).setIsConnected(true);
+        sharedViewModel.setIsConnected(true);
     }
 
     void connectionDisconnected() {
-        ViewModelProviders.of(this).get(SharedViewModel.class).setIsConnected(false);
+        sharedViewModel.setIsConnected(false);
     }
 
 
@@ -414,10 +409,10 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     public void didUpdateOnWristStatus(@EmpaSensorStatus final int status) {
         if (status == EmpaSensorStatus.ON_WRIST) {
 
-            ViewModelProviders.of(this).get(SharedViewModel.class).setOnWrist(true);
+            sharedViewModel.setOnWrist(true);
         } else {
 
-            ViewModelProviders.of(this).get(SharedViewModel.class).setOnWrist(false);
+            sharedViewModel.setOnWrist(false);
         }
 
     }

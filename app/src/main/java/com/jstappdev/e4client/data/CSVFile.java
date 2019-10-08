@@ -1,9 +1,5 @@
 package com.jstappdev.e4client.data;
 
-import android.util.Log;
-
-import com.jstappdev.e4client.MainActivity;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;

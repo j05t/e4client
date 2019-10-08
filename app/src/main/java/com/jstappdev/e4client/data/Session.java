@@ -30,7 +30,7 @@ public class Session implements Comparable<Session> {
     }
 
     @SuppressLint("DefaultLocale")
-    public String getFilename() {
+    public String getZIPFilename() {
         return String.format("%s_%s_%s_%s_%s_%s_%s_%s.zip", getStartTime(), getId(), getDuration(), getDeviceId(), getLabel(), getDevice(), getStatus(), getExit_code());
     }
 
@@ -116,7 +116,17 @@ public class Session implements Comparable<Session> {
 
     @Override
     public String toString() {
-        return "Session " + getFilename();
+        return "Session{" +
+                "id='" + id + '\'' +
+                ", startTime=" + startTime +
+                ", duration=" + duration +
+                ", deviceId='" + deviceId + '\'' +
+                ", label='" + label + '\'' +
+                ", device='" + device + '\'' +
+                ", status='" + status + '\'' +
+                ", exit_code='" + exit_code + '\'' +
+                ", filename='" + getZIPFilename() +
+                "\'}";
     }
 
     @Override

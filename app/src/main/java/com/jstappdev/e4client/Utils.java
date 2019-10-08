@@ -3,6 +3,8 @@ package com.jstappdev.e4client;
 import android.text.format.DateFormat;
 import android.util.Log;
 
+import androidx.lifecycle.ViewModelProviders;
+
 import com.jstappdev.e4client.data.CSVFile;
 import com.jstappdev.e4client.data.Session;
 import com.jstappdev.e4client.data.SessionData;
@@ -15,6 +17,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.Calendar;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.TimeZone;
 
 public class Utils {
@@ -34,21 +37,22 @@ public class Utils {
     }
 
     public static boolean isSessionDownloaded(final Session session) {
-        return new File(MainActivity.context.getFilesDir(), session.getFilename()).exists();
+        return new File(MainActivity.context.getFilesDir(), session.getZIPFilename()).exists();
     }
 
 
     // we cannot afford to load BVP and ACC data into memory for sessions longer than about 8 hours
     static void loadSessionData(final Session session) {
-        SessionData sessionData = SessionData.getInstance();
+        final SessionData sessionData = ViewModelProviders.of(Objects.requireNonNull(MainActivity.context)).get(SharedViewModel.class).getSesssionData();
+
         sessionData.setIsLive(false);
 
         if (isSessionDownloaded(session)) {
 
             try {
-                final File sessionFile = new File(MainActivity.context.getFilesDir(), session.getFilename());
+                final File sessionFile = new File(MainActivity.context.getFilesDir(), session.getZIPFilename());
 
-                Log.d(MainActivity.TAG, "reading " + session.getFilename());
+                Log.d(MainActivity.TAG, "reading " + session.getZIPFilename());
 
                 String basePath = MainActivity.context.getCacheDir().getPath();
 

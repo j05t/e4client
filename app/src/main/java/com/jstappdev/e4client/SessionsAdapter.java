@@ -2,7 +2,6 @@ package com.jstappdev.e4client;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Color;
 import android.os.AsyncTask;
@@ -19,15 +18,16 @@ import com.jstappdev.e4client.data.Session;
 import com.squareup.okhttp.Request;
 
 import java.io.IOException;
-import java.lang.ref.WeakReference;
-import java.util.List;
 
 public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.Adapter<SessionsAdapter.MyViewHolder> {
 
-    private List<Session> sessions;
+    private SharedViewModel sharedViewModel;
 
-    public SessionsAdapter(List<Session> sessions) {
-        this.sessions = sessions;
+    private SessionsAdapter instance;
+
+    public SessionsAdapter(SharedViewModel sharedViewModel) {
+        this.sharedViewModel = sharedViewModel;
+        this.instance = this;
     }
 
 
@@ -70,7 +70,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         @Override
         public void onClick(View v) {
             final int position = (int) v.getTag();
-            final Session session = sessions.get(position);
+            final Session session = sharedViewModel.getSessions().get(position);
             final String sessionId = session.getId();
 
             AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(v.getContext());
@@ -116,7 +116,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         @Override
         public boolean onLongClick(View v) {
             final int position = (int) v.getTag();
-            final Session session = sessions.get(position);
+            final Session session = sharedViewModel.getSessions().get(position);
             final String sessionId = session.getId();
 
             final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(v.getContext());
@@ -129,7 +129,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                     .setCancelable(true)
                     .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
-                            new DeleteSession(v.getContext(), position).execute(sessionId);
+                            new DeleteSession(instance, sharedViewModel, position).execute(sessionId);
                         }
                     })
                     .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -148,7 +148,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
     @SuppressLint("SetTextI18n")
     @Override
     public void onBindViewHolder(@NonNull MyViewHolder holder, final int position) {
-        final Session s = sessions.get(position);
+        final Session s = sharedViewModel.getSessions().get(position);
 
         holder.itemView.setOnClickListener(onClickListener);
         holder.itemView.setOnLongClickListener(onLongClickListener);
@@ -168,18 +168,20 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
 
     @Override
     public int getItemCount() {
-        return sessions.size();
+        return sharedViewModel.getSessions().size();
     }
 
 
-    private class DeleteSession extends AsyncTask<String, Void, Boolean> {
+    private static class DeleteSession extends AsyncTask<String, Void, Boolean> {
 
-        private WeakReference<Context> context;
+        private SessionsAdapter adapter;
+        private SharedViewModel viewModel;
         private int position;
 
-        DeleteSession(final Context context, int position) {
-            this.context = new WeakReference<>(context);
+        DeleteSession(final SessionsAdapter sessionsAdapter, SharedViewModel sharedViewModel, int position) {
+            this.adapter = sessionsAdapter;
             this.position = position;
+            this.viewModel = sharedViewModel;
         }
 
         @Override
@@ -204,14 +206,13 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
 
             if (success) {
                 s = "Deleted session.";
-                sessions.remove(position);
-                notifyItemRemoved(position);
-                notifyItemRangeChanged(position, sessions.size());
+                viewModel.getSessions().remove(position);
+                adapter.notifyItemRemoved(position);
+                adapter.notifyItemRangeChanged(position, viewModel.getSessions().size());
             } else {
                 s = "FAILED to delete session.";
             }
-
-            Toast.makeText(context.get(), s, Toast.LENGTH_SHORT).show();
+            viewModel.getSessionStatus().setValue(s);
         }
 
     }

@@ -11,7 +11,6 @@ import com.jstappdev.e4client.data.SessionData;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.List;
 
 public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
@@ -29,6 +28,11 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     private MutableLiveData<Integer> lastIbi;
     private MutableLiveData<Integer> lastTemp;
 
+    public MutableLiveData<String> getSessionStatus() {
+        return sessionStatus;
+    }
+
+    private MutableLiveData<String> sessionStatus;
 
     private ArrayList<Session> sessions = new ArrayList<>();
     private SessionData sessionData;
@@ -68,7 +72,9 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         lastGsr = new MutableLiveData<>();
         lastIbi = new MutableLiveData<>();
         lastTemp = new MutableLiveData<>();
-        tag = new MutableLiveData<Double>();
+        tag = new MutableLiveData<>();
+
+        sessionStatus = new MutableLiveData<>();
 
         isConnected.setValue(false);
     }
@@ -78,7 +84,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     }
 
     void setIsConnected(boolean isConnected) {
-        if(isConnected) SessionData.clear();
+        if (isConnected) SessionData.clear();
 
         this.isConnected.postValue(isConnected);
     }
@@ -208,4 +214,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         this.sessions = sessions;
     }
 
+    public SessionData getSesssionData() {
+        return this.sessionData;
+    }
 }

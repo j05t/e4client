@@ -16,17 +16,14 @@ import androidx.lifecycle.ViewModelProviders;
 
 import com.jstappdev.e4client.MainActivity;
 import com.jstappdev.e4client.R;
-import com.jstappdev.e4client.data.SessionData;
 import com.jstappdev.e4client.SharedViewModel;
 
 import java.util.Locale;
 import java.util.Objects;
 
 public class ConnectionFragment extends Fragment {
-
-    private static final String TAG = "e4";
-
-    private static final int CALIBRATION_SAMPLES = 400;
+    
+    private static final int CALIBRATION_SAMPLES = 42;
 
     private SharedViewModel sharedViewModel;
 
@@ -44,7 +41,6 @@ public class ConnectionFragment extends Fragment {
 
     private ImageView batteryImageView;
 
-    private SessionData sessionData;
     private int currentBatteryDrawableId = R.drawable.ic_battery_full;
 
 
@@ -84,7 +80,7 @@ public class ConnectionFragment extends Fragment {
 
             @Override
             public void onClick(View v) {
-                ((MainActivity) getActivity()).disconnect();
+                MainActivity.context.disconnect();
             }
         });
     }
@@ -92,8 +88,6 @@ public class ConnectionFragment extends Fragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-
-        sessionData = SessionData.getInstance();
 
         final LifecycleOwner owner = getViewLifecycleOwner();
 
@@ -140,43 +134,43 @@ public class ConnectionFragment extends Fragment {
         sharedViewModel.getLastAcc().observe(owner, new Observer<Integer>() {
 
             public void onChanged(Integer lastAcc) {
-                if(lastAcc < CALIBRATION_SAMPLES) return;
+                if (lastAcc < CALIBRATION_SAMPLES) return;
 
-                accel_xLabel.setText(String.format(Locale.getDefault(), "%d", sessionData.getAcc().getLast().get(0)));
-                accel_yLabel.setText(String.format(Locale.getDefault(), "%d", sessionData.getAcc().getLast().get(1)));
-                accel_zLabel.setText(String.format(Locale.getDefault(), "%d", sessionData.getAcc().getLast().get(2)));
+                accel_xLabel.setText(String.format(Locale.getDefault(), "%d", sharedViewModel.getSesssionData().getAcc().getLast().get(0)));
+                accel_yLabel.setText(String.format(Locale.getDefault(), "%d", sharedViewModel.getSesssionData().getAcc().getLast().get(1)));
+                accel_zLabel.setText(String.format(Locale.getDefault(), "%d", sharedViewModel.getSesssionData().getAcc().getLast().get(2)));
             }
         });
         sharedViewModel.getLastGsr().observe(owner, new Observer<Integer>() {
             @Override
             public void onChanged(Integer lastGsr) {
-                if(lastGsr < CALIBRATION_SAMPLES) return;
+                if (lastGsr < CALIBRATION_SAMPLES) return;
 
-                edaLabel.setText(String.format(Locale.getDefault(), "%.0f", sessionData.getGsr().getLast()));
+                edaLabel.setText(String.format(Locale.getDefault(), "%.0f", sharedViewModel.getSesssionData().getGsr().getLast()));
             }
         });
         sharedViewModel.getLastIbi().observe(owner, new Observer<Integer>() {
             @Override
             public void onChanged(Integer lastIbi) {
-                if(lastIbi < CALIBRATION_SAMPLES) return;
+                if (lastIbi < CALIBRATION_SAMPLES) return;
 
-                ibiLabel.setText(String.format(Locale.getDefault(), "%.0f", sessionData.getIbi().getLast()));
+                ibiLabel.setText(String.format(Locale.getDefault(), "%.0f", sharedViewModel.getSesssionData().getIbi().getLast()));
             }
         });
         sharedViewModel.getLastTemp().observe(owner, new Observer<Integer>() {
             @Override
             public void onChanged(Integer lastTemp) {
-                if(lastTemp < CALIBRATION_SAMPLES) return;
+                if (lastTemp < CALIBRATION_SAMPLES) return;
 
-                temperatureLabel.setText(String.format(Locale.getDefault(), "%.0f", sessionData.getTemp().getLast()));
+                temperatureLabel.setText(String.format(Locale.getDefault(), "%.0f", sharedViewModel.getSesssionData().getTemp().getLast()));
             }
         });
         sharedViewModel.getLastBvp().observe(owner, new Observer<Integer>() {
             @Override
             public void onChanged(Integer lastBvp) {
-                if(lastBvp < CALIBRATION_SAMPLES) return;
+                if (lastBvp < CALIBRATION_SAMPLES) return;
 
-                bvpLabel.setText(String.format(Locale.getDefault(), "%.0f", sessionData.getBvp().getLast()));
+                bvpLabel.setText(String.format(Locale.getDefault(), "%.0f", sharedViewModel.getSesssionData().getBvp().getLast()));
             }
         });
     }
