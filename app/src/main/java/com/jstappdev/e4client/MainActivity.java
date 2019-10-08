@@ -239,7 +239,6 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
             try {
                 // Connect to the device
                 deviceManager.connectDevice(bluetoothDevice);
-                //updateLabel(deviceNameLabel, "To: " + deviceName);
                 sharedViewModel.setDeviceName("To: " + deviceName);
 
             } catch (ConnectionNotAllowedException e) {
@@ -279,7 +278,6 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
         // The device manager is ready for use
         if (status == EmpaStatus.READY) {
-            //updateLabel(statusLabel, status.name() + " - Turn on your device");
             sharedViewModel.setStatus(status.name() + " - Turn on your device");
 
             // Start scanning
