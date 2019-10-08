@@ -22,7 +22,7 @@ import java.util.Locale;
 import java.util.Objects;
 
 public class ConnectionFragment extends Fragment {
-    
+
     private static final int CALIBRATION_SAMPLES = 42;
 
     private SharedViewModel sharedViewModel;
@@ -39,6 +39,8 @@ public class ConnectionFragment extends Fragment {
     private TextView deviceNameLabel;
     private TextView wristStatusLabel;
 
+    private View dataArea;
+
     private ImageView batteryImageView;
 
     private int currentBatteryDrawableId = R.drawable.ic_battery_full;
@@ -49,8 +51,9 @@ public class ConnectionFragment extends Fragment {
 
         sharedViewModel = ViewModelProviders.of(Objects.requireNonNull(getActivity())).get(SharedViewModel.class);
 
-        View root = inflater.inflate(R.layout.fragment_connection, container, false);
+        final View root = inflater.inflate(R.layout.fragment_connection, container, false);
         final TextView textView = root.findViewById(R.id.status);
+
         sharedViewModel.getStatus().observe(this, new Observer<String>() {
             @Override
             public void onChanged(@Nullable String s) {
@@ -75,9 +78,9 @@ public class ConnectionFragment extends Fragment {
         deviceNameLabel = view.findViewById(R.id.deviceName);
         wristStatusLabel = view.findViewById(R.id.wrist_status_label);
         batteryImageView = view.findViewById(R.id.batteryImageView);
+        dataArea = view.findViewById(R.id.dataArea);
 
         view.findViewById(R.id.disconnectButton).setOnClickListener(new View.OnClickListener() {
-
             @Override
             public void onClick(View v) {
                 MainActivity.context.disconnect();
@@ -91,6 +94,13 @@ public class ConnectionFragment extends Fragment {
 
         final LifecycleOwner owner = getViewLifecycleOwner();
 
+        sharedViewModel.getIsConnected().observe(owner, new Observer<Boolean>() {
+            @Override
+            public void onChanged(Boolean isConnected) {
+                if (isConnected) dataArea.setVisibility(View.VISIBLE);
+                else dataArea.setVisibility(View.GONE);
+            }
+        });
         sharedViewModel.getDeviceName().observe(owner, new Observer<String>() {
             @Override
             public void onChanged(String deviceName) {
@@ -132,7 +142,6 @@ public class ConnectionFragment extends Fragment {
         });
 
         sharedViewModel.getLastAcc().observe(owner, new Observer<Integer>() {
-
             public void onChanged(Integer lastAcc) {
                 if (lastAcc < CALIBRATION_SAMPLES) return;
 

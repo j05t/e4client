@@ -34,14 +34,11 @@ import com.empatica.empalink.config.EmpaSensorType;
 import com.empatica.empalink.config.EmpaStatus;
 import com.empatica.empalink.delegate.EmpaStatusDelegate;
 import com.google.android.material.navigation.NavigationView;
-import com.jstappdev.e4client.data.SessionData;
 import com.squareup.okhttp.OkHttpClient;
 
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity implements EmpaStatusDelegate {
@@ -53,11 +50,9 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     private static final String EMPATICA_API_KEY = BuildConfig.EMPATICA_API_KEY;
     private static final String SCICHART_LICENSE = BuildConfig.SCICHART_LICENSE;
 
-    private float batteryLevel = 1.0f;
     private EmpaDeviceManager deviceManager = null;
     private AppBarConfiguration mAppBarConfiguration;
     private SharedViewModel sharedViewModel;
-    private SessionData sessionData;
 
     public static MainActivity context;
 
@@ -73,12 +68,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
         context = this;
 
-        sessionData = SessionData.getInstance();
-
         sharedViewModel = ViewModelProviders.of(this).get(SharedViewModel.class);
-
-        // debug
-        // simulateSensorData();
 
         setContentView(R.layout.activity_main);
 
@@ -113,7 +103,6 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         okHttpClient.setReadTimeout(120, TimeUnit.SECONDS);
         okHttpClient.setWriteTimeout(120, TimeUnit.SECONDS);
         okHttpClient.setCookieHandler(mCookieManager);
-
     }
 
     private void loadPreferences() {
@@ -122,72 +111,6 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         sharedViewModel.setUsername(settings.getString(MainActivity.PREF_UNAME, ""));
         sharedViewModel.setPassword(settings.getString(MainActivity.PREF_PASSWORD, ""));
     }
-
-    private void simulateSensorData() {
-
-        sharedViewModel.setIsConnected(true);
-        sharedViewModel.setDeviceName("DEADBEEF");
-        sharedViewModel.didUpdateOnWristStatus(EmpaSensorStatus.ON_WRIST);
-
-        /*
-             Caused by: java.util.NoSuchElementException
-        at java.util.LinkedList.getLast(LinkedList.java:257)
-        at com.jstappdev.e4client.ui.ConnectionFragment$7.onChanged(ConnectionFragment.java:145)
-         */
-
-        sharedViewModel.didReceiveGSR(0f, 0d);
-        sharedViewModel.didReceiveAcceleration(42, 1, 0, 0d);
-        sharedViewModel.didReceiveBatteryLevel(.98f, 0d);
-        sharedViewModel.didReceiveIBI(12, 0d);
-        sharedViewModel.didReceiveBVP(42f, 0d);
-        sharedViewModel.didReceiveTemperature(37.1337f, 0d);
-
-
-        simulateLiveData();
-        simulateTags();
-    }
-
-    void simulateLiveData() {
-        TimerTask updateDataTask = new TimerTask() {
-            @Override
-            public void run() {
-                double curTimestamp = sessionData.getGsrTimestamps().getLast();
-                curTimestamp += 0.1d;
-                float y = (float) Math.sin(curTimestamp * 0.1);
-
-                sharedViewModel.didReceiveGSR((y + 1f) * 0.7f, curTimestamp);
-                sharedViewModel.didReceiveTemperature(y + 36.5f, curTimestamp);
-                sharedViewModel.didReceiveBVP(70f + y * 6, curTimestamp);
-                sharedViewModel.didReceiveAcceleration((int) (y + 2) * 3, (int) (y + 1) * 3, (int) (y + 1.2) * 13, curTimestamp);
-                sharedViewModel.didReceiveBatteryLevel(batteryLevel, curTimestamp);
-                sharedViewModel.didReceiveIBI(80f + y * 7, curTimestamp);
-
-                if (batteryLevel > 0f)
-                    batteryLevel -= 0.0001f;
-            }
-        };
-
-        Timer timer = new Timer();
-        long delay = 0;
-        long interval = 5;
-        timer.schedule(updateDataTask, delay, interval);
-    }
-
-    void simulateTags() {
-        TimerTask updateDataTask = new TimerTask() {
-            @Override
-            public void run() {
-                double curTimestamp = sharedViewModel.getSesssionData().getGsrTimestamps().getLast();
-                sharedViewModel.didReceiveTag(curTimestamp);
-            }
-        };
-
-        Timer timer = new Timer();
-        long delay = 0;
-        long interval = 2500;
-        timer.schedule(updateDataTask, delay, interval);
-    }
-
 
     private void setUpSciChartLicense() {
         try {
