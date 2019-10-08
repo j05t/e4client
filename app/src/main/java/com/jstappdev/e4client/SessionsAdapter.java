@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.graphics.Color;
 import android.os.AsyncTask;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,11 +13,20 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.jstappdev.e4client.data.CSVFile;
 import com.jstappdev.e4client.data.Session;
+import com.jstappdev.e4client.data.SessionData;
 import com.squareup.okhttp.Request;
 
+import net.lingala.zip4j.ZipFile;
+import net.lingala.zip4j.exception.ZipException;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.Adapter<SessionsAdapter.MyViewHolder> {
@@ -89,14 +99,8 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                     })
                     .setNeutralButton("Load Data", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
-
-                            if (Utils.isSessionDownloaded(session)) {
-                                Utils.loadSessionData(session);
-                                Toast.makeText(v.getContext(), "Loaded session " + sessionId, Toast.LENGTH_SHORT).show();
-                            } else {
-                                Toast.makeText(v.getContext(), "Session data not downloaded!", Toast.LENGTH_SHORT).show();
-                            }
-
+                            new LoadSessionData().execute(session);
+                            dialog.dismiss();
                         }
                     })
                     .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -213,6 +217,109 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                 s = "FAILED to delete session.";
             }
             viewModel.getSessionStatus().setValue(s);
+        }
+
+    }
+
+    // we cannot afford to load BVP and ACC data into memory for sessions longer than about 8 hours
+    private static class LoadSessionData extends AsyncTask<Session, String, Void> {
+
+        final SharedViewModel viewModel = ViewModelProviders.of(MainActivity.context).get(SharedViewModel.class);
+        final SessionData sessionData = viewModel.getSesssionData();
+
+        @Override
+        protected Void doInBackground(Session... sessions) {
+            final Session session = sessions[0];
+
+            sessionData.setIsLive(false);
+
+            publishProgress(String.format("Loading session %s data..", session.getId()));
+
+            if (Utils.isSessionDownloaded(session)) {
+
+                try {
+                    final File sessionFile = new File(MainActivity.context.getFilesDir(), session.getZIPFilename());
+
+                    Log.d(MainActivity.TAG, "reading " + session.getZIPFilename());
+
+                    String basePath = MainActivity.context.getCacheDir().getPath();
+
+                    Log.d(MainActivity.TAG, "extracting to directory " + basePath);
+
+                    new ZipFile(sessionFile.getAbsolutePath()).extractAll(basePath);
+
+                    basePath += File.separator;
+
+                    /*
+                    final File ibiFile = new File(basePath + "IBI.csv");
+                    final File accFile = new File(basePath + "ACC.csv");
+                    final File tagFile = new File(basePath + "tags.csv");
+                    */
+
+                    // same file format for EDA, HR, BVP, TEMP
+                    final File edaFile = new File(basePath + "EDA.csv");
+                    final File tempFile = new File(basePath + "TEMP.csv");
+                    //   final File bvpFile = new File(basePath + "BVP.csv");
+                    final File hrFile = new File(basePath + "HR.csv");
+
+                    CSVFile data;
+
+                    publishProgress("Processing EDA data");
+
+                    data = new CSVFile(new FileInputStream(edaFile));
+                    sessionData.setInitialTime((long) data.getInitialTime());
+                    sessionData.setGsrTimestamps(data.getX());
+                    sessionData.setGsr(data.getY());
+                    edaFile.delete();
+
+                    publishProgress("Processing temperature data");
+
+                    data = new CSVFile(new FileInputStream(tempFile));
+                    sessionData.setTempTimestamps(data.getX());
+                    sessionData.setTemp(data.getY());
+                    tempFile.delete();
+
+                    /*
+                    data = new CSVFile(new FileInputStream(bvpFile));
+                    sessionData.setBvpTimestamps(data.getX());
+                    sessionData.setBvp(data.getY());
+                    bvpFile.delete();
+                    */
+
+                    publishProgress("Processing HR data");
+
+                    data = new CSVFile(new FileInputStream(hrFile));
+                    sessionData.setHrTimestamps(data.getX());
+                    sessionData.setHr(data.getY());
+                    hrFile.delete();
+
+                    /*
+                    data = new CSVFile(new FileInputStream(ibiFile));
+                    sessionData.setIbiTimestamps(data.getX());
+                    sessionData.setIbi(data.getY());
+                    ibiFile.delete();
+                    */
+
+                    sessionData.setInitialTime(session.getStartTime());
+
+                    publishProgress(String.format("Session %s data loaded.", session.getId()));
+
+                } catch (FileNotFoundException | ZipException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                publishProgress("Session data not downloaded!");
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(String... values) {
+            super.onProgressUpdate(values);
+
+            if (values.length > 0)
+                viewModel.getSessionStatus().setValue(values[0]);
         }
 
     }
