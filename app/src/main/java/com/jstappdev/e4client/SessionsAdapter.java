@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.jstappdev.e4client.data.CSVFile;
 import com.jstappdev.e4client.data.Session;
 import com.jstappdev.e4client.data.SessionData;
+import com.jstappdev.e4client.ui.ChartsFragment;
 import com.squareup.okhttp.Request;
 
 import net.lingala.zip4j.ZipFile;
@@ -28,6 +29,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 
 public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.Adapter<SessionsAdapter.MyViewHolder> {
 
@@ -97,9 +99,9 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                             Toast.makeText(v.getContext(), "Share session " + sessionId, Toast.LENGTH_SHORT).show();
                         }
                     })
-                    .setNeutralButton("Load Data", new DialogInterface.OnClickListener() {
+                    .setNeutralButton("View Data", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
-                            new LoadSessionData().execute(session);
+                            new LoadAndViewSessionData(MainActivity.context).execute(session);
                             dialog.dismiss();
                         }
                     })
@@ -222,10 +224,16 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
     }
 
     // we cannot afford to load BVP and ACC data into memory for sessions longer than about 8 hours
-    private static class LoadSessionData extends AsyncTask<Session, String, Void> {
+    private static class LoadAndViewSessionData extends AsyncTask<Session, String, Void> {
 
         final SharedViewModel viewModel = ViewModelProviders.of(MainActivity.context).get(SharedViewModel.class);
         final SessionData sessionData = viewModel.getSesssionData();
+        WeakReference<MainActivity> mainActivity;
+
+        LoadAndViewSessionData(MainActivity context) {
+            mainActivity = new WeakReference<>(context);
+        }
+
 
         @Override
         protected Void doInBackground(Session... sessions) {
@@ -304,6 +312,8 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
 
                     publishProgress(String.format("Session %s data loaded.", session.getId()));
 
+                    mainActivity.get().replaceFragments(ChartsFragment.class);
+
                 } catch (FileNotFoundException | ZipException e) {
                     e.printStackTrace();
                 }
@@ -321,6 +331,5 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
             if (values.length > 0)
                 viewModel.getSessionStatus().setValue(values[0]);
         }
-
     }
 }

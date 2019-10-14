@@ -20,6 +20,8 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProviders;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -127,6 +129,17 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
                     })
                     .show();
         }
+    }
+
+    public void replaceFragments(Class fragmentClass) {
+        try {
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.nav_host_fragment, (Fragment) fragmentClass.newInstance())
+                    .commit();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     @Override
