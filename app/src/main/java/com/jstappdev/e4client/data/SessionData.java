@@ -10,8 +10,6 @@ public class SessionData {
 
     private long initialTime;
 
-    private boolean isLive;
-
     private LinkedList<List<Integer>> acc;
     private LinkedList<Float> bvp;
     private LinkedList<Float> gsr;
@@ -54,14 +52,6 @@ public class SessionData {
 
     public static void clear() {
         INSTANCE = new SessionData();
-    }
-
-    public boolean isLive() {
-        return isLive;
-    }
-
-    public void setIsLive(boolean ísLive) {
-        this.isLive = isLive;
     }
 
     public LinkedList<Double> getAccTimestamps() {

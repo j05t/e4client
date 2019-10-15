@@ -22,12 +22,12 @@ public class CSVFile {
             // initial time of the session expressed as unix timestamp in UTC
             // and sample rate expressed in Hz.
             initialTime = Double.parseDouble(reader.readLine());
-            final double samplingRate = Double.parseDouble(reader.readLine());
+            final double samplingRate = 1d / Double.parseDouble(reader.readLine());
 
             String csvLine;
             int lineNumber = 1;
             while ((csvLine = reader.readLine()) != null) {
-                x.add(initialTime + (60d / samplingRate * lineNumber++));
+                x.add(initialTime + (samplingRate * lineNumber++));
                 y.add(Float.parseFloat(csvLine));
             }
         } catch (IOException ex) {

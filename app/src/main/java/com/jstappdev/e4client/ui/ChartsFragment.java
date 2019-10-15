@@ -1,12 +1,11 @@
 package com.jstappdev.e4client.ui;
 
-import android.content.res.Configuration;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -15,10 +14,10 @@ import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
 
+import com.jstappdev.e4client.MainActivity;
 import com.jstappdev.e4client.R;
 import com.jstappdev.e4client.SharedViewModel;
 import com.scichart.charting.Direction2D;
-import com.scichart.charting.model.AnnotationCollection;
 import com.scichart.charting.model.dataSeries.XyDataSeries;
 import com.scichart.charting.visuals.SciChartSurface;
 import com.scichart.charting.visuals.annotations.AxisMarkerAnnotation;
@@ -27,6 +26,7 @@ import com.scichart.charting.visuals.axes.AutoRange;
 import com.scichart.charting.visuals.axes.IAxis;
 import com.scichart.charting.visuals.renderableSeries.IRenderableSeries;
 import com.scichart.charting.visuals.synchronization.SciChartVerticalGroup;
+import com.scichart.data.model.DateRange;
 import com.scichart.data.model.DoubleRange;
 import com.scichart.drawing.utility.ColorUtil;
 import com.scichart.extensions.builders.SciChartBuilder;
@@ -40,7 +40,8 @@ import butterknife.ButterKnife;
 public class ChartsFragment extends Fragment {
 
     private final SciChartVerticalGroup verticalGroup = new SciChartVerticalGroup();
-    private final DoubleRange sharedXRange = new DoubleRange();
+    // private final DoubleRange sharedXRange = new DoubleRange();
+    private final DateRange sharedXRange = new DateRange();
 
     @BindView(R.id.edaChart)
     SciChartSurface edaChart;
@@ -59,7 +60,6 @@ public class ChartsFragment extends Fragment {
 
     private static final int AXIS_MARKER_COLOR = 0xFFFFA500;
 
-
     private static float averageHr = -1.0f;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -75,7 +75,6 @@ public class ChartsFragment extends Fragment {
         sciChartBuilder = SciChartBuilder.instance();
 
         return root;
-
     }
 
     @Override
@@ -90,26 +89,16 @@ public class ChartsFragment extends Fragment {
         SciChartBuilder.dispose();
     }
 
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-
-        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE)
-            requireActivity().getWindow()
-                    .setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-
-    }
-
     private void setupChart(SciChartSurface chartSurface, final String yAxisTitle, XyDataSeries<Double, Float> lineData, boolean isFirstPane) {
-        AnnotationCollection annotations = new AnnotationCollection();
-
-        // Create a numeric X axis
-        final IAxis xAxis = sciChartBuilder.newNumericAxis()
+        
+        final IAxis xAxis = sciChartBuilder.newDateAxis()
                 .withVisibleRange(sharedXRange)
                 .withDrawMinorGridLines(false)
                 .withGrowBy(0, 0.1)
                 .withVisibility(isFirstPane ? View.VISIBLE : View.GONE)
                 .build();
+
+        xAxis.setTextFormatting("HH:mm:ss");
 
         // Create a numeric Y axis
         final IAxis yAxis = sciChartBuilder.newNumericAxis()
@@ -180,6 +169,19 @@ public class ChartsFragment extends Fragment {
             hrLineData.append(sharedViewModel.getSesssionData().getHrTimestamps(), sharedViewModel.getSesssionData().getHr());
             tempLineData.append(sharedViewModel.getSesssionData().getTempTimestamps(), sharedViewModel.getSesssionData().getTemp());
             //   bvpLineData.append(sharedViewModel.getSesssionData().getBvpTimestamps(), sharedViewModel.getSesssionData().getBvp());
+
+            for (double tag : sharedViewModel.getSesssionData().getTags()) {
+                Log.d(MainActivity.TAG, "added tag " + tag);
+
+                VerticalLineAnnotation verticalLine = sciChartBuilder.newVerticalLineAnnotation()
+                        .withPosition(tag, 0.5d)
+                        .withStroke(2, ColorUtil.Orange)
+                        .withVerticalGravity(Gravity.FILL_VERTICAL)
+                        .withIsEditable(false)
+                        .build();
+
+                Collections.addAll(edaChart.getAnnotations(), verticalLine);
+            }
 
             return;
         }

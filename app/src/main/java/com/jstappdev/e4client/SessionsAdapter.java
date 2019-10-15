@@ -14,20 +14,22 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.ViewModelProviders;
+import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.jstappdev.e4client.data.CSVFile;
 import com.jstappdev.e4client.data.Session;
 import com.jstappdev.e4client.data.SessionData;
-import com.jstappdev.e4client.ui.ChartsFragment;
 import com.squareup.okhttp.Request;
 
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 
@@ -101,7 +103,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                     })
                     .setNeutralButton("View Data", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
-                            new LoadAndViewSessionData(MainActivity.context).execute(session);
+                            new LoadAndViewSessionData(v).execute(session);
                             dialog.dismiss();
                         }
                     })
@@ -224,22 +226,20 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
     }
 
     // we cannot afford to load BVP and ACC data into memory for sessions longer than about 8 hours
-    private static class LoadAndViewSessionData extends AsyncTask<Session, String, Void> {
+    private static class LoadAndViewSessionData extends AsyncTask<Session, String, Boolean> {
 
         final SharedViewModel viewModel = ViewModelProviders.of(MainActivity.context).get(SharedViewModel.class);
         final SessionData sessionData = viewModel.getSesssionData();
-        WeakReference<MainActivity> mainActivity;
 
-        LoadAndViewSessionData(MainActivity context) {
-            mainActivity = new WeakReference<>(context);
+        WeakReference<View> view;
+
+        LoadAndViewSessionData(View v) {
+            view = new WeakReference<>(v);
         }
 
-
         @Override
-        protected Void doInBackground(Session... sessions) {
+        protected Boolean doInBackground(Session... sessions) {
             final Session session = sessions[0];
-
-            sessionData.setIsLive(false);
 
             publishProgress(String.format("Loading session %s data..", session.getId()));
 
@@ -261,8 +261,24 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                     /*
                     final File ibiFile = new File(basePath + "IBI.csv");
                     final File accFile = new File(basePath + "ACC.csv");
+                     */
+
                     final File tagFile = new File(basePath + "tags.csv");
-                    */
+
+                    publishProgress("Processing tag data");
+
+                    try (BufferedReader reader = new BufferedReader(new FileReader(tagFile))) {
+                        String line;
+
+                        while ((line = reader.readLine()) != null) {
+                            Log.d(MainActivity.TAG, "loaded tag " + line);
+
+                            sessionData.getTags().add(Double.parseDouble(line));
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        return false;
+                    }
 
                     // same file format for EDA, HR, BVP, TEMP
                     final File edaFile = new File(basePath + "EDA.csv");
@@ -310,26 +326,29 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
 
                     sessionData.setInitialTime(session.getStartTime());
 
-                    publishProgress(String.format("Session %s data loaded.", session.getId()));
-
-                    mainActivity.get().replaceFragments(ChartsFragment.class);
+                    publishProgress(String.format("Loaded data for session %s", session.getId()));
 
                 } catch (FileNotFoundException | ZipException e) {
                     e.printStackTrace();
+                    return false;
                 }
             } else {
                 publishProgress("Session data not downloaded!");
             }
 
-            return null;
+            return true;
         }
 
         @Override
         protected void onProgressUpdate(String... values) {
             super.onProgressUpdate(values);
 
-            if (values.length > 0)
-                viewModel.getSessionStatus().setValue(values[0]);
+            if (values.length > 0) viewModel.getSessionStatus().setValue(values[0]);
+        }
+
+        @Override
+        protected void onPostExecute(Boolean success) {
+            if (success) Navigation.findNavController(view.get()).navigate(R.id.nav_charts);
         }
     }
 }
