@@ -348,7 +348,8 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
 
         @Override
         protected void onPostExecute(Boolean success) {
-            if (success) Navigation.findNavController(view.get()).navigate(R.id.nav_charts);
+            if (success && view.get() != null)
+                Navigation.findNavController(view.get()).navigate(R.id.nav_charts);
         }
     }
 }

@@ -86,6 +86,8 @@ public class ConnectionFragment extends Fragment {
                 MainActivity.context.disconnect();
             }
         });
+
+        MainActivity.context.initEmpaticaDeviceManager();
     }
 
     @Override

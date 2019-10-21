@@ -3,12 +3,18 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mobile_navigation"
-    app:startDestination="@+id/nav_connection">
+    app:startDestination="@+id/nav_home">
+
+    <fragment
+        android:id="@+id/nav_home"
+        android:name="com.jstappdev.e4client.ui.HomeFragment"
+        android:label="@string/menu_home"
+        tools:layout="@layout/fragment_home" />
 
     <fragment
         android:id="@+id/nav_connection"
         android:name="com.jstappdev.e4client.ui.ConnectionFragment"
-        android:label="@string/menu_connection"
+        android:label="@string/menu_connect"
         tools:layout="@layout/fragment_connection" />
 
     <fragment
@@ -20,7 +26,7 @@
     <fragment
         android:id="@+id/nav_session"
         android:name="com.jstappdev.e4client.ui.SessionsFragment"
-        android:label="@string/menu_slideshow"
+        android:label="@string/menu_sessions"
         tools:layout="@layout/fragment_sessions" />
 
     <fragment

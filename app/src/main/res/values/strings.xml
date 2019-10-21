@@ -7,9 +7,9 @@
     <string name="nav_header_desc">Navigation header</string>
     <string name="action_about">About</string>
 
-    <string name="menu_connection">Connection</string>
+    <string name="menu_connect">Connect</string>
     <string name="menu_charts">Charts</string>
-    <string name="menu_slideshow">Sessions</string>
+    <string name="menu_sessions">Sessions</string>
     <string name="menu_tools">Settings</string>
     <string name="menu_share">Share CSV</string>
     <string name="menu_send">Sync with Google Fit</string>
@@ -25,5 +25,6 @@
     <string name="temp_label">Temperature</string>
     <string name="battery_label">Battery</string>
 
-    <string name="credits">Icons made by &lt;a href="https://www.flaticon.com/authors/freepik" title="Freepik"&gt;Freepik&lt;/a&gt;, &lt;a href="https://www.flaticon.com/authors/smashicons" title="Smashicons"&gt;Smashicons&lt;/a&gt;, &lt;a href="https://www.flaticon.com/authors/hirschwolf" title="hirschwolf">&lt;/a>, &lt;a href="https://www.flaticon.com/authors/srip" title="srip"&gt;srip&lt;/a&gt; from &lt;a href="https://www.flaticon.com/" title="Flaticon"&gt;www.flaticon.com&lt;/a&gt; is licensed by &lt;a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0"&gt;CC 3.0 BY&lt;/a&gt;</string>
+    <string name="credits">Custom client for the E4 wristband from Empatica. Please visit www.empatica.com/research/e4 for official documentation and support. This application is not affiliated in any way with Empatica.\n\nCreated for the University of Applied Sciences FH Joanneum Graz. Full source code is available at github.com/j05t/e4client.\n\nCharting library provided by www.scichart.com. Icons made by Freepik, Smashicons, hirschwolf, srip from www.flaticon.com.</string>
+    <string name="menu_home">Home</string>
 </resources>

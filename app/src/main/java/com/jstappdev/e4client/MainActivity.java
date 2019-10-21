@@ -78,13 +78,12 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
         setContentView(R.layout.activity_main);
 
-        initEmpaticaDeviceManager();
 
         final DrawerLayout drawer = findViewById(R.id.drawer_layout);
         final NavigationView navigationView = findViewById(R.id.nav_view);
         // Passing each menu ID as a set of Ids because each
         // menu should be considered as top level destinations.
-        mAppBarConfiguration = new AppBarConfiguration.Builder(
+        mAppBarConfiguration = new AppBarConfiguration.Builder(R.id.nav_home,
                 R.id.nav_connection, R.id.nav_charts, R.id.nav_session,
                 R.id.nav_settings, R.id.nav_share_csv, R.id.nav_sync)
                 .setDrawerLayout(drawer)
@@ -96,19 +95,21 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
         loadPreferences();
 
+        if (okHttpClient == null) {
+            final CookieManager mCookieManager = new CookieManager();
+            mCookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
+            CookieHandler.setDefault(mCookieManager);
 
-        final CookieManager mCookieManager = new CookieManager();
-        mCookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
-        CookieHandler.setDefault(mCookieManager);
+            okHttpClient = new OkHttpClient();
+            okHttpClient.setFollowRedirects(true);
+            okHttpClient.setFollowSslRedirects(true);
+            okHttpClient.setRetryOnConnectionFailure(true);
+            okHttpClient.setConnectTimeout(120, TimeUnit.SECONDS);
+            okHttpClient.setReadTimeout(120, TimeUnit.SECONDS);
+            okHttpClient.setWriteTimeout(120, TimeUnit.SECONDS);
+            okHttpClient.setCookieHandler(mCookieManager);
+        }
 
-        okHttpClient = new OkHttpClient();
-        okHttpClient.setFollowRedirects(true);
-        okHttpClient.setFollowSslRedirects(true);
-        okHttpClient.setRetryOnConnectionFailure(true);
-        okHttpClient.setConnectTimeout(120, TimeUnit.SECONDS);
-        okHttpClient.setReadTimeout(120, TimeUnit.SECONDS);
-        okHttpClient.setWriteTimeout(120, TimeUnit.SECONDS);
-        okHttpClient.setCookieHandler(mCookieManager);
     }
 
     private void loadPreferences() {
@@ -187,7 +188,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         }
     }
 
-    private void initEmpaticaDeviceManager() {
+    public void initEmpaticaDeviceManager() {
         // Android 6 (API level 23) now require ACCESS_COARSE_LOCATION permission to use BLE
         if (checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_PERMISSION_ACCESS_COARSE_LOCATION);

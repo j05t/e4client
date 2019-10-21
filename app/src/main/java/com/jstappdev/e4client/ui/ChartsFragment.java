@@ -90,7 +90,7 @@ public class ChartsFragment extends Fragment {
     }
 
     private void setupChart(SciChartSurface chartSurface, final String yAxisTitle, XyDataSeries<Double, Float> lineData, boolean isFirstPane) {
-        
+
         final IAxis xAxis = sciChartBuilder.newDateAxis()
                 .withVisibleRange(sharedXRange)
                 .withDrawMinorGridLines(false)

@@ -37,8 +37,9 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="4dp"
         android:layout_marginEnd="8dp"
+        android:drawableLeft="@drawable/ic_cloud_sync"
         android:text="Sync with Empatica"
-        android:textSize="11sp"
+        android:textSize="10sp"
         app:layout_constraintEnd_toStartOf="@+id/button_download_all"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/text_sessions" />
@@ -50,8 +51,9 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="4dp"
         android:layout_marginEnd="8dp"
+        android:drawableLeft="@drawable/ic_cloud_download"
         android:text="Download All"
-        android:textSize="11sp"
+        android:textSize="10sp"
         app:layout_constraintEnd_toStartOf="@+id/button_sync_google"
         app:layout_constraintStart_toEndOf="@+id/button_sync_empatica"
         app:layout_constraintTop_toBottomOf="@+id/text_sessions" />
@@ -63,12 +65,12 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="4dp"
         android:layout_marginEnd="8dp"
+        android:drawableLeft="@drawable/ic_cloud_upload"
         android:text="Upload to Google Fit"
-        android:textSize="11sp"
+        android:textSize="10sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/button_download_all"
         app:layout_constraintTop_toBottomOf="@+id/text_sessions" />
-
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
