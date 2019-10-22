@@ -10,6 +10,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
@@ -35,12 +36,23 @@ import com.empatica.empalink.config.EmpaSensorStatus;
 import com.empatica.empalink.config.EmpaSensorType;
 import com.empatica.empalink.config.EmpaStatus;
 import com.empatica.empalink.delegate.EmpaStatusDelegate;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.fitness.Fitness;
+import com.google.android.gms.fitness.FitnessOptions;
+import com.google.android.gms.fitness.data.DataType;
+import com.google.android.gms.fitness.data.Field;
+import com.google.android.gms.fitness.request.DataTypeCreateRequest;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.android.material.navigation.NavigationView;
 import com.squareup.okhttp.OkHttpClient;
 
+import java.lang.ref.WeakReference;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity implements EmpaStatusDelegate {
@@ -51,6 +63,9 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
     private static final String EMPATICA_API_KEY = BuildConfig.EMPATICA_API_KEY;
     private static final String SCICHART_LICENSE = BuildConfig.SCICHART_LICENSE;
+    private static final int GOOGLE_FIT_PERMISSIONS_REQUEST_CODE = 42;
+
+    private static boolean googleFitCustomDatatypesCreated = false;
 
     private EmpaDeviceManager deviceManager = null;
     private AppBarConfiguration mAppBarConfiguration;
@@ -61,6 +76,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     public static final String PREFS_NAME = "preferences";
     public static final String PREF_UNAME = "Username";
     public static final String PREF_PASSWORD = "Password";
+    public static final String PREFS_DATATYPES_CREATED = "datatypes_created";
 
     public static OkHttpClient okHttpClient;
 
@@ -110,13 +126,16 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
             okHttpClient.setCookieHandler(mCookieManager);
         }
 
+        createGoogleFitClient();
     }
 
     private void loadPreferences() {
         final SharedPreferences settings = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
 
-        sharedViewModel.setUsername(settings.getString(MainActivity.PREF_UNAME, ""));
-        sharedViewModel.setPassword(settings.getString(MainActivity.PREF_PASSWORD, ""));
+        googleFitCustomDatatypesCreated = settings.getBoolean(PREFS_DATATYPES_CREATED, false);
+
+        sharedViewModel.setUsername(settings.getString(PREF_UNAME, ""));
+        sharedViewModel.setPassword(settings.getString(PREF_PASSWORD, ""));
     }
 
     private void setUpSciChartLicense() {
@@ -268,6 +287,15 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
             // You should deal with this
             return;
         }
+        if (requestCode == GOOGLE_FIT_PERMISSIONS_REQUEST_CODE) {
+            if (resultCode == Activity.RESULT_OK) {
+                Log.d(TAG, "got google fit permissions");
+                new CreateCustomDataTypes(this).execute();
+            } else {
+                Log.d(TAG, "Google Fit permission request denied, resultCode: " + resultCode);
+            }
+        }
+
         super.onActivityResult(requestCode, resultCode, data);
     }
 
@@ -347,6 +375,81 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     public void disconnect() {
         if (deviceManager != null) {
             deviceManager.disconnect();
+        }
+    }
+
+
+    public void createGoogleFitClient() {
+        requestPermissions(new String[]{Manifest.permission.ACTIVITY_RECOGNITION}, GOOGLE_FIT_PERMISSIONS_REQUEST_CODE);
+
+        FitnessOptions fitnessOptions = FitnessOptions.builder()
+                .addDataType(DataType.TYPE_HEART_RATE_BPM, FitnessOptions.ACCESS_READ)
+                .build();
+
+        if (!GoogleSignIn.hasPermissions(GoogleSignIn.getLastSignedInAccount(this), fitnessOptions)) {
+            GoogleSignIn.requestPermissions(
+                    this, // your activity
+                    GOOGLE_FIT_PERMISSIONS_REQUEST_CODE,
+                    GoogleSignIn.getLastSignedInAccount(this),
+                    fitnessOptions);
+        } else {
+
+            new CreateCustomDataTypes(this).execute();
+        }
+    }
+
+    private static class CreateCustomDataTypes extends AsyncTask<Void, Void, Void> {
+        WeakReference<MainActivity> activity;
+
+        CreateCustomDataTypes(MainActivity activity) {
+            this.activity = new WeakReference<>(activity);
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            Log.d("e4", "createCustomDataTypes()");
+            if (!googleFitCustomDatatypesCreated) {
+                Log.d("e4", "creating custom datatypes");
+
+                GoogleSignInAccount googleSignInAccount = GoogleSignIn.getLastSignedInAccount(activity.get());
+
+                // todo: tags
+                // the only predefined data type we can use is com.google.heart_rate.bpm
+                for (String s : new String[]{"eda", "temp", "bvp", "ibi"}) {
+                    final Task<DataType> response = Fitness.getConfigClient(activity.get(), googleSignInAccount)
+                            .createCustomDataType(new DataTypeCreateRequest.Builder()
+                                    .setName("com.jstappdev.e4client." + s)
+                                    .addField(s.toUpperCase(), Field.FORMAT_FLOAT)
+                                    .build());
+                    try {
+                        final DataType dataType = Tasks.await(response);
+
+                        Log.d("e4", "created custom datatype " + dataType.getName());
+
+                    } catch (ExecutionException | InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                final Task<DataType> response = Fitness.getConfigClient(activity.get(), googleSignInAccount)
+                        .createCustomDataType(new DataTypeCreateRequest.Builder()
+                                .setName("com.jstappdev.e4client.acc")
+                                .addField("X", Field.FORMAT_INT32)
+                                .addField("Y", Field.FORMAT_INT32)
+                                .addField("Z", Field.FORMAT_INT32)
+                                .build());
+                try {
+                    final DataType dataType = Tasks.await(response);
+
+                    Log.d("e4", "created custom datatype " + dataType.getName());
+
+                } catch (ExecutionException | InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
+
+            return null;
         }
     }
 

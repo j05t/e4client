@@ -18,8 +18,8 @@ import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.jstappdev.e4client.data.CSVFile;
-import com.jstappdev.e4client.data.Session;
-import com.jstappdev.e4client.data.SessionData;
+import com.jstappdev.e4client.data.E4Session;
+import com.jstappdev.e4client.data.E4SessionData;
 import com.squareup.okhttp.Request;
 
 import net.lingala.zip4j.ZipFile;
@@ -84,8 +84,8 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         @Override
         public void onClick(View v) {
             final int position = (int) v.getTag();
-            final Session session = sharedViewModel.getSessions().get(position);
-            final String sessionId = session.getId();
+            final E4Session e4Session = sharedViewModel.getE4Sessions().get(position);
+            final String sessionId = e4Session.getId();
 
             AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(v.getContext());
 
@@ -94,7 +94,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
 
             // set dialog message
             alertDialogBuilder
-                    .setMessage("Start: " + session.getStartDate() + "\nDuration: " + session.getDurationAsString())
+                    .setMessage("Start: " + e4Session.getStartDate() + "\nDuration: " + e4Session.getDurationAsString())
                     .setCancelable(true)
                     .setPositiveButton("Share", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
@@ -103,7 +103,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                     })
                     .setNeutralButton("View Data", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
-                            new LoadAndViewSessionData(v).execute(session);
+                            new LoadAndViewSessionData(v).execute(e4Session);
                             dialog.dismiss();
                         }
                     })
@@ -124,8 +124,8 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         @Override
         public boolean onLongClick(View v) {
             final int position = (int) v.getTag();
-            final Session session = sharedViewModel.getSessions().get(position);
-            final String sessionId = session.getId();
+            final E4Session e4Session = sharedViewModel.getE4Sessions().get(position);
+            final String sessionId = e4Session.getId();
 
             final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(v.getContext());
 
@@ -133,7 +133,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
             alertDialogBuilder.setIcon(android.R.drawable.ic_delete);
 
             alertDialogBuilder
-                    .setMessage(String.format("Start: %s\nDuration: %s", session.getStartDate(), session.getDurationAsString()))
+                    .setMessage(String.format("Start: %s\nDuration: %s", e4Session.getStartDate(), e4Session.getDurationAsString()))
                     .setCancelable(true)
                     .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
@@ -156,7 +156,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
     @SuppressLint("SetTextI18n")
     @Override
     public void onBindViewHolder(@NonNull MyViewHolder holder, final int position) {
-        final Session s = sharedViewModel.getSessions().get(position);
+        final E4Session s = sharedViewModel.getE4Sessions().get(position);
 
         holder.itemView.setOnClickListener(onClickListener);
         holder.itemView.setOnLongClickListener(onLongClickListener);
@@ -176,7 +176,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
 
     @Override
     public int getItemCount() {
-        return sharedViewModel.getSessions().size();
+        return sharedViewModel.getE4Sessions().size();
     }
 
 
@@ -214,9 +214,8 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
 
             if (success) {
                 s = "Deleted session.";
-                viewModel.getSessions().remove(position);
+                viewModel.getE4Sessions().remove(position);
                 adapter.notifyItemRemoved(position);
-                adapter.notifyItemRangeChanged(position, viewModel.getSessions().size());
             } else {
                 s = "FAILED to delete session.";
             }
@@ -226,10 +225,10 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
     }
 
     // we cannot afford to load BVP and ACC data into memory for sessions longer than about 8 hours
-    private static class LoadAndViewSessionData extends AsyncTask<Session, String, Boolean> {
+    private static class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean> {
 
         final SharedViewModel viewModel = ViewModelProviders.of(MainActivity.context).get(SharedViewModel.class);
-        final SessionData sessionData = viewModel.getSesssionData();
+        final E4SessionData e4SessionData = viewModel.getSesssionData();
 
         WeakReference<View> view;
 
@@ -238,17 +237,17 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         }
 
         @Override
-        protected Boolean doInBackground(Session... sessions) {
-            final Session session = sessions[0];
+        protected Boolean doInBackground(E4Session... e4Sessions) {
+            final E4Session e4Session = e4Sessions[0];
 
-            publishProgress(String.format("Loading session %s data..", session.getId()));
+            publishProgress(String.format("Loading session %s data..", e4Session.getId()));
 
-            if (Utils.isSessionDownloaded(session)) {
+            if (Utils.isSessionDownloaded(e4Session)) {
 
                 try {
-                    final File sessionFile = new File(MainActivity.context.getFilesDir(), session.getZIPFilename());
+                    final File sessionFile = new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename());
 
-                    Log.d(MainActivity.TAG, "reading " + session.getZIPFilename());
+                    Log.d(MainActivity.TAG, "reading " + e4Session.getZIPFilename());
 
                     String basePath = MainActivity.context.getCacheDir().getPath();
 
@@ -273,7 +272,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                         while ((line = reader.readLine()) != null) {
                             Log.d(MainActivity.TAG, "loaded tag " + line);
 
-                            sessionData.getTags().add(Double.parseDouble(line));
+                            e4SessionData.getTags().add(Double.parseDouble(line));
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -291,16 +290,16 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                     publishProgress("Processing EDA data");
 
                     data = new CSVFile(new FileInputStream(edaFile));
-                    sessionData.setInitialTime((long) data.getInitialTime());
-                    sessionData.setGsrTimestamps(data.getX());
-                    sessionData.setGsr(data.getY());
+                    e4SessionData.setInitialTime((long) data.getInitialTime());
+                    e4SessionData.setGsrTimestamps(data.getX());
+                    e4SessionData.setGsr(data.getY());
                     edaFile.delete();
 
                     publishProgress("Processing temperature data");
 
                     data = new CSVFile(new FileInputStream(tempFile));
-                    sessionData.setTempTimestamps(data.getX());
-                    sessionData.setTemp(data.getY());
+                    e4SessionData.setTempTimestamps(data.getX());
+                    e4SessionData.setTemp(data.getY());
                     tempFile.delete();
 
                     /*
@@ -313,8 +312,8 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                     publishProgress("Processing HR data");
 
                     data = new CSVFile(new FileInputStream(hrFile));
-                    sessionData.setHrTimestamps(data.getX());
-                    sessionData.setHr(data.getY());
+                    e4SessionData.setHrTimestamps(data.getX());
+                    e4SessionData.setHr(data.getY());
                     hrFile.delete();
 
                     /*
@@ -324,9 +323,9 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                     ibiFile.delete();
                     */
 
-                    sessionData.setInitialTime(session.getStartTime());
+                    e4SessionData.setInitialTime(e4Session.getStartTime());
 
-                    publishProgress(String.format("Loaded data for session %s", session.getId()));
+                    publishProgress(String.format("Loaded data for session %s", e4Session.getId()));
 
                 } catch (FileNotFoundException | ZipException e) {
                     e.printStackTrace();

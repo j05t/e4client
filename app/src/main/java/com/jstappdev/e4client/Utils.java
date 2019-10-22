@@ -2,7 +2,7 @@ package com.jstappdev.e4client;
 
 import android.text.format.DateFormat;
 
-import com.jstappdev.e4client.data.Session;
+import com.jstappdev.e4client.data.E4Session;
 
 import java.io.File;
 import java.util.Calendar;
@@ -25,8 +25,8 @@ public class Utils {
         return DateFormat.format("HH:mm:ss", cal).toString();
     }
 
-    public static boolean isSessionDownloaded(final Session session) {
-        return new File(MainActivity.context.getFilesDir(), session.getZIPFilename()).exists();
+    public static boolean isSessionDownloaded(final E4Session e4Session) {
+        return new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename()).exists();
     }
 
 }

@@ -84,5 +84,10 @@ dependencies {
     // http client
     implementation "com.squareup.okhttp3:okhttp-urlconnection:4.2.0"
 
+    // ZIP library
     implementation 'net.lingala.zip4j:zip4j:2.1.4'
+
+    // Google Fit
+    implementation 'com.google.android.gms:play-services-fitness:18.0.0'
+    implementation 'com.google.android.gms:play-services-auth:17.0.0'
 }

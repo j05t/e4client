@@ -6,8 +6,8 @@ import androidx.lifecycle.ViewModel;
 
 import com.empatica.empalink.config.EmpaSensorStatus;
 import com.empatica.empalink.delegate.EmpaDataDelegate;
-import com.jstappdev.e4client.data.Session;
-import com.jstappdev.e4client.data.SessionData;
+import com.jstappdev.e4client.data.E4Session;
+import com.jstappdev.e4client.data.E4SessionData;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -34,8 +34,8 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     private MutableLiveData<String> sessionStatus;
 
-    private ArrayList<Session> sessions = new ArrayList<>();
-    private SessionData sessionData;
+    private ArrayList<E4Session> e4Sessions = new ArrayList<>();
+    private E4SessionData e4SessionData;
 
     private String username;
     private String password;
@@ -59,7 +59,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
 
     public SharedViewModel() {
-        sessionData = SessionData.getInstance();
+        e4SessionData = E4SessionData.getInstance();
 
         onWrist = new MutableLiveData<>();
         status = new MutableLiveData<>();
@@ -84,7 +84,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     }
 
     void setIsConnected(boolean isConnected) {
-        if (isConnected) SessionData.clear();
+        if (isConnected) E4SessionData.clear();
 
         this.isConnected.postValue(isConnected);
     }
@@ -147,14 +147,14 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         acceleration.add(x);
         acceleration.add(y);
         acceleration.add(z);
-        sessionData.addAcc(acceleration, timestamp);
-        lastAcc.postValue(sessionData.getAcc().size() - 1);
+        e4SessionData.addAcc(acceleration, timestamp);
+        lastAcc.postValue(e4SessionData.getAcc().size() - 1);
     }
 
     @Override
     public void didReceiveBVP(float bvp, double timestamp) {
-        sessionData.addBvp(bvp, timestamp);
-        this.lastBvp.postValue(sessionData.getBvp().size() - 1);
+        e4SessionData.addBvp(bvp, timestamp);
+        this.lastBvp.postValue(e4SessionData.getBvp().size() - 1);
     }
 
     //@Override
@@ -176,25 +176,25 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     @Override
     public void didReceiveGSR(float gsr, double timestamp) {
-        sessionData.addGsr(gsr, timestamp);
-        this.lastGsr.postValue(sessionData.getGsr().size() - 1);
+        e4SessionData.addGsr(gsr, timestamp);
+        this.lastGsr.postValue(e4SessionData.getGsr().size() - 1);
     }
 
     @Override
     public void didReceiveIBI(float ibi, double timestamp) {
-        sessionData.addIbi(ibi, timestamp);
-        this.lastIbi.postValue(sessionData.getIbi().size() - 1);
+        e4SessionData.addIbi(ibi, timestamp);
+        this.lastIbi.postValue(e4SessionData.getIbi().size() - 1);
     }
 
     @Override
     public void didReceiveTemperature(float temp, double timestamp) {
-        sessionData.addTemp(temp, timestamp);
-        this.lastTemp.postValue(sessionData.getTemp().size() - 1);
+        e4SessionData.addTemp(temp, timestamp);
+        this.lastTemp.postValue(e4SessionData.getTemp().size() - 1);
     }
 
     @Override
     public void didReceiveTag(double timestamp) {
-        sessionData.addTag(timestamp);
+        e4SessionData.addTag(timestamp);
         this.tag.postValue(timestamp);
     }
 
@@ -206,15 +206,15 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         this.userId = userId;
     }
 
-    public ArrayList<Session> getSessions() {
-        return sessions;
+    public ArrayList<E4Session> getE4Sessions() {
+        return e4Sessions;
     }
 
-    public void setSessions(ArrayList<Session> sessions) {
-        this.sessions = sessions;
+    public void setE4Sessions(ArrayList<E4Session> e4Sessions) {
+        this.e4Sessions = e4Sessions;
     }
 
-    public SessionData getSesssionData() {
-        return this.sessionData;
+    public E4SessionData getSesssionData() {
+        return this.e4SessionData;
     }
 }

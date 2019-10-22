@@ -22,7 +22,7 @@ import com.jstappdev.e4client.R;
 import com.jstappdev.e4client.SessionsAdapter;
 import com.jstappdev.e4client.SharedViewModel;
 import com.jstappdev.e4client.Utils;
-import com.jstappdev.e4client.data.Session;
+import com.jstappdev.e4client.data.E4Session;
 import com.squareup.okhttp.Callback;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
@@ -87,9 +87,9 @@ public class SessionsFragment extends Fragment {
             @Override
             public void onClick(View v) {
 
-                if (sharedViewModel.getSessions().size() > 0) {
+                if (sharedViewModel.getE4Sessions().size() > 0) {
                     //noinspection unchecked
-                    new DownloadSessions(mAdapter).execute(sharedViewModel.getSessions());
+                    new DownloadSessions(mAdapter).execute(sharedViewModel.getE4Sessions());
                 }
             }
         });
@@ -98,6 +98,7 @@ public class SessionsFragment extends Fragment {
             public void onClick(View v) {
 
                 // todo: implement google fit synchronization
+
             }
         });
 
@@ -151,17 +152,17 @@ public class SessionsFragment extends Fragment {
             final String status = split[6];
             final String exit_code = split[7].substring(0, split[7].length() - 4); // strip .zip extension
 
-            final Session session = new Session(id, start_time, duration, device_id, label, device, status, exit_code);
+            final E4Session e4Session = new E4Session(id, start_time, duration, device_id, label, device, status, exit_code);
 
-            sharedViewModel.getSessionStatus().setValue(String.format("Found %s", session));
-            Log.d(MainActivity.TAG, "Already downloaded: " + session);
+            sharedViewModel.getSessionStatus().setValue(String.format("Found %s", e4Session));
+            Log.d(MainActivity.TAG, "Already downloaded: " + e4Session);
 
-            if (!sharedViewModel.getSessions().contains(session))
-                sharedViewModel.getSessions().add(session);
+            if (!sharedViewModel.getE4Sessions().contains(e4Session))
+                sharedViewModel.getE4Sessions().add(e4Session);
         }
-        sharedViewModel.getSessionStatus().setValue("Sessions in local storage: " + sharedViewModel.getSessions().size());
+        sharedViewModel.getSessionStatus().setValue("Sessions in local storage: " + sharedViewModel.getE4Sessions().size());
 
-        Collections.sort(sharedViewModel.getSessions());
+        Collections.sort(sharedViewModel.getE4Sessions());
 
         mAdapter.notifyDataSetChanged();
     }
@@ -231,10 +232,10 @@ public class SessionsFragment extends Fragment {
                             final String status = oneObject.getString("status");
                             final String exit_code = oneObject.getString("exit_code");
 
-                            final Session session = new Session(id, start_time, duration, device_id, label, device, status, exit_code);
+                            final E4Session e4Session = new E4Session(id, start_time, duration, device_id, label, device, status, exit_code);
 
-                            if (!sharedViewModel.getSessions().contains(session))
-                                sharedViewModel.getSessions().add(session);
+                            if (!sharedViewModel.getE4Sessions().contains(e4Session))
+                                sharedViewModel.getE4Sessions().add(e4Session);
 
                         } catch (JSONException e) {
                             // Oops
@@ -259,7 +260,7 @@ public class SessionsFragment extends Fragment {
 
     }
 
-    private static class DownloadSessions extends AsyncTask<ArrayList<Session>, String, String> {
+    private static class DownloadSessions extends AsyncTask<ArrayList<E4Session>, String, String> {
 
         private SharedViewModel sharedViewModel = ViewModelProviders.of(MainActivity.context).get(SharedViewModel.class);
         private SessionsAdapter adapter;
@@ -270,16 +271,16 @@ public class SessionsFragment extends Fragment {
 
         @SafeVarargs
         @Override
-        protected final String doInBackground(ArrayList<Session>... listsOfSessions) {
+        protected final String doInBackground(ArrayList<E4Session>... listsOfSessions) {
 
             final String url = "https://www.empatica.com/connect/download.php?id=";
 
-            for (final Session session : listsOfSessions[0]) {
+            for (final E4Session e4Session : listsOfSessions[0]) {
 
-                final String sessionId = session.getId();
-                final String filename = session.getZIPFilename();
+                final String sessionId = e4Session.getId();
+                final String filename = e4Session.getZIPFilename();
 
-                if (Utils.isSessionDownloaded(session)) {
+                if (Utils.isSessionDownloaded(e4Session)) {
                     publishProgress("File " + filename + " already downloaded.");
                     continue;
                 }
@@ -341,7 +342,7 @@ public class SessionsFragment extends Fragment {
         protected void onPostExecute(String s) {
             super.onPostExecute(s);
 
-            Collections.sort(sharedViewModel.getSessions());
+            Collections.sort(sharedViewModel.getE4Sessions());
 
             adapter.notifyDataSetChanged();
 
@@ -349,6 +350,5 @@ public class SessionsFragment extends Fragment {
         }
 
     }
-
 
 }

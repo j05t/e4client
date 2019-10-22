@@ -6,7 +6,7 @@ import com.jstappdev.e4client.Utils;
 
 import java.util.Objects;
 
-public class Session implements Comparable<Session> {
+public class E4Session implements Comparable<E4Session> {
 
     private String id;
     private long startTime;
@@ -16,9 +16,9 @@ public class Session implements Comparable<Session> {
     private String device;
     private String status;
     private String exit_code;
-    private SessionData sessionData;
+    private E4SessionData e4SessionData;
 
-    public Session(String id, Long startTime, Long duration, String deviceId, String label, String device, String status, String exit_code) {
+    public E4Session(String id, Long startTime, Long duration, String deviceId, String label, String device, String status, String exit_code) {
         this.id = id;
         this.startTime = startTime;
         this.duration = duration;
@@ -106,12 +106,12 @@ public class Session implements Comparable<Session> {
         this.exit_code = exit_code;
     }
 
-    public SessionData getSessionData() {
-        return sessionData;
+    public E4SessionData getE4SessionData() {
+        return e4SessionData;
     }
 
-    public void setSessionData(SessionData sessionData) {
-        this.sessionData = sessionData;
+    public void setE4SessionData(E4SessionData e4SessionData) {
+        this.e4SessionData = e4SessionData;
     }
 
     @Override
@@ -130,7 +130,7 @@ public class Session implements Comparable<Session> {
     }
 
     @Override
-    public int compareTo(Session o) {
+    public int compareTo(E4Session o) {
         return (int) (o.getStartTime() - this.getStartTime());
     }
 
@@ -139,10 +139,10 @@ public class Session implements Comparable<Session> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Session session = (Session) o;
-        return startTime == session.startTime &&
-                duration == session.duration &&
-                id.equals(session.id);
+        E4Session e4Session = (E4Session) o;
+        return startTime == e4Session.startTime &&
+                duration == e4Session.duration &&
+                id.equals(e4Session.id);
     }
 
     @Override

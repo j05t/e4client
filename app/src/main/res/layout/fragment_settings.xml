@@ -82,7 +82,7 @@
         android:layout_marginStart="32dp"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="32dp"
-        android:text="Insert your Empatica Account username and password here to enable session data synchronisation."
+        android:text="Insert your Empatica Account username and password here to enable e4Session data synchronisation."
         android:textSize="14sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

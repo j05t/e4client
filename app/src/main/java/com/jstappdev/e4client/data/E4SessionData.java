@@ -4,9 +4,9 @@ import java.util.LinkedList;
 import java.util.List;
 
 
-public class SessionData {
+public class E4SessionData {
 
-    private static SessionData INSTANCE;
+    private static E4SessionData INSTANCE;
 
     private long initialTime;
 
@@ -26,7 +26,7 @@ public class SessionData {
     private LinkedList<Double> hrTimestamps;
 
 
-    private SessionData() {
+    private E4SessionData() {
         acc = new LinkedList<>();
         bvp = new LinkedList<>();
         gsr = new LinkedList<>();
@@ -43,15 +43,15 @@ public class SessionData {
         tempTimestamps = new LinkedList<>();
     }
 
-    public static SessionData getInstance() {
+    public static E4SessionData getInstance() {
         if (INSTANCE == null) {
-            INSTANCE = new SessionData();
+            INSTANCE = new E4SessionData();
         }
         return INSTANCE;
     }
 
     public static void clear() {
-        INSTANCE = new SessionData();
+        INSTANCE = new E4SessionData();
     }
 
     public LinkedList<Double> getAccTimestamps() {
