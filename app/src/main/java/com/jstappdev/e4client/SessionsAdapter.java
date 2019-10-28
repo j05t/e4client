@@ -3,6 +3,7 @@ package com.jstappdev.e4client;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.util.Log;
@@ -13,6 +14,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.FileProvider;
 import androidx.lifecycle.ViewModelProviders;
 import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.RecyclerView;
@@ -85,20 +87,25 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         public void onClick(View v) {
             final int position = (int) v.getTag();
             final E4Session e4Session = sharedViewModel.getE4Sessions().get(position);
-            final String sessionId = e4Session.getId();
 
-            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(v.getContext());
-
-            alertDialogBuilder.setTitle("Session " + sessionId);
-            alertDialogBuilder.setIcon(android.R.drawable.ic_dialog_info);
-
-            // set dialog message
-            alertDialogBuilder
+            new AlertDialog.Builder(v.getContext())
+                    .setTitle("Session " + e4Session.getId())
+                    .setIcon(android.R.drawable.ic_dialog_info)
                     .setMessage("Start: " + e4Session.getStartDate() + "\nDuration: " + e4Session.getDurationAsString())
                     .setCancelable(true)
                     .setPositiveButton("Share", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
-                            Toast.makeText(v.getContext(), "Share session " + sessionId, Toast.LENGTH_SHORT).show();
+                            if (Utils.isSessionDownloaded(e4Session)) {
+                                final File file = new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename());
+
+                                MainActivity.context.startActivity(new Intent()
+                                        .setAction(Intent.ACTION_SEND)
+                                        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION).putExtra(Intent.EXTRA_STREAM, FileProvider.getUriForFile(MainActivity.context, MainActivity.context.getApplicationContext().getPackageName() + ".provider", file))
+                                        .setType("application/zip"));
+                            } else {
+                                Toast.makeText(v.getContext(), String.format("Session %s not downloaded.", e4Session.getId()), Toast.LENGTH_SHORT).show();
+                            }
+                            dialog.dismiss();
                         }
                     })
                     .setNeutralButton("View Data", new DialogInterface.OnClickListener() {
@@ -111,12 +118,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                         public void onClick(DialogInterface dialog, int id) {
                             dialog.cancel();
                         }
-                    });
-
-            // create alert dialog
-            AlertDialog alertDialog = alertDialogBuilder.create();
-
-            alertDialog.show();
+                    }).create().show();
         }
     };
 
@@ -125,28 +127,21 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         public boolean onLongClick(View v) {
             final int position = (int) v.getTag();
             final E4Session e4Session = sharedViewModel.getE4Sessions().get(position);
-            final String sessionId = e4Session.getId();
 
-            final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(v.getContext());
-
-            alertDialogBuilder.setTitle("Delete Session " + sessionId);
-            alertDialogBuilder.setIcon(android.R.drawable.ic_delete);
-
-            alertDialogBuilder
+            new AlertDialog.Builder(v.getContext())
+                    .setTitle("Delete Session " + e4Session.getId()).setIcon(android.R.drawable.ic_delete)
                     .setMessage(String.format("Start: %s\nDuration: %s", e4Session.getStartDate(), e4Session.getDurationAsString()))
                     .setCancelable(true)
                     .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
-                            new DeleteSession(instance, sharedViewModel, position).execute(sessionId);
+                            new DeleteSession(instance, sharedViewModel, position).execute(e4Session);
                         }
                     })
                     .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
                             dialog.cancel();
                         }
-                    });
-
-            alertDialogBuilder.create().show();
+                    }).create().show();
 
             return false;
         }
@@ -156,20 +151,20 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
     @SuppressLint("SetTextI18n")
     @Override
     public void onBindViewHolder(@NonNull MyViewHolder holder, final int position) {
-        final E4Session s = sharedViewModel.getE4Sessions().get(position);
+        final E4Session e4Session = sharedViewModel.getE4Sessions().get(position);
 
         holder.itemView.setOnClickListener(onClickListener);
         holder.itemView.setOnLongClickListener(onLongClickListener);
         holder.itemView.setTag(position);
 
-        holder.id.setText(s.getId());
-        holder.start_time.setText(s.getStartDate());
-        holder.duration.setText(s.getDurationAsString());
-        holder.device_id.setText(s.getDeviceId());
-        holder.label.setText(s.getLabel());
-        holder.device.setText(s.getDevice());
+        holder.id.setText(e4Session.getId());
+        holder.start_time.setText(e4Session.getStartDate());
+        holder.duration.setText(e4Session.getDurationAsString());
+        holder.device_id.setText(e4Session.getDeviceId());
+        holder.label.setText(e4Session.getLabel());
+        holder.device.setText(e4Session.getDevice());
 
-        if (Utils.isSessionDownloaded(s)) {
+        if (Utils.isSessionDownloaded(e4Session)) {
             holder.itemView.setBackgroundColor(Color.parseColor("#1cdefce0"));
         }
     }
@@ -180,7 +175,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
     }
 
 
-    private static class DeleteSession extends AsyncTask<String, Void, Boolean> {
+    private static class DeleteSession extends AsyncTask<E4Session, String, Boolean> {
 
         private SessionsAdapter adapter;
         private SharedViewModel viewModel;
@@ -193,14 +188,30 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         }
 
         @Override
-        protected Boolean doInBackground(String... ids) {
-            final String sessionId = ids[0];
+        protected Boolean doInBackground(E4Session... sessions) {
+            final E4Session e4Session = sessions[0];
+            final String sessionId = e4Session.getId();
             final String url = "https://www.empatica.com/connect/connect.php/sessions/" + sessionId;
             final Request request = new Request.Builder().url(url).delete().build();
 
             try {
-                return MainActivity.okHttpClient.newCall(request).execute().isSuccessful();
+                if (Utils.isSessionDownloaded(e4Session)) {
+                    if (new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename()).delete()) {
+                        publishProgress("Deleted local data.");
+                    } else {
+                        publishProgress("Failed to delete local data.");
+                    }
+                }
 
+                publishProgress("Deleting session in Empatica cloud..");
+
+                if (MainActivity.okHttpClient.newCall(request).execute().isSuccessful()) {
+                    publishProgress("Deleted remote data.");
+                } else {
+                    publishProgress("Failed to delete remote data.");
+                }
+
+                return true;
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -209,17 +220,21 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         }
 
         @Override
-        protected void onPostExecute(Boolean success) {
-            String s;
+        protected void onProgressUpdate(String... values) {
+            super.onProgressUpdate(values);
 
-            if (success) {
-                s = "Deleted session.";
+            viewModel.getSessionStatus().setValue(values[0]);
+        }
+
+        @Override
+        protected void onPostExecute(Boolean done) {
+
+            if (done) {
+                viewModel.getSessionStatus().setValue("Session deleted.");
                 viewModel.getE4Sessions().remove(position);
                 adapter.notifyItemRemoved(position);
-            } else {
-                s = "FAILED to delete session.";
             }
-            viewModel.getSessionStatus().setValue(s);
+
         }
 
     }
