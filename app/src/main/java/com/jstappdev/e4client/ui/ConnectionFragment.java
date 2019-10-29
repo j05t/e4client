@@ -147,9 +147,9 @@ public class ConnectionFragment extends Fragment {
             public void onChanged(Integer lastAcc) {
                 if (lastAcc < CALIBRATION_SAMPLES) return;
 
-                accel_xLabel.setText(String.format(Locale.getDefault(), "%d", sharedViewModel.getSesssionData().getAcc().getLast().get(0)));
-                accel_yLabel.setText(String.format(Locale.getDefault(), "%d", sharedViewModel.getSesssionData().getAcc().getLast().get(1)));
-                accel_zLabel.setText(String.format(Locale.getDefault(), "%d", sharedViewModel.getSesssionData().getAcc().getLast().get(2)));
+                accel_xLabel.setText(String.format(Locale.getDefault(), "%d", sharedViewModel.getSessionData().getAcc().getLast().get(0)));
+                accel_yLabel.setText(String.format(Locale.getDefault(), "%d", sharedViewModel.getSessionData().getAcc().getLast().get(1)));
+                accel_zLabel.setText(String.format(Locale.getDefault(), "%d", sharedViewModel.getSessionData().getAcc().getLast().get(2)));
             }
         });
         sharedViewModel.getLastGsr().observe(owner, new Observer<Integer>() {
@@ -157,7 +157,7 @@ public class ConnectionFragment extends Fragment {
             public void onChanged(Integer lastGsr) {
                 if (lastGsr < CALIBRATION_SAMPLES) return;
 
-                edaLabel.setText(String.format(Locale.getDefault(), "%.0f", sharedViewModel.getSesssionData().getGsr().getLast()));
+                edaLabel.setText(String.format(Locale.getDefault(), "%.0f", sharedViewModel.getSessionData().getGsr().getLast()));
             }
         });
         sharedViewModel.getLastIbi().observe(owner, new Observer<Integer>() {
@@ -165,7 +165,7 @@ public class ConnectionFragment extends Fragment {
             public void onChanged(Integer lastIbi) {
                 if (lastIbi < CALIBRATION_SAMPLES) return;
 
-                ibiLabel.setText(String.format(Locale.getDefault(), "%.0f", sharedViewModel.getSesssionData().getIbi().getLast()));
+                ibiLabel.setText(String.format(Locale.getDefault(), "%.0f", sharedViewModel.getSessionData().getIbi().getLast()));
             }
         });
         sharedViewModel.getLastTemp().observe(owner, new Observer<Integer>() {
@@ -173,7 +173,7 @@ public class ConnectionFragment extends Fragment {
             public void onChanged(Integer lastTemp) {
                 if (lastTemp < CALIBRATION_SAMPLES) return;
 
-                temperatureLabel.setText(String.format(Locale.getDefault(), "%.0f", sharedViewModel.getSesssionData().getTemp().getLast()));
+                temperatureLabel.setText(String.format(Locale.getDefault(), "%.0f", sharedViewModel.getSessionData().getTemp().getLast()));
             }
         });
         sharedViewModel.getLastBvp().observe(owner, new Observer<Integer>() {
@@ -181,7 +181,7 @@ public class ConnectionFragment extends Fragment {
             public void onChanged(Integer lastBvp) {
                 if (lastBvp < CALIBRATION_SAMPLES) return;
 
-                bvpLabel.setText(String.format(Locale.getDefault(), "%.0f", sharedViewModel.getSesssionData().getBvp().getLast()));
+                bvpLabel.setText(String.format(Locale.getDefault(), "%.0f", sharedViewModel.getSessionData().getBvp().getLast()));
             }
         });
     }

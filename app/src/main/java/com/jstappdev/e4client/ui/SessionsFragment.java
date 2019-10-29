@@ -17,6 +17,17 @@ import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.fitness.Fitness;
+import com.google.android.gms.fitness.FitnessActivities;
+import com.google.android.gms.fitness.data.DataPoint;
+import com.google.android.gms.fitness.data.DataSet;
+import com.google.android.gms.fitness.data.DataSource;
+import com.google.android.gms.fitness.data.DataType;
+import com.google.android.gms.fitness.data.Session;
+import com.google.android.gms.fitness.request.SessionInsertRequest;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.jstappdev.e4client.MainActivity;
 import com.jstappdev.e4client.R;
 import com.jstappdev.e4client.SessionsAdapter;
@@ -37,7 +48,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -79,7 +92,7 @@ public class SessionsFragment extends Fragment {
         root.findViewById(R.id.button_sync_empatica).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                sharedViewModel.getSessionStatus().setValue("Syncing with Empatica cloud account.");
+                sharedViewModel.getSessionStatus().setValue("Syncing with Empatica cloud account..");
                 new LoginAndGetAllSessions(mAdapter).execute();
             }
         });
@@ -97,8 +110,16 @@ public class SessionsFragment extends Fragment {
             @Override
             public void onClick(View v) {
 
-                // todo: implement google fit synchronization
+                if (!GoogleSignIn.hasPermissions(GoogleSignIn.getLastSignedInAccount(MainActivity.context), MainActivity.fitnessOptions)) {
+                    GoogleSignIn.requestPermissions(
+                            MainActivity.context, // your activity
+                            MainActivity.GOOGLE_FIT_PERMISSIONS_REQUEST_CODE,
+                            GoogleSignIn.getLastSignedInAccount(MainActivity.context),
+                            MainActivity.fitnessOptions);
+                    return;
+                }
 
+                new Utils.LoadSessionData(v, Utils.Action.UPLOAD_TO_GOOGLE_FIT).execute(sharedViewModel.getE4Sessions().get(0));
             }
         });
 

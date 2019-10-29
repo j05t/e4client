@@ -165,12 +165,12 @@ public class ChartsFragment extends Fragment {
                     .withZoomExtentsModifier().build()
                     .build());
 
-            edaLineData.append(sharedViewModel.getSesssionData().getGsrTimestamps(), sharedViewModel.getSesssionData().getGsr());
-            hrLineData.append(sharedViewModel.getSesssionData().getHrTimestamps(), sharedViewModel.getSesssionData().getHr());
-            tempLineData.append(sharedViewModel.getSesssionData().getTempTimestamps(), sharedViewModel.getSesssionData().getTemp());
+            edaLineData.append(sharedViewModel.getSessionData().getGsrTimestamps(), sharedViewModel.getSessionData().getGsr());
+            hrLineData.append(sharedViewModel.getSessionData().getHrTimestamps(), sharedViewModel.getSessionData().getHr());
+            tempLineData.append(sharedViewModel.getSessionData().getTempTimestamps(), sharedViewModel.getSessionData().getTemp());
             //   bvpLineData.append(sharedViewModel.getSesssionData().getBvpTimestamps(), sharedViewModel.getSesssionData().getBvp());
 
-            for (double tag : sharedViewModel.getSesssionData().getTags()) {
+            for (double tag : sharedViewModel.getSessionData().getTags()) {
                 Log.d(MainActivity.TAG, "added tag " + tag);
 
                 VerticalLineAnnotation verticalLine = sciChartBuilder.newVerticalLineAnnotation()
@@ -190,7 +190,7 @@ public class ChartsFragment extends Fragment {
         sharedViewModel.getLastGsr().observe(owner, new Observer<Integer>() {
             @Override
             public void onChanged(Integer lastGsr) {
-                edaLineData.append(sharedViewModel.getSesssionData().getGsrTimestamps().getLast(), sharedViewModel.getSesssionData().getGsr().get(lastGsr));
+                edaLineData.append(sharedViewModel.getSessionData().getGsrTimestamps().getLast(), sharedViewModel.getSessionData().getGsr().get(lastGsr));
                 edaChart.zoomExtents();
             }
         });
@@ -206,8 +206,8 @@ public class ChartsFragment extends Fragment {
         sharedViewModel.getLastTemp().observe(owner, new Observer<Integer>() {
             @Override
             public void onChanged(Integer lastTemp) {
-                tempLineData.append(sharedViewModel.getSesssionData().getTempTimestamps().getLast(), sharedViewModel.getSesssionData().getTemp().get(lastTemp));
-                tempAxisMarker.setY1(sharedViewModel.getSesssionData().getTemp().get(lastTemp));
+                tempLineData.append(sharedViewModel.getSessionData().getTempTimestamps().getLast(), sharedViewModel.getSessionData().getTemp().get(lastTemp));
+                tempAxisMarker.setY1(sharedViewModel.getSessionData().getTemp().get(lastTemp));
                 tempChart.zoomExtents();
             }
         });
@@ -215,7 +215,7 @@ public class ChartsFragment extends Fragment {
         sharedViewModel.getLastIbi().observe(owner, new Observer<Integer>() {
             @Override
             public void onChanged(Integer lastIbi) {
-                final float currentHr = 60.0f / sharedViewModel.getSesssionData().getIbi().getLast();
+                final float currentHr = 60.0f / sharedViewModel.getSessionData().getIbi().getLast();
 
                 // heart rate may theoretically reach 600, but we assume 300 max
                 // https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3273956/
@@ -224,7 +224,7 @@ public class ChartsFragment extends Fragment {
                 }
 
                 //ibiLineData.append(sharedViewModel.getSesssionData().getIbiTimestamps().getLast(), sharedViewModel.getSesssionData().getIbi().get(lastBvp));
-                hrLineData.append(sharedViewModel.getSesssionData().getIbiTimestamps().getLast(), currentHr);
+                hrLineData.append(sharedViewModel.getSessionData().getIbiTimestamps().getLast(), currentHr);
                 hrAxisMarker.setY1(averageHr);
                 hrChart.zoomExtents();
             }

@@ -43,7 +43,6 @@ import com.google.android.gms.fitness.FitnessOptions;
 import com.google.android.gms.fitness.data.DataType;
 import com.google.android.gms.fitness.data.Field;
 import com.google.android.gms.fitness.request.DataTypeCreateRequest;
-import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.android.material.navigation.NavigationView;
 import com.squareup.okhttp.OkHttpClient;
@@ -52,6 +51,8 @@ import java.lang.ref.WeakReference;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -63,7 +64,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
     private static final String EMPATICA_API_KEY = BuildConfig.EMPATICA_API_KEY;
     private static final String SCICHART_LICENSE = BuildConfig.SCICHART_LICENSE;
-    private static final int GOOGLE_FIT_PERMISSIONS_REQUEST_CODE = 42;
+    public static final int GOOGLE_FIT_PERMISSIONS_REQUEST_CODE = 42;
 
     private static boolean googleFitCustomDatatypesCreated = false;
 
@@ -78,7 +79,13 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     public static final String PREF_PASSWORD = "Password";
     public static final String PREFS_DATATYPES_CREATED = "datatypes_created";
 
+    public static final String[] customDataTypes = new String[]{"eda", "temp", "bvp", "ibi", "acc"};
+    public static  ArrayList<DataType> dataTypes;
+
     public static OkHttpClient okHttpClient;
+
+    public static FitnessOptions fitnessOptions;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -383,7 +390,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         requestPermissions(new String[]{Manifest.permission.ACTIVITY_RECOGNITION}, GOOGLE_FIT_PERMISSIONS_REQUEST_CODE);
 
         FitnessOptions fitnessOptions = FitnessOptions.builder()
-                .addDataType(DataType.TYPE_HEART_RATE_BPM, FitnessOptions.ACCESS_READ)
+                .addDataType(DataType.TYPE_HEART_RATE_BPM, FitnessOptions.ACCESS_WRITE)
                 .build();
 
         if (!GoogleSignIn.hasPermissions(GoogleSignIn.getLastSignedInAccount(this), fitnessOptions)) {
@@ -394,11 +401,12 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
                     fitnessOptions);
         } else {
 
-            new CreateCustomDataTypes(this).execute();
+            if (!googleFitCustomDatatypesCreated)
+                new CreateCustomDataTypes(this).execute();
         }
     }
 
-    private static class CreateCustomDataTypes extends AsyncTask<Void, Void, Void> {
+    private static class CreateCustomDataTypes extends AsyncTask<Void, String, Void> {
         WeakReference<MainActivity> activity;
 
         CreateCustomDataTypes(MainActivity activity) {
@@ -407,49 +415,49 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
         @Override
         protected Void doInBackground(Void... voids) {
-            Log.d("e4", "createCustomDataTypes()");
-            if (!googleFitCustomDatatypesCreated) {
-                Log.d("e4", "creating custom datatypes");
 
-                GoogleSignInAccount googleSignInAccount = GoogleSignIn.getLastSignedInAccount(activity.get());
+            Log.d("e4", "creating custom datatypes");
 
-                // todo: tags
-                // the only predefined data type we can use is com.google.heart_rate.bpm
-                for (String s : new String[]{"eda", "temp", "bvp", "ibi"}) {
-                    final Task<DataType> response = Fitness.getConfigClient(activity.get(), googleSignInAccount)
+            GoogleSignInAccount googleSignInAccount = GoogleSignIn.getLastSignedInAccount(activity.get());
+
+            dataTypes = new ArrayList<>();
+
+            // todo: tags
+            // the only predefined data type we can use is com.google.heart_rate.bpm
+            for (String s : customDataTypes) {
+                try {
+                    DataType dataType = Tasks.await(Fitness.getConfigClient(activity.get(), googleSignInAccount)
                             .createCustomDataType(new DataTypeCreateRequest.Builder()
                                     .setName("com.jstappdev.e4client." + s)
                                     .addField(s.toUpperCase(), Field.FORMAT_FLOAT)
-                                    .build());
-                    try {
-                        final DataType dataType = Tasks.await(response);
+                                    .build()));
 
-                        Log.d("e4", "created custom datatype " + dataType.getName());
-
-                    } catch (ExecutionException | InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                final Task<DataType> response = Fitness.getConfigClient(activity.get(), googleSignInAccount)
-                        .createCustomDataType(new DataTypeCreateRequest.Builder()
-                                .setName("com.jstappdev.e4client.acc")
-                                .addField("X", Field.FORMAT_INT32)
-                                .addField("Y", Field.FORMAT_INT32)
-                                .addField("Z", Field.FORMAT_INT32)
-                                .build());
-                try {
-                    final DataType dataType = Tasks.await(response);
-
-                    Log.d("e4", "created custom datatype " + dataType.getName());
+                    dataTypes.add(dataType);
+                    publishProgress("added custom datatype " + dataType);
 
                 } catch (ExecutionException | InterruptedException e) {
                     e.printStackTrace();
                 }
             }
 
+            final FitnessOptions.Builder fitnessOptionsBuilder = FitnessOptions.builder();
+
+            for (DataType dataType : dataTypes)
+                fitnessOptionsBuilder.addDataType(dataType, FitnessOptions.ACCESS_WRITE);
+
+            fitnessOptionsBuilder.addDataType(DataType.TYPE_HEART_RATE_BPM, FitnessOptions.ACCESS_WRITE);
+
+            fitnessOptions = fitnessOptionsBuilder.build();
 
             return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(String... values) {
+            super.onProgressUpdate(values);
+
+            if (values != null && values.length > 0)
+                Log.d("e4", "created custom datatype " + values[0]);
         }
     }
 
