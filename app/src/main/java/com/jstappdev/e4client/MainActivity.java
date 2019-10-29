@@ -52,7 +52,6 @@ import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -80,7 +79,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     public static final String PREFS_DATATYPES_CREATED = "datatypes_created";
 
     public static final String[] customDataTypes = new String[]{"eda", "temp", "bvp", "ibi", "acc"};
-    public static  ArrayList<DataType> dataTypes;
+    public static ArrayList<DataType> dataTypes;
 
     public static OkHttpClient okHttpClient;
 

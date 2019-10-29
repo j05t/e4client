@@ -55,5 +55,7 @@ public class CSVFile {
         return initialTime;
     }
 
-    public double getSamplingRate() { return samplingRate; }
+    public double getSamplingRate() {
+        return samplingRate;
+    }
 }

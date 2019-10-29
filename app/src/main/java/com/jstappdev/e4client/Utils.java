@@ -86,7 +86,7 @@ public class Utils {
                     .setEndTime(e4Session.getStartTime() + e4Session.getDuration(), TimeUnit.MILLISECONDS)
                     .build();
 
-            // HR datasource is defined by google already
+            // datasource for heart rate is defined by google
             final DataSource hrDataSource =
                     new DataSource.Builder()
                             .setAppPackageName(MainActivity.context)
@@ -96,7 +96,7 @@ public class Utils {
                             .build();
             uploadDataSet(viewModel.getSessionData().getHrTimestamps(), viewModel.getSessionData().getHr(), session, hrDataSource);
 
-            // upload custom datatypes
+            // upload our custom datatypes
             final String packageName = MainActivity.context.getPackageName();
 
             for (DataType dataType : MainActivity.dataTypes) {
@@ -108,8 +108,7 @@ public class Utils {
                 if (dataType.getName().equals(packageName + ".eda")) {
                     dataSourceBuilder.setStreamName("Electodermal Activity");
                     uploadDataSet(viewModel.getSessionData().getGsrTimestamps(), viewModel.getSessionData().getGsr(), session, dataSourceBuilder.build());
-                }
-                if (dataType.getName().equals(packageName + ".temp")) {
+                } else if (dataType.getName().equals(packageName + ".temp")) {
                     dataSourceBuilder.setStreamName("Peripheral Skin Temperature");
                     uploadDataSet(viewModel.getSessionData().getTempTimestamps(), viewModel.getSessionData().getTemp(), session, dataSourceBuilder.build());
                 }
@@ -136,13 +135,15 @@ public class Utils {
                 dataSetBuilder.add(dataPoint);
 
                 if (i % 1000 == 0) {
-                    insertData(session, dataSetBuilder, String.format(Locale.getDefault(), "inserted %d/%d datapoints", i, values.size()));
+                    final String message = String.format(Locale.getDefault(), "%s: inserted %d/%d datapoints", dataSource.getStreamName(), i, values.size());
+
+                    insertData(session, dataSetBuilder, message);
 
                     dataSetBuilder = DataSet.builder(dataSource);
                 }
             }
 
-            insertData(session, dataSetBuilder, "done.");
+            insertData(session, dataSetBuilder, "Data uploaded to Google Fit.");
         }
 
         private void insertData(final Session session, final DataSet.Builder dataSetBuilder, final String message) {
@@ -153,10 +154,7 @@ public class Utils {
                     .addDataSet(dataSetBuilder.build())
                     .build();
 
-            // Then, invoke the Sessions API to insert the session and await the result,
-            // which is possible here because of the AsyncTask. Always include a timeout when
-            // calling await() to avoid hanging that can occur from the service being shutdown
-            // because of low memory or other conditions.
+            // invoke the Sessions API to insert the session and await the result,
             Fitness.getSessionsClient(MainActivity.context, Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(MainActivity.context)))
                     .insertSession(insertRequest)
                     .addOnSuccessListener(new OnSuccessListener<Void>() {
@@ -234,7 +232,6 @@ public class Utils {
                     final File tagFile = new File(basePath + "tags.csv");
 
                     publishProgress("Processing tag data");
-
                     try (BufferedReader reader = new BufferedReader(new FileReader(tagFile))) {
                         String line;
 
@@ -257,39 +254,29 @@ public class Utils {
                     CSVFile data;
 
                     publishProgress("Processing EDA data");
-
                     data = new CSVFile(new FileInputStream(edaFile));
                     e4SessionData.setInitialTime((long) data.getInitialTime());
                     e4SessionData.setGsrTimestamps(data.getX());
                     e4SessionData.setGsr(data.getY());
                     edaFile.delete();
 
-                    publishProgress("Processing temperature data");
-
+                    publishProgress("Processing TEMP data");
                     data = new CSVFile(new FileInputStream(tempFile));
                     e4SessionData.setTempTimestamps(data.getX());
                     e4SessionData.setTemp(data.getY());
                     tempFile.delete();
 
-                    /*
-                    data = new CSVFile(new FileInputStream(bvpFile));
-                    sessionData.setBvpTimestamps(data.getX());
-                    sessionData.setBvp(data.getY());
-                    bvpFile.delete();
-                    */
-
                     publishProgress("Processing HR data");
-
                     data = new CSVFile(new FileInputStream(hrFile));
                     e4SessionData.setHrTimestamps(data.getX());
                     e4SessionData.setHr(data.getY());
                     hrFile.delete();
 
                     /*
-                    data = new CSVFile(new FileInputStream(ibiFile));
-                    sessionData.setIbiTimestamps(data.getX());
-                    sessionData.setIbi(data.getY());
-                    ibiFile.delete();
+                    data = new CSVFile(new FileInputStream(bvpFile));
+                    e4SessionData.setBvpTimestamps(data.getX());
+                    e4SessionData.setBvp(data.getY());
+                    bvpFile.delete();
                     */
 
                     e4SessionData.setInitialTime(e4Session.getStartTime());
