@@ -1,5 +1,6 @@
 package com.jstappdev.e4client.ui;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -8,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -60,7 +62,6 @@ public class SessionsFragment extends Fragment {
         final TextView statusTextView = root.findViewById(R.id.text_sessions);
         final RecyclerView recyclerView = root.findViewById(R.id.recyclerview);
 
-
         // use this setting to improve performance if you know that changes
         // in content do not change the layout size of the RecyclerView
         recyclerView.setHasFixedSize(true);
@@ -98,16 +99,18 @@ public class SessionsFragment extends Fragment {
             @Override
             public void onClick(View v) {
 
-                if (!GoogleSignIn.hasPermissions(GoogleSignIn.getLastSignedInAccount(MainActivity.context), MainActivity.fitnessOptions)) {
+                if (MainActivity.fitnessOptions == null) {
+                    Toast.makeText(MainActivity.context, "Failed to initialize Google Fit Options. Check Google API settings.", Toast.LENGTH_LONG).show();
+                } else if (!GoogleSignIn.hasPermissions(GoogleSignIn.getLastSignedInAccount(MainActivity.context), MainActivity.fitnessOptions)) {
                     GoogleSignIn.requestPermissions(
-                            MainActivity.context, // your activity
+                            MainActivity.context,
                             MainActivity.GOOGLE_FIT_PERMISSIONS_REQUEST_CODE,
                             GoogleSignIn.getLastSignedInAccount(MainActivity.context),
                             MainActivity.fitnessOptions);
-                    return;
+                } else {
+                    // todo: upload all sessions
+                    new Utils.UploadE4SessionToGoogleFit().execute(sharedViewModel.getE4Sessions().get(0));
                 }
-
-                new Utils.LoadSessionData(v, Utils.Action.UPLOAD_TO_GOOGLE_FIT).execute(sharedViewModel.getE4Sessions().get(0));
             }
         });
 
@@ -141,7 +144,7 @@ public class SessionsFragment extends Fragment {
             return;
         }
 
-        for (File file : files) {
+        for (final File file : files) {
             final String filename = file.getName();
 
             Log.d(MainActivity.TAG, "In files directory: " + filename);
@@ -278,11 +281,14 @@ public class SessionsFragment extends Fragment {
             this.adapter = sessionsAdapter;
         }
 
+        @SuppressLint("DefaultLocale")
         @SafeVarargs
         @Override
         protected final String doInBackground(ArrayList<E4Session>... listsOfSessions) {
 
             final String url = "https://www.empatica.com/connect/download.php?id=";
+            final int totalSessions = listsOfSessions[0].size();
+            int downloadedSessions = 0;
 
             for (final E4Session e4Session : listsOfSessions[0]) {
 
@@ -296,7 +302,7 @@ public class SessionsFragment extends Fragment {
 
                 final Request request = new Request.Builder().url(url + sessionId).build();
 
-                publishProgress("Downloading Session " + sessionId);
+                publishProgress(String.format("Downloading session %d/%d..", downloadedSessions++, totalSessions));
 
                 MainActivity.okHttpClient.newCall(request).enqueue(new Callback() {
                     @Override
@@ -319,8 +325,6 @@ public class SessionsFragment extends Fragment {
                             }
 
                             publishProgress("Downloaded " + filename);
-                            Log.d(MainActivity.TAG, "Downloaded " + filename);
-
                         } else {
                             Log.d(MainActivity.TAG, "unsuccessful download, redirect: " + response.isRedirect());
                             Log.d(MainActivity.TAG, response.toString());

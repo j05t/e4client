@@ -97,7 +97,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                     })
                     .setNeutralButton("View Data", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
-                            new Utils.LoadSessionData(v, Utils.Action.VIEW_CHART).execute(e4Session);
+                            new Utils.LoadAndViewSessionData(v).execute(e4Session);
                             dialog.dismiss();
                         }
                     })
@@ -151,6 +151,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         holder.label.setText(e4Session.getLabel());
         holder.device.setText(e4Session.getDevice());
 
+        // fixme: doesn't work with recyclerview
         if (Utils.isSessionDownloaded(e4Session)) {
             holder.itemView.setBackgroundColor(Color.parseColor("#1cdefce0"));
         }

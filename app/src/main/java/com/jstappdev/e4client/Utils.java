@@ -35,7 +35,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.Calendar;
-import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.TimeZone;
@@ -61,22 +60,27 @@ public class Utils {
         return new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename()).exists();
     }
 
-    public static float magnitude(int x, int y, int z) {
+    public static float magnitude(final int x, final int y, final int z) {
         return (float) Math.sqrt(x * x + y * y + z * z);
     }
 
-    static class UploadE4SessionToGoogleFit extends AsyncTask<E4Session, String, Boolean> {
+    public static class UploadE4SessionToGoogleFit extends AsyncTask<E4Session, String, Boolean> {
 
         final SharedViewModel viewModel = ViewModelProviders.of(MainActivity.context).get(SharedViewModel.class);
 
         @Override
-        protected Boolean doInBackground(E4Session... e4Sessions) {
+        protected Boolean doInBackground(final E4Session... e4Sessions) {
             final E4Session e4Session = e4Sessions[0];
+
+            if (!Utils.isSessionDownloaded(e4Session)) {
+                publishProgress("Session data not downloaded.");
+                return false;
+            }
 
             Log.d(MainActivity.TAG, "Session start: " + e4Session.getStartTime() + " duration: " + e4Session.getDuration()
                     + " end: " + (e4Session.getStartTime() + e4Session.getDuration()));
 
-            // Create a session with metadata about the activity
+            // Create a Google Fit session with metadata about the activity
             final Session session = new Session.Builder()
                     .setName("sample session")
                     .setDescription("Empatica E4 Session")
@@ -86,7 +90,7 @@ public class Utils {
                     .setEndTime(e4Session.getStartTime() + e4Session.getDuration(), TimeUnit.MILLISECONDS)
                     .build();
 
-            // datasource for heart rate is defined by google
+            // datatype for heart rate is predefined by google
             final DataSource hrDataSource =
                     new DataSource.Builder()
                             .setAppPackageName(MainActivity.context)
@@ -94,37 +98,105 @@ public class Utils {
                             .setStreamName("Heart Rate")
                             .setType(DataSource.TYPE_RAW)
                             .build();
-            uploadDataSet(viewModel.getSessionData().getHrTimestamps(), viewModel.getSessionData().getHr(), session, hrDataSource);
 
-            // upload our custom datatypes
-            final String packageName = MainActivity.context.getPackageName();
+            try {
+                final File sessionFile = new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename());
 
-            for (DataType dataType : MainActivity.dataTypes) {
-                final DataSource.Builder dataSourceBuilder = new DataSource.Builder()
-                        .setAppPackageName(MainActivity.context)
-                        .setDataType(dataType)
-                        .setType(DataSource.TYPE_RAW);
+                Log.d(MainActivity.TAG, "reading " + e4Session.getZIPFilename());
 
-                if (dataType.getName().equals(packageName + ".eda")) {
-                    dataSourceBuilder.setStreamName("Electodermal Activity");
-                    uploadDataSet(viewModel.getSessionData().getGsrTimestamps(), viewModel.getSessionData().getGsr(), session, dataSourceBuilder.build());
-                } else if (dataType.getName().equals(packageName + ".temp")) {
-                    dataSourceBuilder.setStreamName("Peripheral Skin Temperature");
-                    uploadDataSet(viewModel.getSessionData().getTempTimestamps(), viewModel.getSessionData().getTemp(), session, dataSourceBuilder.build());
+                String basePath = MainActivity.context.getCacheDir().getPath();
+
+                Log.d(MainActivity.TAG, "extracting to directory " + basePath);
+
+                new ZipFile(sessionFile.getAbsolutePath()).extractAll(basePath);
+
+                basePath += File.separator;
+
+                // same file format for EDA, HR, BVP, TEMP
+                final File edaFile = new File(basePath + "EDA.csv");
+                final File tempFile = new File(basePath + "TEMP.csv");
+                final File bvpFile = new File(basePath + "BVP.csv");
+                final File hrFile = new File(basePath + "HR.csv");
+
+                final File tagFile = new File(basePath + "tags.csv");
+                final File ibiFile = new File(basePath + "IBI.csv");
+                final File accFile = new File(basePath + "ACC.csv");
+
+                publishProgress("Processing HR data");
+                uploadFile(hrFile, hrDataSource, session);
+
+                final String packageName = MainActivity.context.getPackageName();
+
+                for (final DataType dataType : MainActivity.dataTypes) {
+                    final DataSource.Builder dataSourceBuilder = new DataSource.Builder()
+                            .setAppPackageName(MainActivity.context)
+                            .setDataType(dataType)
+                            .setType(DataSource.TYPE_RAW);
+
+                    if (dataType.getName().equals(packageName + ".eda")) {
+                        dataSourceBuilder.setStreamName("Electodermal Activity");
+                        publishProgress("Uploading EDA data");
+                        uploadFile(edaFile, dataSourceBuilder.build(), session);
+                    } else if (dataType.getName().equals(packageName + ".temp")) {
+                        dataSourceBuilder.setStreamName("Peripheral Skin Temperature");
+                        publishProgress("Uploading TEMP data");
+                        uploadFile(tempFile, dataSourceBuilder.build(), session);
+                    } else if (dataType.getName().equals(packageName + ".bvp")) {
+                        dataSourceBuilder.setStreamName("Blood Volume Pressure");
+                        publishProgress("Uploading BVP data");
+                        uploadFile(bvpFile, dataSourceBuilder.build(), session);
+                    }
                 }
+
+                // todo: implement tag, ibi, acc upload
+
+                publishProgress(String.format("Session %s upload complete.", e4Session.getId()));
+
+            } catch (ZipException e) {
+                e.printStackTrace();
+                return false;
             }
 
             return null;
         }
 
-        private void uploadDataSet(List<Double> timestamps, List<Float> values, Session session, DataSource dataSource) {
+        private void uploadFile(final File file, final DataSource dataSource, final Session session) {
+            double[] xBuf = new double[1000];
+            float[] yBuf = new float[1000];
+            int index = 0;
+
+            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                final double initialTime = Double.parseDouble(reader.readLine());
+                final double samplingRate = 1d / Double.parseDouble(reader.readLine());
+                String line;
+
+                while ((line = reader.readLine()) != null) {
+                    final String[] split = line.split(",");
+
+                    if (index < 1000) {
+                        xBuf[index] = Double.parseDouble(split[0]);
+                        yBuf[index] = Float.parseFloat(split[1]);
+                        index++;
+                    } else {
+                        uploadDataChunk(xBuf, yBuf, session, dataSource);
+                        index = 0;
+                    }
+                }
+                uploadDataChunk(xBuf, yBuf, session, dataSource);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private void uploadDataChunk(double[] timestamps, float[] values, Session session, DataSource dataSource) {
             Log.i(MainActivity.TAG, "Inserting the session in the Sessions API: " + dataSource.getStreamName());
 
-            DataSet.Builder dataSetBuilder = DataSet.builder(dataSource);
+            final DataSet.Builder dataSetBuilder = DataSet.builder(dataSource);
 
-            for (int i = 0; i < values.size(); i++) {
-                final float value = values.get(i);
-                final double timestamp = timestamps.get(i);
+            for (int i = 0; i < values.length; i++) {
+                final float value = values[i];
+                final double timestamp = timestamps[i];
 
                 final DataPoint dataPoint = DataPoint.builder(dataSource)
                         // fixme: rounding double to closest long..
@@ -133,17 +205,9 @@ public class Utils {
                         .build();
 
                 dataSetBuilder.add(dataPoint);
-
-                if (i % 1000 == 0) {
-                    final String message = String.format(Locale.getDefault(), "%s: inserted %d/%d datapoints", dataSource.getStreamName(), i, values.size());
-
-                    insertData(session, dataSetBuilder, message);
-
-                    dataSetBuilder = DataSet.builder(dataSource);
-                }
             }
 
-            insertData(session, dataSetBuilder, "Data uploaded to Google Fit.");
+            insertData(session, dataSetBuilder, String.format("%d datapoints uploaded.", values.length));
         }
 
         private void insertData(final Session session, final DataSet.Builder dataSetBuilder, final String message) {
@@ -181,31 +245,21 @@ public class Utils {
         }
     }
 
-    public enum Action {
-        NOP,
-        VIEW_CHART,
-        UPLOAD_TO_GOOGLE_FIT
-    }
-
     // we cannot afford to load BVP and ACC data into memory for sessions longer than about 8 hours
-    public static class LoadSessionData extends AsyncTask<E4Session, String, Boolean> {
+    public static class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean> {
 
         final SharedViewModel viewModel = ViewModelProviders.of(MainActivity.context).get(SharedViewModel.class);
         final E4SessionData e4SessionData = viewModel.getSessionData();
-        private E4Session e4Session;
 
-        private Action action = Action.NOP;
+        private WeakReference<View> view;
 
-        WeakReference<View> view;
-
-        public LoadSessionData(View v, Action action) {
+        LoadAndViewSessionData(View v) {
             view = new WeakReference<>(v);
-            this.action = action;
         }
 
         @Override
-        protected Boolean doInBackground(E4Session... e4Sessions) {
-            e4Session = e4Sessions[0];
+        protected Boolean doInBackground(final E4Session... e4Sessions) {
+            final E4Session e4Session = e4Sessions[0];
 
             publishProgress(String.format("Loading session %s data..", e4Session.getId()));
 
@@ -303,16 +357,8 @@ public class Utils {
 
         @Override
         protected void onPostExecute(Boolean success) {
-            if (success)
-                switch (action) {
-                    case VIEW_CHART:
-                        if (view.get() != null)
-                            Navigation.findNavController(view.get()).navigate(R.id.nav_charts);
-                        break;
-                    case UPLOAD_TO_GOOGLE_FIT:
-                        new Utils.UploadE4SessionToGoogleFit().execute(e4Session);
-                        break;
-                }
+            if (success && view.get() != null)
+                Navigation.findNavController(view.get()).navigate(R.id.nav_charts);
         }
     }
 }
