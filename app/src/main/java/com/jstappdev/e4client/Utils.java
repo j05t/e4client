@@ -128,13 +128,15 @@ public class Utils {
                 final String packageName = MainActivity.context.getPackageName();
 
                 for (final DataType dataType : MainActivity.dataTypes) {
+                    Log.d(MainActivity.TAG, "uploading " + dataType.getName());
+
                     final DataSource.Builder dataSourceBuilder = new DataSource.Builder()
                             .setAppPackageName(MainActivity.context)
                             .setDataType(dataType)
                             .setType(DataSource.TYPE_RAW);
 
                     if (dataType.getName().equals(packageName + ".eda")) {
-                        dataSourceBuilder.setStreamName("Electodermal Activity");
+                        dataSourceBuilder.setStreamName("Electrodermal Activity");
                         publishProgress("Uploading EDA data");
                         uploadFile(edaFile, dataSourceBuilder.build(), session);
                     } else if (dataType.getName().equals(packageName + ".temp")) {
@@ -145,10 +147,24 @@ public class Utils {
                         dataSourceBuilder.setStreamName("Blood Volume Pressure");
                         publishProgress("Uploading BVP data");
                         uploadFile(bvpFile, dataSourceBuilder.build(), session);
+                    } // need special treatment
+                    else if (dataType.getName().equals(packageName + ".ibi")) {
+                        dataSourceBuilder.setStreamName("Interbeat Interval");
+                        publishProgress("Uploading IBI data");
+                        uploadIbiFile(ibiFile, dataSourceBuilder.build(), session);
+                    } else if (dataType.getName().equals(packageName + ".acc")) {
+                        dataSourceBuilder.setStreamName("Acceleration");
+                        publishProgress("Uploading ACC data");
+                        uploadAccFile(accFile, dataSourceBuilder.build(), session);
                     }
+                    /* tags may not be useful in Google Fit
+                    else if (dataType.getName().equals(packageName + ".tags")) {
+                        dataSourceBuilder.setStreamName("tags");
+                        publishProgress("Uploading tag data");
+                        uploadTagFile(tagFile, dataSourceBuilder.build(), session);
+                    }
+                     */
                 }
-
-                // todo: implement tag, ibi, acc upload
 
                 publishProgress(String.format("Session %s upload complete.", e4Session.getId()));
 
@@ -160,6 +176,7 @@ public class Utils {
             return null;
         }
 
+
         private void uploadFile(final File file, final DataSource dataSource, final Session session) {
             double[] xBuf = new double[1000];
             float[] yBuf = new float[1000];
@@ -169,32 +186,109 @@ public class Utils {
                 final double initialTime = Double.parseDouble(reader.readLine());
                 final double samplingRate = 1d / Double.parseDouble(reader.readLine());
                 String line;
+                int lineNumber = 0;
 
                 while ((line = reader.readLine()) != null) {
-                    final String[] split = line.split(",");
 
                     if (index < 1000) {
-                        xBuf[index] = Double.parseDouble(split[0]);
-                        yBuf[index] = Float.parseFloat(split[1]);
+                        xBuf[index] = initialTime + samplingRate * lineNumber;
+                        yBuf[index] = Float.parseFloat(line);
                         index++;
+                        lineNumber++;
                     } else {
-                        uploadDataChunk(xBuf, yBuf, session, dataSource);
+                        uploadDataChunk(xBuf, yBuf, index, session, dataSource);
                         index = 0;
                     }
                 }
-                uploadDataChunk(xBuf, yBuf, session, dataSource);
+                uploadDataChunk(xBuf, yBuf, index, session, dataSource);
 
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
 
-        private void uploadDataChunk(double[] timestamps, float[] values, Session session, DataSource dataSource) {
+
+        private void uploadAccFile(File file, DataSource dataSource, Session session) {
+            double[] xBuf = new double[1000];
+            float[] yBuf = new float[1000];
+            int index = 0;
+
+            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                final double initialTime = Double.parseDouble(reader.readLine().split(",")[0]);
+                final double samplingRate = 1d / Double.parseDouble(reader.readLine().split(",")[0]);
+                String line;
+                int lineNumber = 0;
+
+                while ((line = reader.readLine()) != null) {
+                    final String[] acc = line.split(",");
+                    final int x = Integer.parseInt(acc[0]);
+                    final int y = Integer.parseInt(acc[1]);
+                    final int z = Integer.parseInt(acc[2]);
+                    final float magnitude = magnitude(x, y, z);
+
+                    if (index < 1000) {
+                        xBuf[index] = initialTime + samplingRate * lineNumber;
+                        yBuf[index] = magnitude;
+                        index++;
+                        lineNumber++;
+                    } else {
+                        uploadDataChunk(xBuf, yBuf, index, session, dataSource);
+                        index = 0;
+                    }
+                }
+                uploadDataChunk(xBuf, yBuf, index, session, dataSource);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private void uploadIbiFile(File file, DataSource dataSource, Session session) {
+            double[] xBuf = new double[1000];
+            float[] yBuf = new float[1000];
+            int index = 0;
+
+            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                double currentTime = Double.parseDouble(reader.readLine().split(",")[0]);
+
+                String line;
+
+                while ((line = reader.readLine()) != null) {
+                    final String[] split = line.split(",");
+                    final double plusTime = Double.parseDouble(split[0]);
+                    final float ibi = Float.parseFloat(split[1]);
+                    currentTime += plusTime;
+
+                    // fixme
+                    if (currentTime >  session.getEndTime(TimeUnit.MILLISECONDS)) {
+                        Log.d(MainActivity.TAG, "skipping IBI beyond endtime with timestamp " + currentTime);
+                        continue;
+                    }
+
+                    Log.d(MainActivity.TAG, "ibi: " + plusTime + " " + ibi);
+                    if (index < 1000) {
+                        xBuf[index] = currentTime;
+                        yBuf[index] = ibi;
+                        index++;
+                    } else {
+                        uploadDataChunk(xBuf, yBuf, index, session, dataSource);
+                        index = 0;
+                    }
+                }
+                uploadDataChunk(xBuf, yBuf, index, session, dataSource);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+
+        private void uploadDataChunk(double[] timestamps, float[] values, final int index, Session session, DataSource dataSource) {
             Log.i(MainActivity.TAG, "Inserting the session in the Sessions API: " + dataSource.getStreamName());
 
             final DataSet.Builder dataSetBuilder = DataSet.builder(dataSource);
 
-            for (int i = 0; i < values.length; i++) {
+            for (int i = 0; i < index; i++) {
                 final float value = values[i];
                 final double timestamp = timestamps[i];
 
@@ -207,7 +301,10 @@ public class Utils {
                 dataSetBuilder.add(dataPoint);
             }
 
-            insertData(session, dataSetBuilder, String.format("%d datapoints uploaded.", values.length));
+            final String message = String.format("%d datapoints uploaded.", index);
+            Log.d(MainActivity.TAG, message);
+
+            insertData(session, dataSetBuilder, message);
         }
 
         private void insertData(final Session session, final DataSet.Builder dataSetBuilder, final String message) {
