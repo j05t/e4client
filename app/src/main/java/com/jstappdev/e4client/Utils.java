@@ -249,25 +249,32 @@ public class Utils {
             int index = 0;
 
             try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-                double currentTime = Double.parseDouble(reader.readLine().split(",")[0]);
+                final double initialTime = Double.parseDouble(reader.readLine().split(",")[0]);
+                double timestamp;
 
                 String line;
 
+                /* IBI
+Time between individuals heart beats extracted from the BVP signal.
+No sample rate is needed for this file.
+The first column is the time (respect to the initial time) of the detected inter-beat interval expressed in seconds (s).
+The second column is the duration in seconds (s) of the detected inter-beat interval (i.e., the distance in seconds from the previous beat).
+                 */
                 while ((line = reader.readLine()) != null) {
                     final String[] split = line.split(",");
                     final double plusTime = Double.parseDouble(split[0]);
                     final float ibi = Float.parseFloat(split[1]);
-                    currentTime += plusTime;
+
+                    timestamp = initialTime + plusTime;
 
                     // fixme
-                    if (currentTime >  session.getEndTime(TimeUnit.MILLISECONDS)) {
-                        Log.d(MainActivity.TAG, "skipping IBI beyond endtime with timestamp " + currentTime);
+                    if (timestamp > session.getEndTime(TimeUnit.MILLISECONDS)) {
+                        Log.e(MainActivity.TAG, "skipping IBI beyond endtime with timestamp " + timestamp);
                         continue;
                     }
 
-                    Log.d(MainActivity.TAG, "ibi: " + plusTime + " " + ibi);
                     if (index < 1000) {
-                        xBuf[index] = currentTime;
+                        xBuf[index] = timestamp;
                         yBuf[index] = ibi;
                         index++;
                     } else {
