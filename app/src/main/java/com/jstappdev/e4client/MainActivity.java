@@ -384,7 +384,6 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         }
     }
 
-
     public void createGoogleFitClient() {
         requestPermissions(new String[]{Manifest.permission.ACTIVITY_RECOGNITION}, GOOGLE_FIT_PERMISSIONS_REQUEST_CODE);
 

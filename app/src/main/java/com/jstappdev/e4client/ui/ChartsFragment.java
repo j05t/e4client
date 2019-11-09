@@ -1,5 +1,6 @@
 package com.jstappdev.e4client.ui;
 
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
@@ -73,6 +74,9 @@ public class ChartsFragment extends Fragment {
 
         SciChartBuilder.init(requireActivity());
         sciChartBuilder = SciChartBuilder.instance();
+
+        getActivity().setRequestedOrientation(
+                ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
 
         return root;
     }

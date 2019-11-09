@@ -1,5 +1,6 @@
 package com.jstappdev.e4client.ui;
 
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -45,6 +46,21 @@ public class HomeFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 Navigation.findNavController(view).navigate(R.id.nav_charts);
+            }
+        });
+        view.findViewById(R.id.button_about).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new android.app.AlertDialog.Builder(requireContext())
+                        .setTitle("About e4client")
+                        .setMessage(getResources().getString(R.string.credits))
+                        .setCancelable(true)
+                        .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int id) {
+                                        dialog.dismiss();
+                                    }
+                                }
+                        ).create().show();
             }
         });
     }
