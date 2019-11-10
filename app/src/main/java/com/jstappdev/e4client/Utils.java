@@ -1,28 +1,35 @@
 package com.jstappdev.e4client;
 
+import android.annotation.SuppressLint;
+import android.content.Context;
 import android.os.AsyncTask;
+import android.os.SystemClock;
 import android.text.format.DateFormat;
 import android.util.Log;
-import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.ViewModelProviders;
-import androidx.navigation.Navigation;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.Status;
 import com.google.android.gms.fitness.Fitness;
-import com.google.android.gms.fitness.FitnessActivities;
 import com.google.android.gms.fitness.data.DataPoint;
 import com.google.android.gms.fitness.data.DataSet;
 import com.google.android.gms.fitness.data.DataSource;
 import com.google.android.gms.fitness.data.DataType;
 import com.google.android.gms.fitness.data.Session;
 import com.google.android.gms.fitness.request.SessionInsertRequest;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.jstappdev.e4client.data.CSVFile;
 import com.jstappdev.e4client.data.E4Session;
 import com.jstappdev.e4client.data.E4SessionData;
+import com.squareup.okhttp.Callback;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.Response;
 
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
@@ -31,16 +38,22 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
+import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 public class Utils {
+
+    public static boolean isUploading = false;
 
     public static String getDate(final long time) {
         final Calendar cal = Calendar.getInstance(Locale.getDefault());
@@ -56,41 +69,52 @@ public class Utils {
         return DateFormat.format("HH:mm:ss", cal).toString();
     }
 
-    public static boolean isSessionDownloaded(final E4Session e4Session) {
+    static boolean isSessionDownloaded(final E4Session e4Session) {
         return new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename()).exists();
     }
 
-    public static float magnitude(final int x, final int y, final int z) {
+    private static float magnitude(final int x, final int y, final int z) {
         return (float) Math.sqrt(x * x + y * y + z * z);
     }
 
-    public static class UploadE4SessionToGoogleFit extends AsyncTask<E4Session, String, Boolean> {
+    public static class UploadE4SessionsToGoogleFit extends AsyncTask<List<E4Session>, String, Void> {
 
-        final SharedViewModel viewModel = ViewModelProviders.of(MainActivity.context).get(SharedViewModel.class);
+        private final SharedViewModel viewModel = ViewModelProviders.of(MainActivity.context).get(SharedViewModel.class);
 
+        @SafeVarargs
         @Override
-        protected Boolean doInBackground(final E4Session... e4Sessions) {
-            final E4Session e4Session = e4Sessions[0];
+        protected final Void doInBackground(final List<E4Session>... e4Sessions) {
+            final List<E4Session> listOfSessions = e4Sessions[0];
 
-            if (!Utils.isSessionDownloaded(e4Session)) {
-                publishProgress("Session data not downloaded.");
-                return false;
+            for (final E4Session e4Session : listOfSessions) {
+
+                if (!Utils.isSessionDownloaded(e4Session)) {
+                    publishProgress("Session data not downloaded.");
+                    return null;
+                }
+
+                // Create a Google Fit session with metadata about the activity
+                final Session fitSession = new Session.Builder()
+                        .setName(MainActivity.SESSION_NAME)
+                        .setDescription("Empatica E4 Session")
+                        .setIdentifier(e4Session.getId())
+                        .setStartTime(e4Session.getStartTime(), TimeUnit.MILLISECONDS)
+                        .setEndTime(e4Session.getStartTime() + e4Session.getDuration(), TimeUnit.MILLISECONDS)
+                        .build();
+
+                Log.d(MainActivity.TAG, "uploading " + fitSession.toString());
+
+                processFile(e4Session, fitSession);
+
+                publishProgress(String.format("Session %s upload complete.", e4Session.getId()));
             }
 
-            Log.d(MainActivity.TAG, "Session start: " + e4Session.getStartTime() + " duration: " + e4Session.getDuration()
-                    + " end: " + (e4Session.getStartTime() + e4Session.getDuration()));
+            return null;
+        }
 
-            // Create a Google Fit session with metadata about the activity
-            final Session session = new Session.Builder()
-                    .setName("sample session")
-                    .setDescription("Empatica E4 Session")
-                    .setIdentifier(e4Session.getId())
-                    .setActivity(FitnessActivities.SLEEP)
-                    .setStartTime(e4Session.getStartTime(), TimeUnit.MILLISECONDS)
-                    .setEndTime(e4Session.getStartTime() + e4Session.getDuration(), TimeUnit.MILLISECONDS)
-                    .build();
+        private synchronized void processFile(final E4Session e4Session, final Session fitSession) {
 
-            // datatype for heart rate is predefined by google
+            // datatype for heart rate defined by google
             final DataSource hrDataSource =
                     new DataSource.Builder()
                             .setAppPackageName(MainActivity.context)
@@ -99,15 +123,14 @@ public class Utils {
                             .setType(DataSource.TYPE_RAW)
                             .build();
 
+            final File sessionFile = new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename());
+
+            Log.d(MainActivity.TAG, "reading " + e4Session.getZIPFilename());
+
+            String basePath = MainActivity.context.getCacheDir().getPath();
+
+            Log.d(MainActivity.TAG, "extracting to directory " + basePath);
             try {
-                final File sessionFile = new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename());
-
-                Log.d(MainActivity.TAG, "reading " + e4Session.getZIPFilename());
-
-                String basePath = MainActivity.context.getCacheDir().getPath();
-
-                Log.d(MainActivity.TAG, "extracting to directory " + basePath);
-
                 new ZipFile(sessionFile.getAbsolutePath()).extractAll(basePath);
 
                 basePath += File.separator;
@@ -118,12 +141,12 @@ public class Utils {
                 final File bvpFile = new File(basePath + "BVP.csv");
                 final File hrFile = new File(basePath + "HR.csv");
 
-                final File tagFile = new File(basePath + "tags.csv");
+                //final File tagFile = new File(basePath + "tags.csv");
                 final File ibiFile = new File(basePath + "IBI.csv");
                 final File accFile = new File(basePath + "ACC.csv");
 
                 publishProgress("Processing HR data");
-                uploadFile(hrFile, hrDataSource, session);
+                uploadFile(hrFile, hrDataSource, fitSession);
 
                 final String packageName = MainActivity.context.getPackageName();
 
@@ -137,25 +160,25 @@ public class Utils {
 
                     if (dataType.getName().equals(packageName + ".eda")) {
                         dataSourceBuilder.setStreamName("Electrodermal Activity");
-                        publishProgress("Uploading EDA data");
-                        uploadFile(edaFile, dataSourceBuilder.build(), session);
+                        publishProgress(String.format("Session %s: uploading EDA data", e4Session.getId()));
+                        uploadFile(edaFile, dataSourceBuilder.build(), fitSession);
                     } else if (dataType.getName().equals(packageName + ".temp")) {
                         dataSourceBuilder.setStreamName("Peripheral Skin Temperature");
-                        publishProgress("Uploading TEMP data");
-                        uploadFile(tempFile, dataSourceBuilder.build(), session);
+                        publishProgress(String.format("Session %s: uploading TEMP data", e4Session.getId()));
+                        uploadFile(tempFile, dataSourceBuilder.build(), fitSession);
                     } else if (dataType.getName().equals(packageName + ".bvp")) {
                         dataSourceBuilder.setStreamName("Blood Volume Pressure");
-                        publishProgress("Uploading BVP data");
-                        uploadFile(bvpFile, dataSourceBuilder.build(), session);
+                        publishProgress(String.format("Session %s: uploading BVP data", e4Session.getId()));
+                        uploadFile(bvpFile, dataSourceBuilder.build(), fitSession);
                     } // need special treatment
                     else if (dataType.getName().equals(packageName + ".ibi")) {
                         dataSourceBuilder.setStreamName("Interbeat Interval");
-                        publishProgress("Uploading IBI data");
-                        uploadIbiFile(ibiFile, dataSourceBuilder.build(), session);
+                        publishProgress(String.format("Session %s: uploading IBI data", e4Session.getId()));
+                        uploadIbiFile(ibiFile, dataSourceBuilder.build(), fitSession);
                     } else if (dataType.getName().equals(packageName + ".acc")) {
                         dataSourceBuilder.setStreamName("Acceleration");
-                        publishProgress("Uploading ACC data");
-                        uploadAccFile(accFile, dataSourceBuilder.build(), session);
+                        publishProgress(String.format("Session %s: uploading ACC data", e4Session.getId()));
+                        uploadAccFile(accFile, dataSourceBuilder.build(), fitSession);
                     }
                     /* tags may not be useful in Google Fit
                     else if (dataType.getName().equals(packageName + ".tags")) {
@@ -165,19 +188,13 @@ public class Utils {
                     }
                      */
                 }
-
-                publishProgress(String.format("Session %s upload complete.", e4Session.getId()));
-
             } catch (ZipException e) {
                 e.printStackTrace();
-                return false;
             }
-
-            return null;
         }
 
 
-        private void uploadFile(final File file, final DataSource dataSource, final Session session) {
+        private synchronized void uploadFile(final File file, final DataSource dataSource, final Session session) {
             double[] xBuf = new double[1000];
             float[] yBuf = new float[1000];
             int index = 0;
@@ -187,20 +204,27 @@ public class Utils {
                 final double samplingRate = 1d / Double.parseDouble(reader.readLine());
                 String line;
                 int lineNumber = 0;
-
+                int chunksProcessed = 0;
                 while ((line = reader.readLine()) != null) {
+                    final double timestamp = initialTime + samplingRate * lineNumber++;
 
-                    if (index < 1000) {
-                        xBuf[index] = initialTime + samplingRate * lineNumber;
-                        yBuf[index] = Float.parseFloat(line);
+                    xBuf[index] = timestamp;
+                    yBuf[index] = Float.parseFloat(line);
+
+                    // fixme
+                    if (timestamp > session.getEndTime(TimeUnit.MILLISECONDS)) {
+                        Log.e(MainActivity.TAG, "skipping ACC beyond endtime with timestamp " + timestamp);
+                        continue;
+                    }
+
+                    if (index < 999) {
                         index++;
-                        lineNumber++;
                     } else {
-                        uploadDataChunk(xBuf, yBuf, index, session, dataSource);
+                        uploadDataChunk(xBuf, yBuf, index, session, dataSource, chunksProcessed++);
                         index = 0;
                     }
                 }
-                uploadDataChunk(xBuf, yBuf, index, session, dataSource);
+                uploadDataChunk(xBuf, yBuf, index, session, dataSource, chunksProcessed++);
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -208,7 +232,7 @@ public class Utils {
         }
 
 
-        private void uploadAccFile(File file, DataSource dataSource, Session session) {
+        private synchronized void uploadAccFile(File file, DataSource dataSource, Session session) {
             double[] xBuf = new double[1000];
             float[] yBuf = new float[1000];
             int index = 0;
@@ -218,6 +242,7 @@ public class Utils {
                 final double samplingRate = 1d / Double.parseDouble(reader.readLine().split(",")[0]);
                 String line;
                 int lineNumber = 0;
+                int chunksProcessed = 0;
 
                 while ((line = reader.readLine()) != null) {
                     final String[] acc = line.split(",");
@@ -225,25 +250,33 @@ public class Utils {
                     final int y = Integer.parseInt(acc[1]);
                     final int z = Integer.parseInt(acc[2]);
                     final float magnitude = magnitude(x, y, z);
+                    final double timestamp = initialTime + samplingRate * lineNumber++;
 
-                    if (index < 1000) {
-                        xBuf[index] = initialTime + samplingRate * lineNumber;
-                        yBuf[index] = magnitude;
+                    // fixme
+                    if (timestamp > session.getEndTime(TimeUnit.MILLISECONDS)) {
+                        Log.e(MainActivity.TAG, "skipping ACC beyond endtime with timestamp " + timestamp);
+                        continue;
+                    }
+
+                    xBuf[index] = timestamp;
+                    yBuf[index] = magnitude;
+
+                    if (index < 999) {
                         index++;
-                        lineNumber++;
                     } else {
-                        uploadDataChunk(xBuf, yBuf, index, session, dataSource);
+                        uploadDataChunk(xBuf, yBuf, index, session, dataSource, chunksProcessed++);
                         index = 0;
                     }
                 }
-                uploadDataChunk(xBuf, yBuf, index, session, dataSource);
+                uploadDataChunk(xBuf, yBuf, index, session, dataSource, chunksProcessed++);
+
 
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
 
-        private void uploadIbiFile(File file, DataSource dataSource, Session session) {
+        private synchronized void uploadIbiFile(File file, DataSource dataSource, Session session) {
             double[] xBuf = new double[1000];
             float[] yBuf = new float[1000];
             int index = 0;
@@ -251,6 +284,7 @@ public class Utils {
             try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
                 final double initialTime = Double.parseDouble(reader.readLine().split(",")[0]);
                 double timestamp;
+                int chunksProcessed = 0;
 
                 String line;
 
@@ -273,16 +307,17 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
                         continue;
                     }
 
-                    if (index < 1000) {
-                        xBuf[index] = timestamp;
-                        yBuf[index] = ibi;
+                    xBuf[index] = timestamp;
+                    yBuf[index] = ibi;
+
+                    if (index < 999) {
                         index++;
                     } else {
-                        uploadDataChunk(xBuf, yBuf, index, session, dataSource);
+                        uploadDataChunk(xBuf, yBuf, index, session, dataSource, chunksProcessed++);
                         index = 0;
                     }
                 }
-                uploadDataChunk(xBuf, yBuf, index, session, dataSource);
+                uploadDataChunk(xBuf, yBuf, index, session, dataSource, chunksProcessed++);
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -290,7 +325,7 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
         }
 
 
-        private void uploadDataChunk(double[] timestamps, float[] values, final int index, Session session, DataSource dataSource) {
+        private synchronized void uploadDataChunk(double[] timestamps, float[] values, final int index, Session session, final DataSource dataSource, final int chunksProcessed) {
             Log.i(MainActivity.TAG, "Inserting the session in the Sessions API: " + dataSource.getStreamName());
 
             final DataSet.Builder dataSetBuilder = DataSet.builder(dataSource);
@@ -308,19 +343,27 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
                 dataSetBuilder.add(dataPoint);
             }
 
-            final String message = String.format("%d datapoints uploaded.", index);
-            Log.d(MainActivity.TAG, message);
+            @SuppressLint("DefaultLocale") final String message = String.format("Session %s: uploading chunk %d with %d datapoints..", session.getIdentifier(), chunksProcessed, index);
 
-            insertData(session, dataSetBuilder, message);
+            insertData(session, dataSetBuilder.build(), message);
         }
 
-        private void insertData(final Session session, final DataSet.Builder dataSetBuilder, final String message) {
+        private synchronized void insertData(final Session session, final DataSet dataSet, final String message) {
 
             // Build a session insert request
             final SessionInsertRequest insertRequest = new SessionInsertRequest.Builder()
                     .setSession(session)
-                    .addDataSet(dataSetBuilder.build())
+                    .addDataSet(dataSet)
                     .build();
+
+            Log.i(MainActivity.TAG, message);
+
+            while (isUploading) {
+                Log.i(MainActivity.TAG, "uploading, sleeping for 500ms..");
+                SystemClock.sleep(500);
+            }
+
+            isUploading = true;
 
             // invoke the Sessions API to insert the session and await the result,
             Fitness.getSessionsClient(MainActivity.context, Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(MainActivity.context)))
@@ -330,6 +373,7 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
                         public void onSuccess(Void aVoid) {
                             // At this point, the session has been inserted and can be read.
                             publishProgress(message);
+                            Log.i(MainActivity.TAG, "inserted data");
                         }
                     })
                     .addOnFailureListener(new OnFailureListener() {
@@ -338,7 +382,13 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
                             publishProgress("There was a problem inserting the session: " +
                                     e.getLocalizedMessage());
                         }
-                    });
+                    }).addOnCompleteListener(new OnCompleteListener<Void>() {
+                @Override
+                public void onComplete(@NonNull Task<Void> task) {
+                    Log.i(MainActivity.TAG, "complete");
+                    isUploading = false;
+                }
+            });
         }
 
         @Override
@@ -349,17 +399,12 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
         }
     }
 
+
     // we cannot afford to load BVP and ACC data into memory for sessions longer than about 8 hours
-    public static class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean> {
+    static class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean> {
 
         final SharedViewModel viewModel = ViewModelProviders.of(MainActivity.context).get(SharedViewModel.class);
         final E4SessionData e4SessionData = viewModel.getSessionData();
-
-        private WeakReference<View> view;
-
-        LoadAndViewSessionData(View v) {
-            view = new WeakReference<>(v);
-        }
 
         @Override
         protected Boolean doInBackground(final E4Session... e4Sessions) {
@@ -441,12 +486,17 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
 
                     publishProgress(String.format("Loaded data for session %s", e4Session.getId()));
 
-                } catch (FileNotFoundException | ZipException e) {
+                } catch (FileNotFoundException e) {
+                    publishProgress("File not found.");
+                    return false;
+                } catch (ZipException e) {
+                    publishProgress("Corrupted ZIP file.");
                     e.printStackTrace();
                     return false;
                 }
             } else {
                 publishProgress("Session data not downloaded!");
+                return false;
             }
 
             return true;
@@ -461,8 +511,105 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
 
         @Override
         protected void onPostExecute(Boolean success) {
-            if (success && view.get() != null)
-                Navigation.findNavController(view.get()).navigate(R.id.nav_charts);
+            if (success)
+                MainActivity.context.openCharts();
         }
+    }
+
+
+    public static class DownloadSessions extends AsyncTask<ArrayList<E4Session>, String, String> {
+
+        private SharedViewModel sharedViewModel = ViewModelProviders.of(MainActivity.context).get(SharedViewModel.class);
+        private SessionsAdapter adapter;
+
+        public DownloadSessions(SessionsAdapter sessionsAdapter) {
+            this.adapter = sessionsAdapter;
+        }
+
+        @SuppressLint("DefaultLocale")
+        @SafeVarargs
+        @Override
+        protected final String doInBackground(ArrayList<E4Session>... listsOfSessions) {
+            Log.d(MainActivity.TAG, "DownloadSessions.doInBackground()");
+
+            final String url = "https://www.empatica.com/connect/download.php?id=";
+            final int totalSessions = listsOfSessions[0].size();
+            int downloadedSessions = 0;
+
+            for (final E4Session e4Session : listsOfSessions[0]) {
+
+                final String sessionId = e4Session.getId();
+                final String filename = e4Session.getZIPFilename();
+
+                if (Utils.isSessionDownloaded(e4Session)) {
+                    Log.d(MainActivity.TAG, "session exists: " + e4Session);
+                    publishProgress("File " + filename + " already downloaded.");
+                    continue;
+                }
+
+                Log.d(MainActivity.TAG, "Downloading session " + e4Session);
+
+                final Request request = new Request.Builder().url(url + sessionId).build();
+
+                publishProgress(String.format("Downloading session %d/%d..", downloadedSessions++, totalSessions));
+
+                MainActivity.okHttpClient.newCall(request).enqueue(new Callback() {
+                    @Override
+                    public void onFailure(Request request, IOException e) {
+                        publishProgress("Download failed for " + filename);
+
+                        Log.d(MainActivity.TAG, "Failed Download for " + filename + " " + e.getMessage());
+                    }
+
+                    @Override
+                    public void onResponse(Response response) throws IOException {
+                        if (response.isSuccessful()) {
+                            final InputStream inputStream = response.body().byteStream();
+                            final FileOutputStream out = MainActivity.context.openFileOutput(filename, Context.MODE_PRIVATE);
+
+                            byte[] buf = new byte[1024];
+                            int len;
+                            while ((len = inputStream.read(buf)) > 0) {
+                                out.write(buf, 0, len);
+                            }
+
+                            publishProgress("Downloaded " + filename);
+                        } else {
+                            Log.d(MainActivity.TAG, "unsuccessful download, redirect: " + response.isRedirect());
+                            Log.d(MainActivity.TAG, response.toString());
+                            Log.d(MainActivity.TAG, response.headers().toString());
+                            if (response.body() != null)
+                                Log.d(MainActivity.TAG, response.body().toString());
+                        }
+
+                        if (response.body() != null)
+                            response.body().close();
+                    }
+                });
+            }
+            return "Downloads enqueued";
+        }
+
+        @Override
+        protected void onProgressUpdate(String... values) {
+            super.onProgressUpdate(values);
+
+            if (values.length > 0)
+                sharedViewModel.getSessionStatus().setValue(values[0]);
+
+            adapter.notifyDataSetChanged();
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+
+            Collections.sort(sharedViewModel.getE4Sessions());
+
+            adapter.notifyDataSetChanged();
+
+            sharedViewModel.getSessionStatus().setValue(s);
+        }
+
     }
 }

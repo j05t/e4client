@@ -1,7 +1,5 @@
 package com.jstappdev.e4client.ui;
 
-import android.annotation.SuppressLint;
-import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -26,7 +24,6 @@ import com.jstappdev.e4client.SessionsAdapter;
 import com.jstappdev.e4client.SharedViewModel;
 import com.jstappdev.e4client.Utils;
 import com.jstappdev.e4client.data.E4Session;
-import com.squareup.okhttp.Callback;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
 
@@ -35,10 +32,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -91,7 +85,7 @@ public class SessionsFragment extends Fragment {
 
                 if (sharedViewModel.getE4Sessions().size() > 0) {
                     //noinspection unchecked
-                    new DownloadSessions(mAdapter).execute(sharedViewModel.getE4Sessions());
+                    new Utils.DownloadSessions(mAdapter).execute(sharedViewModel.getE4Sessions());
                 }
             }
         });
@@ -108,8 +102,9 @@ public class SessionsFragment extends Fragment {
                             GoogleSignIn.getLastSignedInAccount(MainActivity.context),
                             MainActivity.fitnessOptions);
                 } else {
-                    // todo: upload all sessions
-                    new Utils.UploadE4SessionToGoogleFit().execute(sharedViewModel.getE4Sessions().get(0));
+                    // todo: upload only selected sessions
+                    //noinspection unchecked
+                    new Utils.UploadE4SessionsToGoogleFit().execute(sharedViewModel.getE4Sessions());
                 }
             }
         });
@@ -121,7 +116,6 @@ public class SessionsFragment extends Fragment {
             }
         });
 
-
         return root;
     }
 
@@ -129,54 +123,51 @@ public class SessionsFragment extends Fragment {
     public void onStart() {
         super.onStart();
 
-        if (sharedViewModel.getUsername().isEmpty() || sharedViewModel.getPassword().isEmpty()) {
-            sharedViewModel.getSessionStatus().setValue("Please edit your Empatica account settings.");
-            return;
-        }
-
         final File directory = new File(requireContext().getFilesDir().getPath());
         final File[] files = directory.listFiles();
 
         if (files == null || files.length == 0) {
-            Log.d(MainActivity.TAG, "no downloaded files found");
-
             sharedViewModel.getSessionStatus().setValue("No sessions in local storage.");
-            return;
+        } else {
+            for (final File file : files) {
+                final String filename = file.getName();
+                final String[] split = filename.split("_");
+
+                if (split.length != 8) continue;
+
+                // file name format: 1566420867_739826_31590_1e2fcd_10674_E4 3.2_0_0.zip
+
+                final Long start_time = Long.valueOf(split[0]);
+                final String id = split[1];
+                final Long duration = Long.valueOf(split[2]);
+                final String device_id = split[3];
+                final String label = split[4];
+                final String device = split[5];
+                final String status = split[6];
+                final String exit_code = split[7].substring(0, split[7].length() - 4); // strip .zip extension
+
+                final E4Session e4Session = new E4Session(id, start_time, duration, device_id, label, device, status, exit_code);
+
+                sharedViewModel.getSessionStatus().setValue(String.format("Found session %s", e4Session));
+
+                if (!sharedViewModel.getE4Sessions().contains(e4Session))
+                    sharedViewModel.getE4Sessions().add(e4Session);
+            }
         }
 
-        for (final File file : files) {
-            final String filename = file.getName();
-
-            Log.d(MainActivity.TAG, "In files directory: " + filename);
-
-            final String[] split = filename.split("_");
-
-            if (split.length != 8) continue;
-
-            // file name format: 1566420867_739826_31590_1e2fcd_10674_E4 3.2_0_0.zip
-
-            final Long start_time = Long.valueOf(split[0]);
-            final String id = split[1];
-            final Long duration = Long.valueOf(split[2]);
-            final String device_id = split[3];
-            final String label = split[4];
-            final String device = split[5];
-            final String status = split[6];
-            final String exit_code = split[7].substring(0, split[7].length() - 4); // strip .zip extension
-
-            final E4Session e4Session = new E4Session(id, start_time, duration, device_id, label, device, status, exit_code);
-
-            sharedViewModel.getSessionStatus().setValue(String.format("Found %s", e4Session));
-            Log.d(MainActivity.TAG, "Already downloaded: " + e4Session);
-
-            if (!sharedViewModel.getE4Sessions().contains(e4Session))
-                sharedViewModel.getE4Sessions().add(e4Session);
-        }
         sharedViewModel.getSessionStatus().setValue("Sessions in local storage: " + sharedViewModel.getE4Sessions().size());
 
-        Collections.sort(sharedViewModel.getE4Sessions());
+        if(!Utils.isUploading)
+            Collections.sort(sharedViewModel.getE4Sessions());
 
         mAdapter.notifyDataSetChanged();
+
+        if (sharedViewModel.getUsername().isEmpty() || sharedViewModel.getPassword().isEmpty()) {
+            sharedViewModel.getSessionStatus().setValue("Please edit your Empatica account settings.");
+        } else if (sharedViewModel.getUserId() == null) {
+            new LoginAndGetAllSessions(mAdapter).execute();
+        }
+
     }
 
 
@@ -247,7 +238,7 @@ public class SessionsFragment extends Fragment {
                             final E4Session e4Session = new E4Session(id, start_time, duration, device_id, label, device, status, exit_code);
 
                             if (!sharedViewModel.getE4Sessions().contains(e4Session))
-                                sharedViewModel.getE4Sessions().add(e4Session);
+                                sharedViewModel.getE4Sessions().add(0, e4Session);
 
                         } catch (JSONException e) {
                             // Oops
@@ -272,96 +263,5 @@ public class SessionsFragment extends Fragment {
 
     }
 
-    private static class DownloadSessions extends AsyncTask<ArrayList<E4Session>, String, String> {
-
-        private SharedViewModel sharedViewModel = ViewModelProviders.of(MainActivity.context).get(SharedViewModel.class);
-        private SessionsAdapter adapter;
-
-        DownloadSessions(SessionsAdapter sessionsAdapter) {
-            this.adapter = sessionsAdapter;
-        }
-
-        @SuppressLint("DefaultLocale")
-        @SafeVarargs
-        @Override
-        protected final String doInBackground(ArrayList<E4Session>... listsOfSessions) {
-
-            final String url = "https://www.empatica.com/connect/download.php?id=";
-            final int totalSessions = listsOfSessions[0].size();
-            int downloadedSessions = 0;
-
-            for (final E4Session e4Session : listsOfSessions[0]) {
-
-                final String sessionId = e4Session.getId();
-                final String filename = e4Session.getZIPFilename();
-
-                if (Utils.isSessionDownloaded(e4Session)) {
-                    publishProgress("File " + filename + " already downloaded.");
-                    continue;
-                }
-
-                final Request request = new Request.Builder().url(url + sessionId).build();
-
-                publishProgress(String.format("Downloading session %d/%d..", downloadedSessions++, totalSessions));
-
-                MainActivity.okHttpClient.newCall(request).enqueue(new Callback() {
-                    @Override
-                    public void onFailure(Request request, IOException e) {
-                        publishProgress("Download failed for " + filename);
-
-                        Log.d(MainActivity.TAG, "Failed Download for " + filename + " " + e.getMessage());
-                    }
-
-                    @Override
-                    public void onResponse(Response response) throws IOException {
-                        if (response.isSuccessful()) {
-                            final InputStream inputStream = response.body().byteStream();
-                            final FileOutputStream out = MainActivity.context.openFileOutput(filename, Context.MODE_PRIVATE);
-
-                            byte[] buf = new byte[1024];
-                            int len;
-                            while ((len = inputStream.read(buf)) > 0) {
-                                out.write(buf, 0, len);
-                            }
-
-                            publishProgress("Downloaded " + filename);
-                        } else {
-                            Log.d(MainActivity.TAG, "unsuccessful download, redirect: " + response.isRedirect());
-                            Log.d(MainActivity.TAG, response.toString());
-                            Log.d(MainActivity.TAG, response.headers().toString());
-                            if (response.body() != null)
-                                Log.d(MainActivity.TAG, response.body().toString());
-                        }
-
-                        if (response.body() != null)
-                            response.body().close();
-                    }
-                });
-            }
-            return "Downloads enqueued";
-        }
-
-        @Override
-        protected void onProgressUpdate(String... values) {
-            super.onProgressUpdate(values);
-
-            if (values.length > 0)
-                sharedViewModel.getSessionStatus().setValue(values[0]);
-
-            adapter.notifyDataSetChanged();
-        }
-
-        @Override
-        protected void onPostExecute(String s) {
-            super.onPostExecute(s);
-
-            Collections.sort(sharedViewModel.getE4Sessions());
-
-            adapter.notifyDataSetChanged();
-
-            sharedViewModel.getSessionStatus().setValue(s);
-        }
-
-    }
 
 }

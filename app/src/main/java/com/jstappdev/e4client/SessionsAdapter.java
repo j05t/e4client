@@ -6,9 +6,11 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.AsyncTask;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckedTextView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -21,6 +23,9 @@ import com.squareup.okhttp.Request;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 
 public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.Adapter<SessionsAdapter.MyViewHolder> {
 
@@ -45,6 +50,8 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         TextView device_id;
         TextView label;
         TextView device;
+        CheckedTextView isDownloaded;
+        CheckedTextView isUploaded;
 
         MyViewHolder(View v) {
             super(v);
@@ -55,6 +62,8 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
             device_id = v.findViewById(R.id.session_device_id);
             label = v.findViewById(R.id.session_label);
             device = v.findViewById(R.id.session_device);
+            isDownloaded = v.findViewById(R.id.isDownloaded);
+            isUploaded = v.findViewById(R.id.isUploaded);
         }
     }
 
@@ -97,7 +106,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                     })
                     .setNeutralButton("View Data", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
-                            new Utils.LoadAndViewSessionData(v).execute(e4Session);
+                            new Utils.LoadAndViewSessionData().execute(e4Session);
                             dialog.dismiss();
                         }
                     })
@@ -128,7 +137,27 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                         public void onClick(DialogInterface dialog, int id) {
                             dialog.cancel();
                         }
-                    }).create().show();
+                    }).setNeutralButton("Redownload", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    final File file = new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename());
+
+                    Log.d(MainActivity.TAG, "deleting session " + e4Session);
+
+                    if (!file.delete()) {
+                        sharedViewModel.setStatus("Failed to delete session data.");
+                    }
+
+                    final ArrayList<E4Session> downloadMe = new ArrayList<>();
+                    downloadMe.add(e4Session);
+
+                    //noinspection unchecked
+                    new Utils.DownloadSessions(instance).execute(downloadMe);
+
+                    instance.notifyItemChanged(position);
+
+                    dialog.dismiss();
+                }
+            }).create().show();
 
             return false;
         }
@@ -151,9 +180,12 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         holder.label.setText(e4Session.getLabel());
         holder.device.setText(e4Session.getDevice());
 
-        // fixme: doesn't work with recyclerview
         if (Utils.isSessionDownloaded(e4Session)) {
-            holder.itemView.setBackgroundColor(Color.parseColor("#1cdefce0"));
+            holder.isDownloaded.setCheckMarkDrawable(android.R.drawable.checkbox_on_background);
+            holder.isDownloaded.setChecked(true);
+        } else {
+            holder.isDownloaded.setCheckMarkDrawable(android.R.drawable.checkbox_off_background);
+            holder.isDownloaded.setChecked(false);
         }
     }
 

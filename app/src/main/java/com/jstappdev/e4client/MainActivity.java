@@ -11,10 +11,12 @@ import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.Menu;
+import android.view.View;
 import android.view.WindowManager;
 import android.widget.Toast;
 
@@ -58,6 +60,8 @@ import java.util.concurrent.TimeUnit;
 public class MainActivity extends AppCompatActivity implements EmpaStatusDelegate {
     public static final String TAG = "e4";
 
+    public static final String SESSION_NAME = "e4session";
+
     private static final int REQUEST_ENABLE_BT = 1;
     private static final int REQUEST_PERMISSION_ACCESS_COARSE_LOCATION = 1;
 
@@ -65,9 +69,9 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     private static final String SCICHART_LICENSE = BuildConfig.SCICHART_LICENSE;
     public static final int GOOGLE_FIT_PERMISSIONS_REQUEST_CODE = 42;
 
-    private static boolean googleFitCustomDatatypesCreated = false;
+    private static boolean googleFitCustomDatatypesCreated;
 
-    private EmpaDeviceManager deviceManager = null;
+    private EmpaDeviceManager deviceManager;
     private AppBarConfiguration mAppBarConfiguration;
     private SharedViewModel sharedViewModel;
 
@@ -84,6 +88,8 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     public static OkHttpClient okHttpClient;
 
     public static FitnessOptions fitnessOptions;
+
+    private NavController navController;
 
 
     @Override
@@ -110,7 +116,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
                 R.id.nav_settings, R.id.nav_share_csv, R.id.nav_sync)
                 .setDrawerLayout(drawer)
                 .build();
-        final NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
+        navController = Navigation.findNavController(this, R.id.nav_host_fragment);
         NavigationUI.setupWithNavController(navigationView, navController);
 
         setUpSciChartLicense();
@@ -133,6 +139,10 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         }
 
         createGoogleFitClient();
+    }
+
+    public void openCharts() {
+        navController.navigate(R.id.nav_charts);
     }
 
     private void loadPreferences() {
@@ -294,8 +304,8 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
             return;
         }
         if (requestCode == GOOGLE_FIT_PERMISSIONS_REQUEST_CODE) {
-            if (resultCode == Activity.RESULT_OK) {
-                Log.d(TAG, "got google fit permissions");
+            if (resultCode == Activity.RESULT_OK && !googleFitCustomDatatypesCreated) {
+                Log.d(TAG, "got google fit permissions, creating custom datatypes");
                 new CreateCustomDataTypes(this).execute();
             } else {
                 Log.d(TAG, "Google Fit permission request denied, resultCode: " + resultCode);
@@ -385,7 +395,8 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     }
 
     public void createGoogleFitClient() {
-        requestPermissions(new String[]{Manifest.permission.ACTIVITY_RECOGNITION}, GOOGLE_FIT_PERMISSIONS_REQUEST_CODE);
+        requestPermissions(new String[]{Manifest.permission.ACTIVITY_RECOGNITION, Manifest.permission.ACCESS_FINE_LOCATION}, GOOGLE_FIT_PERMISSIONS_REQUEST_CODE);
+
 
         FitnessOptions fitnessOptions = FitnessOptions.builder()
                 .addDataType(DataType.TYPE_HEART_RATE_BPM, FitnessOptions.ACCESS_WRITE)
@@ -399,8 +410,10 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
                     fitnessOptions);
         } else {
 
-            if (!googleFitCustomDatatypesCreated)
+            if (!googleFitCustomDatatypesCreated) {
                 new CreateCustomDataTypes(this).execute();
+                googleFitCustomDatatypesCreated = true;
+            }
         }
     }
 
@@ -447,6 +460,8 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
             fitnessOptions = fitnessOptionsBuilder.build();
 
+            Log.d(TAG, "created fitnessOptions: " + fitnessOptions.toString());
+
             return null;
         }
 
@@ -456,6 +471,13 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
             if (values != null && values.length > 0)
                 Log.d("e4", "created custom datatype " + values[0]);
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+
+            googleFitCustomDatatypesCreated = true;
         }
     }
 

@@ -1,5 +1,6 @@
 package com.jstappdev.e4client.ui;
 
+import android.annotation.SuppressLint;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.util.Log;
@@ -66,7 +67,7 @@ public class ChartsFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
 
-        sharedViewModel = ViewModelProviders.of(Objects.requireNonNull(getActivity())).get(SharedViewModel.class);
+        sharedViewModel = ViewModelProviders.of(Objects.requireNonNull(requireActivity())).get(SharedViewModel.class);
 
         final View root = inflater.inflate(R.layout.fragment_charts, container, false);
 
@@ -75,8 +76,7 @@ public class ChartsFragment extends Fragment {
         SciChartBuilder.init(requireActivity());
         sciChartBuilder = SciChartBuilder.instance();
 
-        getActivity().setRequestedOrientation(
-                ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+        requireActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
 
         return root;
     }
@@ -86,6 +86,7 @@ public class ChartsFragment extends Fragment {
         setupCharts();
     }
 
+    @SuppressLint("SourceLockedOrientationActivity")
     @Override
     public void onDestroy() {
         super.onDestroy();
