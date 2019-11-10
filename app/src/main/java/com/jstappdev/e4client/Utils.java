@@ -73,6 +73,11 @@ public class Utils {
         return new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename()).exists();
     }
 
+    static boolean isSessionUploaded(final E4Session e4Session) {
+        // todo: query google fit
+        return false;
+    }
+
     private static float magnitude(final int x, final int y, final int z) {
         return (float) Math.sqrt(x * x + y * y + z * z);
     }
@@ -220,11 +225,11 @@ public class Utils {
                     if (index < 999) {
                         index++;
                     } else {
-                        uploadDataChunk(xBuf, yBuf, index, session, dataSource, chunksProcessed++);
+                        uploadDataChunk(xBuf, yBuf, index, session, dataSource, ++chunksProcessed);
                         index = 0;
                     }
                 }
-                uploadDataChunk(xBuf, yBuf, index, session, dataSource, chunksProcessed++);
+                uploadDataChunk(xBuf, yBuf, index, session, dataSource, ++chunksProcessed);
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -264,11 +269,11 @@ public class Utils {
                     if (index < 999) {
                         index++;
                     } else {
-                        uploadDataChunk(xBuf, yBuf, index, session, dataSource, chunksProcessed++);
+                        uploadDataChunk(xBuf, yBuf, index, session, dataSource, ++chunksProcessed);
                         index = 0;
                     }
                 }
-                uploadDataChunk(xBuf, yBuf, index, session, dataSource, chunksProcessed++);
+                uploadDataChunk(xBuf, yBuf, index, session, dataSource, ++chunksProcessed);
 
 
             } catch (IOException e) {
@@ -313,11 +318,11 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
                     if (index < 999) {
                         index++;
                     } else {
-                        uploadDataChunk(xBuf, yBuf, index, session, dataSource, chunksProcessed++);
+                        uploadDataChunk(xBuf, yBuf, index, session, dataSource, ++chunksProcessed);
                         index = 0;
                     }
                 }
-                uploadDataChunk(xBuf, yBuf, index, session, dataSource, chunksProcessed++);
+                uploadDataChunk(xBuf, yBuf, index, session, dataSource, ++chunksProcessed);
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -343,7 +348,7 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
                 dataSetBuilder.add(dataPoint);
             }
 
-            @SuppressLint("DefaultLocale") final String message = String.format("Session %s: uploading chunk %d with %d datapoints..", session.getIdentifier(), chunksProcessed, index);
+            @SuppressLint("DefaultLocale") final String message = String.format("Session %s: uploading chunk %d..", session.getIdentifier(), chunksProcessed);
 
             insertData(session, dataSetBuilder.build(), message);
         }
@@ -359,8 +364,8 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
             Log.i(MainActivity.TAG, message);
 
             while (isUploading) {
-                Log.i(MainActivity.TAG, "uploading, sleeping for 500ms..");
-                SystemClock.sleep(500);
+                Log.i(MainActivity.TAG, "uploading, sleeping for 250ms..");
+                SystemClock.sleep(250);
             }
 
             isUploading = true;
