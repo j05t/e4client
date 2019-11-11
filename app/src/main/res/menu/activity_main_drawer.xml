@@ -26,7 +26,7 @@
             android:title="@string/menu_tools" />
     </group>
 
-    <item android:title="Communicate">
+    <item android:title="Cloud Storage">
         <menu>
             <item
                 android:id="@+id/nav_share_csv"
@@ -34,8 +34,8 @@
                 android:title="@string/menu_share" />
             <item
                 android:id="@+id/nav_sync"
-                android:icon="@drawable/ic_menu_send"
-                android:title="@string/menu_send" />
+                android:icon="@drawable/ic_menu_google_fit_sessions"
+                android:title="@string/menu_google_fit_sessions" />
         </menu>
     </item>
 

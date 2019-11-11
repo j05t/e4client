@@ -11,8 +11,6 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.ViewModelProviders;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.common.api.Status;
 import com.google.android.gms.fitness.Fitness;
 import com.google.android.gms.fitness.data.DataPoint;
 import com.google.android.gms.fitness.data.DataSet;
@@ -101,7 +99,7 @@ public class Utils {
                 // Create a Google Fit session with metadata about the activity
                 final Session fitSession = new Session.Builder()
                         .setName(MainActivity.SESSION_NAME)
-                        .setDescription("Empatica E4 Session")
+                        .setDescription("empatica_e4_session")
                         .setIdentifier(e4Session.getId())
                         .setStartTime(e4Session.getStartTime(), TimeUnit.MILLISECONDS)
                         .setEndTime(e4Session.getStartTime() + e4Session.getDuration(), TimeUnit.MILLISECONDS)
@@ -119,23 +117,16 @@ public class Utils {
 
         private synchronized void processFile(final E4Session e4Session, final Session fitSession) {
 
-            // datatype for heart rate defined by google
-            final DataSource hrDataSource =
-                    new DataSource.Builder()
-                            .setAppPackageName(MainActivity.context)
-                            .setDataType(DataType.TYPE_HEART_RATE_BPM)
-                            .setStreamName("Heart Rate")
-                            .setType(DataSource.TYPE_RAW)
-                            .build();
-
-            final File sessionFile = new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename());
-
             Log.d(MainActivity.TAG, "reading " + e4Session.getZIPFilename());
 
             String basePath = MainActivity.context.getCacheDir().getPath();
 
             Log.d(MainActivity.TAG, "extracting to directory " + basePath);
             try {
+                final String packageName = MainActivity.context.getPackageName();
+
+                final File sessionFile = new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename());
+
                 new ZipFile(sessionFile.getAbsolutePath()).extractAll(basePath);
 
                 basePath += File.separator;
@@ -151,37 +142,44 @@ public class Utils {
                 final File accFile = new File(basePath + "ACC.csv");
 
                 publishProgress("Processing HR data");
+                // datatype for heart rate defined by google
+                final DataSource hrDataSource =
+                        new DataSource.Builder()
+                                .setAppPackageName(packageName)
+                                .setDataType(DataType.TYPE_HEART_RATE_BPM)
+                                .setStreamName("heart_rate")
+                                .setType(DataSource.TYPE_RAW)
+                                .build();
                 uploadFile(hrFile, hrDataSource, fitSession);
 
-                final String packageName = MainActivity.context.getPackageName();
 
                 for (final DataType dataType : MainActivity.dataTypes) {
-                    Log.d(MainActivity.TAG, "uploading " + dataType.getName());
+                    Log.d(MainActivity.TAG, "uploading datatype " + dataType.getName());
 
                     final DataSource.Builder dataSourceBuilder = new DataSource.Builder()
-                            .setAppPackageName(MainActivity.context)
+                            .setAppPackageName(packageName)
                             .setDataType(dataType)
                             .setType(DataSource.TYPE_RAW);
 
                     if (dataType.getName().equals(packageName + ".eda")) {
-                        dataSourceBuilder.setStreamName("Electrodermal Activity");
+                        dataSourceBuilder.setStreamName("electrodermal_activity");
                         publishProgress(String.format("Session %s: uploading EDA data", e4Session.getId()));
                         uploadFile(edaFile, dataSourceBuilder.build(), fitSession);
                     } else if (dataType.getName().equals(packageName + ".temp")) {
-                        dataSourceBuilder.setStreamName("Peripheral Skin Temperature");
+                        dataSourceBuilder.setStreamName("peripheral_skin_temperature");
                         publishProgress(String.format("Session %s: uploading TEMP data", e4Session.getId()));
                         uploadFile(tempFile, dataSourceBuilder.build(), fitSession);
-                    } else if (dataType.getName().equals(packageName + ".bvp")) {
-                        dataSourceBuilder.setStreamName("Blood Volume Pressure");
+                    } /* BVP is used to extract HR and IBI, we don't upload it here
+                    else if (dataType.getName().equals(packageName + ".bvp")) {
+                        dataSourceBuilder.setStreamName("blood_volume_pressure");
                         publishProgress(String.format("Session %s: uploading BVP data", e4Session.getId()));
                         uploadFile(bvpFile, dataSourceBuilder.build(), fitSession);
-                    } // need special treatment
-                    else if (dataType.getName().equals(packageName + ".ibi")) {
-                        dataSourceBuilder.setStreamName("Interbeat Interval");
+                    } */ else if (dataType.getName().equals(packageName + ".ibi")) {
+                        dataSourceBuilder.setStreamName("interbeat_interval");
                         publishProgress(String.format("Session %s: uploading IBI data", e4Session.getId()));
                         uploadIbiFile(ibiFile, dataSourceBuilder.build(), fitSession);
                     } else if (dataType.getName().equals(packageName + ".acc")) {
-                        dataSourceBuilder.setStreamName("Acceleration");
+                        dataSourceBuilder.setStreamName("acceleration");
                         publishProgress(String.format("Session %s: uploading ACC data", e4Session.getId()));
                         uploadAccFile(accFile, dataSourceBuilder.build(), fitSession);
                     }
@@ -348,13 +346,13 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
                 dataSetBuilder.add(dataPoint);
             }
 
-            @SuppressLint("DefaultLocale") final String message = String.format("Session %s: uploading chunk %d..", session.getIdentifier(), chunksProcessed);
+            @SuppressLint("DefaultLocale") final String message = String.format("Session %s: uploading %s chunk %d..",
+                    session.getIdentifier(),dataSource.getDataType(), chunksProcessed);
 
             insertData(session, dataSetBuilder.build(), message);
         }
 
         private synchronized void insertData(final Session session, final DataSet dataSet, final String message) {
-
             // Build a session insert request
             final SessionInsertRequest insertRequest = new SessionInsertRequest.Builder()
                     .setSession(session)
@@ -364,7 +362,7 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
             Log.i(MainActivity.TAG, message);
 
             while (isUploading) {
-                Log.i(MainActivity.TAG, "uploading, sleeping for 250ms..");
+                Log.i(MainActivity.TAG, "upload in progress, sleeping for 250ms..");
                 SystemClock.sleep(250);
             }
 
@@ -378,7 +376,7 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
                         public void onSuccess(Void aVoid) {
                             // At this point, the session has been inserted and can be read.
                             publishProgress(message);
-                            Log.i(MainActivity.TAG, "inserted data");
+                            Log.i(MainActivity.TAG, insertRequest.toString());
                         }
                     })
                     .addOnFailureListener(new OnFailureListener() {

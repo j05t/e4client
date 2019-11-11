@@ -43,7 +43,7 @@
 
     <fragment
         android:id="@+id/nav_sync"
-        android:name="com.jstappdev.e4client.ui.SendFragment"
-        android:label="@string/menu_send"
-        tools:layout="@layout/fragment_send" />
+        android:name="com.jstappdev.e4client.ui.GoogleFitSessionsFragment"
+        android:label="@string/menu_google_fit_sessions"
+        tools:layout="@layout/fragment_google_fit_sessions" />
 </navigation>

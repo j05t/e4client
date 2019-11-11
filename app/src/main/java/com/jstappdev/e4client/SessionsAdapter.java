@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -24,8 +23,6 @@ import com.squareup.okhttp.Request;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 
 public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.Adapter<SessionsAdapter.MyViewHolder> {
 
@@ -137,7 +134,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                         public void onClick(DialogInterface dialog, int id) {
                             dialog.cancel();
                         }
-                    }).setNeutralButton("Redownload", new DialogInterface.OnClickListener() {
+                    }).setNeutralButton("(Re)download", new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int id) {
                     final File file = new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename());
 

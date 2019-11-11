@@ -157,7 +157,7 @@ public class SessionsFragment extends Fragment {
 
         sharedViewModel.getSessionStatus().setValue("Sessions in local storage: " + sharedViewModel.getE4Sessions().size());
 
-        if(!Utils.isUploading)
+        if (!Utils.isUploading)
             Collections.sort(sharedViewModel.getE4Sessions());
 
         mAdapter.notifyDataSetChanged();
@@ -238,11 +238,15 @@ public class SessionsFragment extends Fragment {
                             final E4Session e4Session = new E4Session(id, start_time, duration, device_id, label, device, status, exit_code);
 
                             if (!sharedViewModel.getE4Sessions().contains(e4Session))
-                                sharedViewModel.getE4Sessions().add(0, e4Session);
+                                sharedViewModel.getE4Sessions().add(e4Session);
 
                         } catch (JSONException e) {
                             // Oops
                         }
+                    }
+
+                    if (!Utils.isUploading) {
+                        Collections.sort(sharedViewModel.getE4Sessions());
                     }
 
                     return "Synchronization successful";

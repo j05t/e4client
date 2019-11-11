@@ -12,7 +12,7 @@
     <string name="menu_sessions">Sessions</string>
     <string name="menu_tools">Settings</string>
     <string name="menu_share">Share CSV</string>
-    <string name="menu_send">Sync with Google Fit</string>
+    <string name="menu_google_fit_sessions">Google Fit</string>
 
     <string name="accel">Accelerometers</string>
     <string name="accel_x">x:</string>
