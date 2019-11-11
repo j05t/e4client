@@ -184,6 +184,14 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
             holder.isDownloaded.setCheckMarkDrawable(android.R.drawable.checkbox_off_background);
             holder.isDownloaded.setChecked(false);
         }
+
+        if (sharedViewModel.getUploadedSessionIDs().contains(e4Session.getId())) {
+            holder.isUploaded.setCheckMarkDrawable(android.R.drawable.checkbox_on_background);
+            holder.isUploaded.setChecked(true);
+        } else {
+            holder.isUploaded.setCheckMarkDrawable(android.R.drawable.checkbox_off_background);
+            holder.isUploaded.setChecked(false);
+        }
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.jstappdev.e4client;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
@@ -42,7 +43,12 @@ import com.google.android.gms.fitness.Fitness;
 import com.google.android.gms.fitness.FitnessOptions;
 import com.google.android.gms.fitness.data.DataType;
 import com.google.android.gms.fitness.data.Field;
+import com.google.android.gms.fitness.data.Session;
 import com.google.android.gms.fitness.request.DataTypeCreateRequest;
+import com.google.android.gms.fitness.request.SessionReadRequest;
+import com.google.android.gms.fitness.result.SessionReadResponse;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Tasks;
 import com.google.android.material.navigation.NavigationView;
 import com.squareup.okhttp.OkHttpClient;
@@ -52,6 +58,10 @@ import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -413,6 +423,52 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
                 googleFitCustomDatatypesCreated = true;
             }
         }
+        readUploadedSessions();
+    }
+
+    private void readUploadedSessions() {
+
+        Log.d(TAG, "reading uploaded sessions from Google Fit");
+
+        // Set a start and end time for our query, using a start time of 1 week before this moment.
+        Calendar cal = Calendar.getInstance();
+        Date now = new Date();
+        cal.setTime(now);
+        long endTime = cal.getTimeInMillis();
+
+        SessionReadRequest readRequest = new SessionReadRequest.Builder()
+                .setTimeInterval(1L, endTime, TimeUnit.MILLISECONDS).enableServerQueries()
+                .readSessionsFromAllApps().setSessionName(MainActivity.SESSION_NAME)
+                .build();
+
+        Log.d(MainActivity.TAG, readRequest.toString());
+
+        // Invoke the Sessions API to fetch the session with the query and wait for the result
+        // of the read request. Note: Fitness.SessionsApi.readSession() requires the
+        // ACCESS_FINE_LOCATION permission.
+        Fitness.getSessionsClient(MainActivity.context, Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(MainActivity.context)))
+                .readSession(readRequest)
+                .addOnSuccessListener(new OnSuccessListener<SessionReadResponse>() {
+                    @SuppressLint("DefaultLocale")
+                    @Override
+                    public void onSuccess(SessionReadResponse sessionReadResponse) {
+
+                        final List<Session> sessions = sessionReadResponse.getSessions();
+
+                        for (final Session session : sessions) {
+                            if (!sharedViewModel.getUploadedSessionIDs().contains(session.getIdentifier())) {
+                                sharedViewModel.getUploadedSessionIDs().add(session.getIdentifier());
+                                Log.d(MainActivity.TAG, "already uploaded to Google Fit: Session " + session.getIdentifier());
+                            }
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.i(MainActivity.TAG, "Failed to read session");
+                    }
+                });
     }
 
     private static class CreateCustomDataTypes extends AsyncTask<Void, String, Void> {

@@ -89,6 +89,11 @@ public class GoogleFitSessionsFragment extends Fragment {
                             // Process the session
                             sb.append(session.getName()).append(session.getIdentifier());
 
+                            if (!sharedViewModel.getUploadedSessionIDs().contains(session.getIdentifier())) {
+                                sharedViewModel.getUploadedSessionIDs().add(session.getIdentifier());
+                                Log.d(MainActivity.TAG, "already uploaded to Google Fit: Session " + session.getIdentifier());
+                            }
+
                             // Process the data sets for this session
                             List<DataSet> dataSets = sessionReadResponse.getDataSet(session);
 

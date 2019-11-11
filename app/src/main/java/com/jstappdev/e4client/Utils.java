@@ -107,15 +107,19 @@ public class Utils {
 
                 Log.d(MainActivity.TAG, "uploading " + fitSession.toString());
 
-                processFile(e4Session, fitSession);
+                if (!viewModel.getUploadedSessionIDs().contains(e4Session.getId())) {
+                    if (processFile(e4Session, fitSession)) {
+                        viewModel.getUploadedSessionIDs().add(e4Session.getId());
+                    }
+                }
 
-                publishProgress(String.format("Session %s upload complete.", e4Session.getId()));
+                publishProgress(String.format("Session %s uploaded.", e4Session.getId()));
             }
 
             return null;
         }
 
-        private synchronized void processFile(final E4Session e4Session, final Session fitSession) {
+        private synchronized boolean processFile(final E4Session e4Session, final Session fitSession) {
 
             Log.d(MainActivity.TAG, "reading " + e4Session.getZIPFilename());
 
@@ -191,9 +195,11 @@ public class Utils {
                     }
                      */
                 }
-            } catch (ZipException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
+                return false;
             }
+            return true;
         }
 
 
@@ -347,7 +353,7 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
             }
 
             @SuppressLint("DefaultLocale") final String message = String.format("Session %s: uploading %s chunk %d..",
-                    session.getIdentifier(),dataSource.getDataType(), chunksProcessed);
+                    session.getIdentifier(), dataSource.getDataType().getName(), chunksProcessed);
 
             insertData(session, dataSetBuilder.build(), message);
         }
