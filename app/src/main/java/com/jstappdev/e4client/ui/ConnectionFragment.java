@@ -84,6 +84,9 @@ public class ConnectionFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 MainActivity.context.disconnect();
+                dataArea.setVisibility(View.GONE);
+
+                // todo: save recorded session data to CSV files
             }
         });
 
@@ -184,11 +187,6 @@ public class ConnectionFragment extends Fragment {
                 bvpLabel.setText(String.format(Locale.getDefault(), "%.0f", sharedViewModel.getSessionData().getBvp().getLast()));
             }
         });
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
 }

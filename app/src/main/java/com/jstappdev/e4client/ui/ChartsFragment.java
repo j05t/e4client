@@ -1,6 +1,5 @@
 package com.jstappdev.e4client.ui;
 
-import android.annotation.SuppressLint;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.util.Log;
@@ -42,7 +41,6 @@ import butterknife.ButterKnife;
 public class ChartsFragment extends Fragment {
 
     private final SciChartVerticalGroup verticalGroup = new SciChartVerticalGroup();
-    // private final DoubleRange sharedXRange = new DoubleRange();
     private final DateRange sharedXRange = new DateRange();
 
     @BindView(R.id.edaChart)
@@ -86,7 +84,6 @@ public class ChartsFragment extends Fragment {
         setupCharts();
     }
 
-    @SuppressLint("SourceLockedOrientationActivity")
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -193,10 +190,14 @@ public class ChartsFragment extends Fragment {
 
 
         sharedViewModel.getLastGsr().observe(owner, new Observer<Integer>() {
+            private int x = 0;
+
             @Override
             public void onChanged(Integer lastGsr) {
-                edaLineData.append(sharedViewModel.getSessionData().getGsrTimestamps().getLast(), sharedViewModel.getSessionData().getGsr().get(lastGsr));
-                edaChart.zoomExtents();
+                if (x++ % 100 == 0) {
+                    edaLineData.append(sharedViewModel.getSessionData().getGsrTimestamps().getLast(), sharedViewModel.getSessionData().getGsr().get(lastGsr));
+                    edaChart.zoomExtents();
+                }
             }
         });
         /*
@@ -218,6 +219,8 @@ public class ChartsFragment extends Fragment {
         });
 
         sharedViewModel.getLastIbi().observe(owner, new Observer<Integer>() {
+            private int x = 0;
+
             @Override
             public void onChanged(Integer lastIbi) {
                 final float currentHr = 60.0f / sharedViewModel.getSessionData().getIbi().getLast();
@@ -228,10 +231,11 @@ public class ChartsFragment extends Fragment {
                     averageHr = 0.8f * averageHr + 0.2f * currentHr;
                 }
 
-                //ibiLineData.append(sharedViewModel.getSesssionData().getIbiTimestamps().getLast(), sharedViewModel.getSesssionData().getIbi().get(lastBvp));
-                hrLineData.append(sharedViewModel.getSessionData().getIbiTimestamps().getLast(), currentHr);
-                hrAxisMarker.setY1(averageHr);
-                hrChart.zoomExtents();
+                if (x++ % 100 == 0) {
+                    hrLineData.append(sharedViewModel.getSessionData().getIbiTimestamps().getLast(), currentHr);
+                    hrAxisMarker.setY1(averageHr);
+                    hrChart.zoomExtents();
+                }
             }
         });
 

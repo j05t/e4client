@@ -126,9 +126,10 @@ public class Utils {
                         .setEndTime(e4Session.getStartTime() + e4Session.getDuration(), TimeUnit.MILLISECONDS)
                         .build();
 
-                Log.d(MainActivity.TAG, "uploading " + fitSession.toString());
 
                 if (!viewModel.getUploadedSessionIDs().contains(e4Session.getId())) {
+                    Log.d(MainActivity.TAG, "uploading " + fitSession.toString());
+
                     if (processFile(e4Session, fitSession)) {
                         viewModel.getUploadedSessionIDs().add(e4Session.getId());
                     }
