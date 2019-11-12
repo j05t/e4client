@@ -168,7 +168,8 @@ public class Utils {
                 final File ibiFile = new File(basePath + "IBI.csv");
                 final File accFile = new File(basePath + "ACC.csv");
 
-                publishProgress("Processing HR data");
+
+                publishProgress(String.format("Session %s: uploading HR data", e4Session.getId()));
                 // datatype for heart rate defined by google
                 final DataSource hrDataSource =
                         new DataSource.Builder()
@@ -245,7 +246,7 @@ public class Utils {
 
                     // fixme
                     if (timestamp > session.getEndTime(TimeUnit.MILLISECONDS)) {
-                        Log.e(MainActivity.TAG, "skipping ACC beyond endtime with timestamp " + timestamp);
+                        Log.e(MainActivity.TAG, "skipping datapoint beyond endtime with timestamp " + timestamp);
                         continue;
                     }
 
@@ -358,7 +359,6 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
 
 
         private synchronized void uploadDataChunk(double[] timestamps, float[] values, final int index, Session session, final DataSource dataSource, final int chunksProcessed) {
-            Log.i(MainActivity.TAG, "Inserting the session in the Sessions API: " + dataSource.getStreamName());
 
             final DataSet.Builder dataSetBuilder = DataSet.builder(dataSource);
 
@@ -375,7 +375,7 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
                 dataSetBuilder.add(dataPoint);
             }
 
-            @SuppressLint("DefaultLocale") final String message = String.format("Session %s: uploading %s chunk %d..",
+            @SuppressLint("DefaultLocale") final String message = String.format("Session %s: uploading %s chunk %d",
                     session.getIdentifier(), dataSource.getDataType().getName(), chunksProcessed);
 
             insertData(session, dataSetBuilder.build(), message);
@@ -388,10 +388,7 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
                     .addDataSet(dataSet)
                     .build();
 
-            Log.i(MainActivity.TAG, message);
-
             while (isUploading) {
-                Log.i(MainActivity.TAG, "upload in progress, sleeping for 250ms..");
                 SystemClock.sleep(250);
             }
 
@@ -405,19 +402,18 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
                         public void onSuccess(Void aVoid) {
                             // At this point, the session has been inserted and can be read.
                             publishProgress(message);
-                            Log.i(MainActivity.TAG, insertRequest.toString());
+                            Log.i(MainActivity.TAG, message + " successful.");
                         }
                     })
                     .addOnFailureListener(new OnFailureListener() {
                         @Override
                         public void onFailure(@NonNull Exception e) {
-                            publishProgress("There was a problem inserting the session: " +
-                                    e.getLocalizedMessage());
+                            publishProgress(String.format("There was a problem inserting session %s: %s",
+                                    session.getIdentifier(), e.getLocalizedMessage()));
                         }
                     }).addOnCompleteListener(new OnCompleteListener<Void>() {
                 @Override
                 public void onComplete(@NonNull Task<Void> task) {
-                    Log.i(MainActivity.TAG, "complete");
                     isUploading = false;
                 }
             });
