@@ -18,8 +18,10 @@ import androidx.lifecycle.ViewModelProviders;
 import com.jstappdev.e4client.MainActivity;
 import com.jstappdev.e4client.R;
 import com.jstappdev.e4client.SharedViewModel;
+import com.jstappdev.e4client.Utils;
 import com.scichart.charting.Direction2D;
 import com.scichart.charting.model.dataSeries.XyDataSeries;
+import com.scichart.charting.numerics.labelProviders.DateLabelProvider;
 import com.scichart.charting.visuals.SciChartSurface;
 import com.scichart.charting.visuals.annotations.AxisMarkerAnnotation;
 import com.scichart.charting.visuals.annotations.VerticalLineAnnotation;
@@ -33,6 +35,7 @@ import com.scichart.drawing.utility.ColorUtil;
 import com.scichart.extensions.builders.SciChartBuilder;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.Objects;
 
 import butterknife.BindView;
@@ -59,6 +62,7 @@ public class ChartsFragment extends Fragment {
     private SciChartBuilder sciChartBuilder;
 
     private static final int AXIS_MARKER_COLOR = 0xFFFFA500;
+    private static final int HRV_MARKER_COLOR = 0x00FFA500;
 
     private static float averageHr = -1.0f;
 
@@ -91,6 +95,14 @@ public class ChartsFragment extends Fragment {
         SciChartBuilder.dispose();
     }
 
+    public static class DateLabelProviderEx extends DateLabelProvider {
+        @Override
+        public String formatLabel(Comparable dataValue) {
+            // return a formatting string for tick labels
+            return Utils.getDuration(Math.round((Double) dataValue));
+        }
+    }
+
     private void setupChart(SciChartSurface chartSurface, final String yAxisTitle, XyDataSeries<Double, Float> lineData, boolean isFirstPane) {
 
         final IAxis xAxis = sciChartBuilder.newDateAxis()
@@ -99,8 +111,7 @@ public class ChartsFragment extends Fragment {
                 .withGrowBy(0, 0.1)
                 .withVisibility(isFirstPane ? View.VISIBLE : View.GONE)
                 .build();
-
-        xAxis.setTextFormatting("HH:mm:ss");
+        xAxis.setLabelProvider(new DateLabelProviderEx());
 
         // Create a numeric Y axis
         final IAxis yAxis = sciChartBuilder.newNumericAxis()
@@ -134,12 +145,14 @@ public class ChartsFragment extends Fragment {
         // Create a couple of DataSeries for numeric data
         final XyDataSeries<Double, Float> edaLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
         final XyDataSeries<Double, Float> hrLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
-        //  final XyDataSeries<Double, Float> bvpLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
+        // final XyDataSeries<Double, Float> bvpLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
         final XyDataSeries<Double, Float> tempLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
-        //final XyDataSeries<Double, Float> ibiLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
+        // final XyDataSeries<Double, Float> ibiLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
 
         final AxisMarkerAnnotation hrAxisMarker = sciChartBuilder.newAxisMarkerAnnotation()
                 .withY1(0d).withBackgroundColor(AXIS_MARKER_COLOR).build();
+        final AxisMarkerAnnotation hrvAxisMarker = sciChartBuilder.newAxisMarkerAnnotation()
+                .withY1(0d).withBackgroundColor(HRV_MARKER_COLOR).build();
         final AxisMarkerAnnotation tempAxisMarker = sciChartBuilder.newAxisMarkerAnnotation()
                 .withY1(0d).withBackgroundColor(AXIS_MARKER_COLOR).build();
 
@@ -150,7 +163,7 @@ public class ChartsFragment extends Fragment {
         //setupChart(ibiChart, "IBI", ibiLineData);
 
         // axis marker showing current value
-        Collections.addAll(hrChart.getAnnotations(), hrAxisMarker);
+        Collections.addAll(hrChart.getAnnotations(), hrAxisMarker, hrvAxisMarker);
         Collections.addAll(tempChart.getAnnotations(), tempAxisMarker);
 
         verticalGroup.addSurfaceToGroup(edaChart);
@@ -161,6 +174,9 @@ public class ChartsFragment extends Fragment {
 
         // modifiers for main chart
         if (!sharedViewModel.getIsConnected().getValue()) {
+
+            sharedXRange.setMin(new Date(sharedViewModel.getSessionData().getInitialTime()));
+
             Collections.addAll(edaChart.getChartModifiers(), sciChartBuilder.newModifierGroup()
                     .withXAxisDragModifier().build()
                     .withZoomPanModifier().withReceiveHandledEvents(true).withXyDirection(Direction2D.XDirection).build()
@@ -185,6 +201,14 @@ public class ChartsFragment extends Fragment {
                 Collections.addAll(edaChart.getAnnotations(), verticalLine);
             }
 
+            // fixme: annotation not visible
+            // display heart rate variability
+            final double hrv = Utils.calcHrvSDNN(sharedViewModel.getSessionData().getHr());
+            Log.d(MainActivity.TAG, "calulated HRV: " + hrv);
+            hrvAxisMarker.setY1(hrv);
+
+            edaChart.animateZoomExtents(500);
+
             return;
         }
 
@@ -204,7 +228,7 @@ public class ChartsFragment extends Fragment {
         sharedViewModel.getLastBvp().observe(owner, new Observer<Integer>() {
             @Override
             public void onChanged(Integer lastBvp) {
-                bvpLineData.append(sharedViewModel.getSesssionData().getBvpTimestamps().getLast(), sharedViewModel.getSesssionData().getBvp().get(lastBvp));
+                bvpLineData.append(sharedViewModel.getSessionData().getBvpTimestamps().getLast(), sharedViewModel.getSesssionData().getBvp().get(lastBvp));
                 bvpChart.zoomExtents();
             }
         });
