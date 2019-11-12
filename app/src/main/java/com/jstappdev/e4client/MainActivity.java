@@ -275,6 +275,12 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         if (deviceManager != null) {
             deviceManager.cleanUp();
         }
+
+        try {
+            Utils.trimCache(this);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override

@@ -71,9 +71,30 @@ public class Utils {
         return new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename()).exists();
     }
 
-    static boolean isSessionUploaded(final E4Session e4Session) {
-        // todo: query google fit
-        return false;
+    public static void trimCache(Context context) {
+        try {
+            File dir = context.getCacheDir();
+            if (dir != null && dir.isDirectory()) {
+                deleteDir(dir);
+            }
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
+    }
+
+    private static boolean deleteDir(File dir) {
+        if (dir != null && dir.isDirectory()) {
+            String[] children = dir.list();
+            for (int i = 0; i < children.length; i++) {
+                boolean success = deleteDir(new File(dir, children[i]));
+                if (!success) {
+                    return false;
+                }
+            }
+        }
+
+        // The directory is now empty so delete it
+        return dir.delete();
     }
 
     private static float magnitude(final int x, final int y, final int z) {
@@ -131,6 +152,8 @@ public class Utils {
 
                 final File sessionFile = new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename());
 
+                trimCache(MainActivity.context);
+
                 new ZipFile(sessionFile.getAbsolutePath()).extractAll(basePath);
 
                 basePath += File.separator;
@@ -138,7 +161,7 @@ public class Utils {
                 // same file format for EDA, HR, BVP, TEMP
                 final File edaFile = new File(basePath + "EDA.csv");
                 final File tempFile = new File(basePath + "TEMP.csv");
-                final File bvpFile = new File(basePath + "BVP.csv");
+                //final File bvpFile = new File(basePath + "BVP.csv");
                 final File hrFile = new File(basePath + "HR.csv");
 
                 //final File tagFile = new File(basePath + "tags.csv");
@@ -431,6 +454,8 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
                     String basePath = MainActivity.context.getCacheDir().getPath();
 
                     Log.d(MainActivity.TAG, "extracting to directory " + basePath);
+
+                    trimCache(MainActivity.context);
 
                     new ZipFile(sessionFile.getAbsolutePath()).extractAll(basePath);
 
