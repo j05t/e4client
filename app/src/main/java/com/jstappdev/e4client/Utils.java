@@ -53,6 +53,25 @@ public class Utils {
 
     public static boolean isUploading = false;
 
+    private static double variance(final List<Float> list) {
+        double sum = 0;
+
+        for (Float f : list) sum += f;
+
+        double mean = sum / (double) list.size();
+
+        // Compute sum of squared differences with mean
+        double sqDiff = 0;
+
+        for (float f : list) sqDiff += (f - mean) * (f - mean);
+
+        return sqDiff / list.size();
+    }
+
+    public static double calcHrvSDNN(List<Float> list) {
+        return Math.sqrt(variance(list));
+    }
+
     public static String getDate(final long time) {
         final Calendar cal = Calendar.getInstance(Locale.getDefault());
         cal.setTimeZone(TimeZone.getTimeZone("UTC"));
