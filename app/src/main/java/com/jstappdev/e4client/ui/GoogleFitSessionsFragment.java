@@ -16,7 +16,10 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProviders;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.fitness.Fitness;
+import com.google.android.gms.fitness.FitnessOptions;
 import com.google.android.gms.fitness.data.DataPoint;
 import com.google.android.gms.fitness.data.DataSet;
 import com.google.android.gms.fitness.data.DataSource;
@@ -74,6 +77,36 @@ public class GoogleFitSessionsFragment extends Fragment {
         cal.add(Calendar.YEAR, -1);
         final long startTime = cal.getTimeInMillis();
 
+        final FitnessOptions.Builder fitnessOptionsBuilder = FitnessOptions.builder();
+
+        for (DataType dataType : MainActivity.dataTypes) {
+            Log.d(MainActivity.TAG, "adding datatype to fitnessoptions: " + dataType.toString());
+            fitnessOptionsBuilder.addDataType(dataType, FitnessOptions.ACCESS_READ);
+        }
+        fitnessOptionsBuilder.addDataType(DataType.TYPE_HEART_RATE_BPM, FitnessOptions.ACCESS_READ);
+
+        FitnessOptions fitnessOptions = fitnessOptionsBuilder.build();
+
+        Log.d(MainActivity.TAG, "created fitnessOptions with implied scopes");
+        for (Scope s : fitnessOptions.getImpliedScopes()) {
+            Log.d(MainActivity.TAG, s.toString());
+        }
+
+        if (!GoogleSignIn.hasPermissions(
+                GoogleSignIn.getLastSignedInAccount(MainActivity.context),
+                fitnessOptions
+        )
+        ) {
+            Log.e("GOOGLE_FIT", "no permission");
+            GoogleSignIn.requestPermissions(
+                    MainActivity.context, // your activity
+                    MainActivity.GOOGLE_FIT_PERMISSIONS_REQUEST_CODE,
+                    GoogleSignIn.getLastSignedInAccount(MainActivity.context),
+                    fitnessOptions);
+        } else {
+            Log.e("GOOGLE_FIT", "has permission");
+        }
+
         DataSource dataSource = new DataSource.Builder()
                 .setDataType(DataType.TYPE_HEART_RATE_BPM)
                 .setType(DataSource.TYPE_RAW)
@@ -94,8 +127,8 @@ public class GoogleFitSessionsFragment extends Fragment {
         result.addOnCompleteListener(new OnCompleteListener<DataReadResponse>() {
             @Override
             public void onComplete(@NonNull Task<DataReadResponse> task) {
-                StringBuilder sb = new StringBuilder( task.getResult().toString());
-                for (DataSet dataSet: task.getResult().getDataSets()) {
+                StringBuilder sb = new StringBuilder(task.getResult().toString());
+                for (DataSet dataSet : task.getResult().getDataSets()) {
                     sb.append(dataSet.getDataPoints());
                 }
                 textView.setText(sb.toString());
@@ -185,7 +218,6 @@ public class GoogleFitSessionsFragment extends Fragment {
 
          */
     }
-
 
 
 }
