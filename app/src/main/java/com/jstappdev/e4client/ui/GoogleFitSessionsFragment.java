@@ -1,7 +1,9 @@
 package com.jstappdev.e4client.ui;
 
 import android.annotation.SuppressLint;
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,12 +19,18 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.fitness.Fitness;
 import com.google.android.gms.fitness.data.DataPoint;
 import com.google.android.gms.fitness.data.DataSet;
+import com.google.android.gms.fitness.data.DataSource;
+import com.google.android.gms.fitness.data.DataType;
 import com.google.android.gms.fitness.data.Field;
 import com.google.android.gms.fitness.data.Session;
+import com.google.android.gms.fitness.request.DataReadRequest;
 import com.google.android.gms.fitness.request.SessionReadRequest;
+import com.google.android.gms.fitness.result.DataReadResponse;
 import com.google.android.gms.fitness.result.SessionReadResponse;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.jstappdev.e4client.MainActivity;
 import com.jstappdev.e4client.R;
 import com.jstappdev.e4client.SharedViewModel;
@@ -40,8 +48,11 @@ public class GoogleFitSessionsFragment extends Fragment {
 
     private TextView textView;
 
+    @SuppressLint("SourceLockedOrientationActivity")
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
+
+        requireActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
         sharedViewModel = ViewModelProviders.of(requireActivity()).get(SharedViewModel.class);
 
@@ -55,25 +66,58 @@ public class GoogleFitSessionsFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        // Set a start and end time for our query, using a start time of 1 week before this moment.
+
         Calendar cal = Calendar.getInstance();
         Date now = new Date();
         cal.setTime(now);
-        long endTime = cal.getTimeInMillis();
+        final long endTime = cal.getTimeInMillis();
         cal.add(Calendar.YEAR, -1);
-        long startTime = cal.getTimeInMillis();
+        final long startTime = cal.getTimeInMillis();
+
+        DataSource dataSource = new DataSource.Builder()
+                .setDataType(DataType.TYPE_HEART_RATE_BPM)
+                .setType(DataSource.TYPE_RAW)
+                //.setStreamName("heart_rate")
+                //.setAppPackageName(MainActivity.context.getPackageName())
+                .build();
+
+        DataReadRequest readRequest = new DataReadRequest.Builder()
+                .read(dataSource).enableServerQueries()
+                .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
+                .build();
+
+        Task<DataReadResponse> result = Fitness.getHistoryClient(MainActivity.context,
+                Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(MainActivity.context)))
+                .readData(readRequest);
+
+
+        result.addOnCompleteListener(new OnCompleteListener<DataReadResponse>() {
+            @Override
+            public void onComplete(@NonNull Task<DataReadResponse> task) {
+                StringBuilder sb = new StringBuilder( task.getResult().toString());
+                for (DataSet dataSet: task.getResult().getDataSets()) {
+                    sb.append(dataSet.getDataPoints());
+                }
+                textView.setText(sb.toString());
+                Log.d(MainActivity.TAG, sb.toString());
+            }
+        });
+
+        /*
 
 // Build a session read request
-        SessionReadRequest readRequest = new SessionReadRequest.Builder()
+        final SessionReadRequest readRequest = new SessionReadRequest.Builder()
                 .setTimeInterval(1L, endTime, TimeUnit.MILLISECONDS).enableServerQueries()
                 .readSessionsFromAllApps().setSessionName(MainActivity.SESSION_NAME)
                 .build();
 
+
+
         Log.d(MainActivity.TAG, readRequest.toString());
 
-// Invoke the Sessions API to fetch the session with the query and wait for the result
-// of the read request. Note: Fitness.SessionsApi.readSession() requires the
-// ACCESS_FINE_LOCATION permission.
+        // Invoke the Sessions API to fetch the session with the query and wait for the result
+        // of the read request. Note: Fitness.SessionsApi.readSession() requires the
+        // ACCESS_FINE_LOCATION permission.
         Fitness.getSessionsClient(MainActivity.context, Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(MainActivity.context)))
                 .readSession(readRequest)
                 .addOnSuccessListener(new OnSuccessListener<SessionReadResponse>() {
@@ -94,15 +138,16 @@ public class GoogleFitSessionsFragment extends Fragment {
                                 Log.d(MainActivity.TAG, "already uploaded to Google Fit: Session " + session.getIdentifier());
                             }
 
-                            // Process the data sets for this session
-                            List<DataSet> dataSets = sessionReadResponse.getDataSet(session);
+                            // Process the data sets for the session
+                            //List<DataSet> dataSets = sessionReadResponse.getDataSet(session);
+                            List<DataSet> dataSets =sessionReadResponse.getDataSet(session, MainActivity.dataTypes.get(0));
 
                             sb.append(String.format("\nStart:\t%s\nEnd:\t%s\nDatasets:\t%d\n\n",
                                     Utils.getDate(session.getStartTime(TimeUnit.MILLISECONDS)),
                                     Utils.getDate(session.getEndTime(TimeUnit.MILLISECONDS)),
                                     dataSets.size()));
 
-                            /*
+
                             for (DataSet dataSet : dataSets) {
                                 sb.append("\n")
                                         .append(dataSet.getDataSource()).append("\n")
@@ -112,7 +157,7 @@ public class GoogleFitSessionsFragment extends Fragment {
 
                                 dumpDataSet(dataSet);
                             }
-                             */
+
                         }
                         textView.setText(sb.toString());
                     }
@@ -137,5 +182,10 @@ public class GoogleFitSessionsFragment extends Fragment {
                 Log.i(MainActivity.TAG, "\tField: " + field.getName() + " Value: " + dp.getValue(field));
             }
         }
+
+         */
     }
+
+
+
 }

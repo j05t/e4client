@@ -26,6 +26,6 @@
     <string name="battery_label">Battery</string>
     <string name="menu_home">Home</string>
 
-    <string name="credits">Custom client for the E4 wristband from Empatica. Please visit www.empatica.com/research/e4 for official documentation and support. This application is not affiliated in any way with Empatica.\n\nCreated for the University of Applied Sciences FH Joanneum Graz. Full source code is available at github.com/j05t/e4client.\n\nCharting library provided by www.scichart.com. Icons made by Freepik, Smashicons, hirschwolf, srip from www.flaticon.com.</string>
+    <string name="credits" >Custom client for the E4 wristband from Empatica. Visit www.empatica.com/research/e4 for official documentation and support. This application is not affiliated in any way with Empatica.\n\nDeveloped for the eHealth department of the University of Applied Sciences FH Joanneum Graz. Source code available at github.com/j05t/e4client.\n\nCharting library provided by www.scichart.com. Icons made by Freepik, Smashicons, hirschwolf, srip from www.flaticon.com.</string>
     <string name="settings_description">Insert your Empatica account username and password here to enable session data synchronisation.</string>
 </resources>

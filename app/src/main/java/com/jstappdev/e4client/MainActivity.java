@@ -39,6 +39,7 @@ import com.empatica.empalink.config.EmpaStatus;
 import com.empatica.empalink.delegate.EmpaStatusDelegate;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.fitness.Fitness;
 import com.google.android.gms.fitness.FitnessOptions;
 import com.google.android.gms.fitness.data.DataType;
@@ -85,10 +86,10 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
     public static MainActivity context;
 
-    public static final String PREFS_NAME = "preferences";
-    public static final String PREF_UNAME = "Username";
-    public static final String PREF_PASSWORD = "Password";
-    public static final String PREFS_DATATYPES_CREATED = "datatypes_created";
+    public static final String PREFS_NAME = "prefs";
+    public static final String PREF_UNAME = "uname";
+    public static final String PREF_PASSWORD = "pass";
+    public static final String PREFS_DATATYPES_CREATED = "types_created";
 
     private static final String[] customDataTypes = new String[]{"eda", "temp", "bvp", "ibi", "acc"};
     public static ArrayList<DataType> dataTypes;
@@ -411,8 +412,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     public void createGoogleFitClient() {
         requestPermissions(new String[]{Manifest.permission.ACTIVITY_RECOGNITION, Manifest.permission.ACCESS_FINE_LOCATION}, GOOGLE_FIT_PERMISSIONS_REQUEST_CODE);
 
-
-        FitnessOptions fitnessOptions = FitnessOptions.builder()
+        final FitnessOptions fitnessOptions = FitnessOptions.builder()
                 .addDataType(DataType.TYPE_HEART_RATE_BPM, FitnessOptions.ACCESS_WRITE)
                 .build();
 
@@ -423,20 +423,20 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
                     GoogleSignIn.getLastSignedInAccount(this),
                     fitnessOptions);
         } else {
+            readUploadedSessions();
 
             if (!googleFitCustomDatatypesCreated) {
                 new CreateCustomDataTypes(this).execute();
                 googleFitCustomDatatypesCreated = true;
             }
         }
-        readUploadedSessions();
     }
 
     private void readUploadedSessions() {
 
-        Log.d(TAG, "reading uploaded sessions from Google Fit");
+        Log.d(TAG, "reading sessions stored in Google Fit");
 
-        // Set a start and end time for our query, using a start time of 1 week before this moment.
+        // Set a start and end time for our query
         Calendar cal = Calendar.getInstance();
         Date now = new Date();
         cal.setTime(now);
@@ -495,7 +495,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
             // todo: tags
             // the only predefined data type we can use is com.google.heart_rate.bpm
-            for (String s : customDataTypes) {
+            for (final String s : customDataTypes) {
                 try {
                     DataType dataType = Tasks.await(Fitness.getConfigClient(activity.get(), googleSignInAccount)
                             .createCustomDataType(new DataTypeCreateRequest.Builder()
@@ -513,14 +513,19 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
             final FitnessOptions.Builder fitnessOptionsBuilder = FitnessOptions.builder();
 
-            for (DataType dataType : dataTypes)
+            for (DataType dataType : dataTypes) {
+                Log.d(TAG, "adding datatype to fitnessoptions: " + dataType.toString());
                 fitnessOptionsBuilder.addDataType(dataType, FitnessOptions.ACCESS_WRITE);
+            }
 
             fitnessOptionsBuilder.addDataType(DataType.TYPE_HEART_RATE_BPM, FitnessOptions.ACCESS_WRITE);
 
             fitnessOptions = fitnessOptionsBuilder.build();
 
-            Log.d(TAG, "created fitnessOptions: " + fitnessOptions.toString());
+            Log.d(TAG, "created fitnessOptions with scopes");
+            for(Scope s : fitnessOptions.getImpliedScopes()) {
+                Log.d(TAG, s.toString());
+            }
 
             return null;
         }
@@ -537,6 +542,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
 
+            // todo: save in sharedpreferences
             googleFitCustomDatatypesCreated = true;
         }
     }

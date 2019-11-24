@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -8,7 +9,7 @@
         android:id="@+id/button_about"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="8dp"
         android:text="About"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -20,12 +21,12 @@
         android:layout_height="96dp"
         android:layout_marginEnd="32dp"
         android:layout_marginBottom="48dp"
-        android:background="@drawable/ic_menu_manage"
+        android:background="@drawable/roundshapebutton"
         android:backgroundTint="@color/colorPrimary"
+        android:drawableTop="@drawable/ic_menu_manage"
+        android:padding="8dp"
         android:text="Settings"
-        android:textAppearance="@style/TextAppearance.AppCompat.Large"
-        android:textSize="20sp"
-        android:textStyle="bold"
+        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/guideline" />
 
@@ -35,12 +36,12 @@
         android:layout_height="96dp"
         android:layout_marginEnd="32dp"
         android:layout_marginBottom="48dp"
-        android:background="@drawable/ic_menu_connection"
+        android:background="@drawable/roundshapebutton"
         android:backgroundTint="@color/colorPrimary"
+        android:drawableTop="@drawable/ic_menu_connection"
+        android:padding="8dp"
         android:text="@string/menu_connect"
-        android:textAppearance="@style/TextAppearance.AppCompat.Large"
-        android:textSize="20sp"
-        android:textStyle="bold"
+        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
         app:layout_constraintBottom_toTopOf="@+id/button_settings"
         app:layout_constraintEnd_toStartOf="@+id/guideline" />
 
@@ -50,12 +51,12 @@
         android:layout_height="96dp"
         android:layout_marginStart="32dp"
         android:layout_marginBottom="48dp"
-        android:background="@drawable/ic_menu_sessions"
+        android:background="@drawable/roundshapebutton"
         android:backgroundTint="@color/colorPrimary"
+        android:drawableTop="@drawable/ic_menu_sessions"
+        android:padding="8dp"
         android:text="Sessions"
-        android:textAppearance="@style/TextAppearance.AppCompat.Large"
-        android:textSize="20sp"
-        android:textStyle="bold"
+        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
         app:layout_constraintBottom_toTopOf="@+id/button_charts"
         app:layout_constraintStart_toStartOf="@+id/guideline" />
 
@@ -65,12 +66,13 @@
         android:layout_height="96dp"
         android:layout_marginStart="32dp"
         android:layout_marginBottom="48dp"
-        android:background="@drawable/ic_menu_charts"
+        android:background="@drawable/roundshapebutton"
         android:backgroundTint="@color/colorPrimary"
+        android:drawableTop="@drawable/ic_menu_charts"
+        android:padding="8dp"
         android:text="@string/menu_charts"
         android:textAllCaps="false"
-        android:textSize="20sp"
-        android:textStyle="bold"
+        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="@+id/guideline" />
 
@@ -85,12 +87,21 @@
         android:id="@+id/title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:text="E4 Client"
+        android:text="Empatica E4 Client"
         android:textAppearance="@style/TextAppearance.AppCompat.Large"
         android:textSize="30sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/fhlogo" />
+
+    <ImageView
+        android:id="@+id/fhlogo"
+        android:layout_width="0dp"
+        android:layout_height="120dp"
+        android:scaleType="fitCenter"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/fhj_logo" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

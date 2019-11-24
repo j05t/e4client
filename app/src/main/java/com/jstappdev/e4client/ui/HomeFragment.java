@@ -1,7 +1,12 @@
 package com.jstappdev.e4client.ui;
 
+import android.annotation.SuppressLint;
 import android.content.DialogInterface;
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
+import android.text.Html;
+import android.text.SpannableString;
+import android.text.util.Linkify;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,9 +20,12 @@ import com.jstappdev.e4client.R;
 
 public class HomeFragment extends Fragment {
 
+    @SuppressLint("SourceLockedOrientationActivity")
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
+
+        requireActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
         return inflater.inflate(R.layout.fragment_home, container, false);
     }
@@ -51,9 +59,12 @@ public class HomeFragment extends Fragment {
         view.findViewById(R.id.button_about).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                final SpannableString s = new SpannableString(getResources().getString(R.string.credits));
+                Linkify.addLinks(s, Linkify.WEB_URLS);
+
                 new android.app.AlertDialog.Builder(requireContext())
                         .setTitle("About e4client")
-                        .setMessage(getResources().getString(R.string.credits))
+                        .setMessage(s)
                         .setCancelable(true)
                         .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                                     public void onClick(DialogInterface dialog, int id) {

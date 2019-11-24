@@ -12,16 +12,21 @@ import androidx.lifecycle.ViewModelProviders;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.fitness.Fitness;
+import com.google.android.gms.fitness.FitnessActivities;
 import com.google.android.gms.fitness.data.DataPoint;
 import com.google.android.gms.fitness.data.DataSet;
 import com.google.android.gms.fitness.data.DataSource;
 import com.google.android.gms.fitness.data.DataType;
 import com.google.android.gms.fitness.data.Session;
 import com.google.android.gms.fitness.request.SessionInsertRequest;
+import com.google.android.gms.fitness.result.DataReadResponse;
+import com.google.android.gms.fitness.result.DataReadResult;
+import com.google.android.gms.tasks.OnCanceledListener;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.jstappdev.e4client.data.CSVFile;
 import com.jstappdev.e4client.data.E4Session;
 import com.jstappdev.e4client.data.E4SessionData;
@@ -47,6 +52,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.TimeZone;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class Utils {
@@ -141,6 +147,7 @@ public class Utils {
                         .setName(MainActivity.SESSION_NAME)
                         .setDescription("empatica_e4_session")
                         .setIdentifier(e4Session.getId())
+                        .setActivity(FitnessActivities.SLEEP)
                         .setStartTime(e4Session.getStartTime(), TimeUnit.MILLISECONDS)
                         .setEndTime(e4Session.getStartTime() + e4Session.getDuration(), TimeUnit.MILLISECONDS)
                         .build();
@@ -380,20 +387,27 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
 
         private synchronized void uploadDataChunk(double[] timestamps, float[] values, final int index, Session session, final DataSource dataSource, final int chunksProcessed) {
 
+            if (index < 10 ) return;
+
             final DataSet.Builder dataSetBuilder = DataSet.builder(dataSource);
+
+            float sum = 0f;
 
             for (int i = 0; i < index; i++) {
                 final float value = values[i];
                 final double timestamp = timestamps[i];
 
-                final DataPoint dataPoint = DataPoint.builder(dataSource)
-                        // fixme: rounding double to closest long..
-                        .setTimestamp(Math.round(timestamp), TimeUnit.MILLISECONDS)
-                        .setFloatValues(value)
-                        .build();
-
-                dataSetBuilder.add(dataPoint);
+                sum += value;
             }
+
+            // we only upload the mean to save on data volume
+            final DataPoint dataPoint = DataPoint.builder(dataSource)
+                    // fixme: rounding double to closest long..
+                    .setTimeInterval(Math.round(timestamps[0]), Math.round(timestamps[index - 1]),TimeUnit.MILLISECONDS)
+                    .setFloatValues(sum / index)
+                    .build();
+
+            dataSetBuilder.add(dataPoint);
 
             @SuppressLint("DefaultLocale") final String message = String.format("Session %s: uploading %s chunk %d",
                     session.getIdentifier(), dataSource.getDataType().getName(), chunksProcessed);
@@ -402,17 +416,42 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
         }
 
         private synchronized void insertData(final Session session, final DataSet dataSet, final String message) {
-            // Build a session insert request
-            final SessionInsertRequest insertRequest = new SessionInsertRequest.Builder()
-                    .setSession(session)
-                    .addDataSet(dataSet)
-                    .build();
 
             while (isUploading) {
                 SystemClock.sleep(250);
             }
 
             isUploading = true;
+
+            Fitness.getHistoryClient(MainActivity.context,
+                    Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(MainActivity.context)))
+                    .insertData(dataSet).addOnCompleteListener(new OnCompleteListener<Void>() {
+                        @Override
+                        public void onComplete(@NonNull Task<Void> task) {
+                            publishProgress(message);
+                            Log.i(MainActivity.TAG, message + " successful.");
+                            isUploading = false;
+                        }
+                    }).addOnCanceledListener(new OnCanceledListener() {
+                        @Override
+                        public void onCanceled() {
+                            Log.i(MainActivity.TAG, message + " failed.");
+                            isUploading = false;
+                        }
+                    }).addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Log.i(MainActivity.TAG, message + " canceled.");
+                            isUploading = false;
+                        }
+                    });
+
+            /*
+            // Build a session insert request
+            final SessionInsertRequest insertRequest = new SessionInsertRequest.Builder()
+                    .setSession(session)
+                    .addDataSet(dataSet)
+                    .build();
 
             // invoke the Sessions API to insert the session and await the result,
             Fitness.getSessionsClient(MainActivity.context, Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(MainActivity.context)))
@@ -437,6 +476,8 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
                     isUploading = false;
                 }
             });
+
+        */
         }
 
         @Override

@@ -69,6 +69,8 @@ public class ChartsFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
 
+        requireActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+
         sharedViewModel = ViewModelProviders.of(Objects.requireNonNull(requireActivity())).get(SharedViewModel.class);
 
         final View root = inflater.inflate(R.layout.fragment_charts, container, false);
@@ -77,8 +79,6 @@ public class ChartsFragment extends Fragment {
 
         SciChartBuilder.init(requireActivity());
         sciChartBuilder = SciChartBuilder.instance();
-
-        requireActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
 
         return root;
     }
