@@ -12,21 +12,16 @@ import androidx.lifecycle.ViewModelProviders;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.fitness.Fitness;
-import com.google.android.gms.fitness.FitnessActivities;
 import com.google.android.gms.fitness.data.DataPoint;
 import com.google.android.gms.fitness.data.DataSet;
 import com.google.android.gms.fitness.data.DataSource;
 import com.google.android.gms.fitness.data.DataType;
 import com.google.android.gms.fitness.data.Session;
 import com.google.android.gms.fitness.request.SessionInsertRequest;
-import com.google.android.gms.fitness.result.DataReadResponse;
-import com.google.android.gms.fitness.result.DataReadResult;
 import com.google.android.gms.tasks.OnCanceledListener;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
 import com.jstappdev.e4client.data.CSVFile;
 import com.jstappdev.e4client.data.E4Session;
 import com.jstappdev.e4client.data.E4SessionData;
@@ -52,30 +47,30 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.TimeZone;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class Utils {
 
     public static boolean isUploading = false;
 
-    private static double variance(final List<Float> list) {
+    private static double variance(final float[] list, final int size) {
         double sum = 0;
 
-        for (Float f : list) sum += f;
+        for (int i = 0; i < size; i++)
+            sum += list[i];
 
-        double mean = sum / (double) list.size();
+        double mean = sum / (double) size;
 
         // Compute sum of squared differences with mean
         double sqDiff = 0;
 
         for (float f : list) sqDiff += (f - mean) * (f - mean);
 
-        return sqDiff / list.size();
+        return sqDiff / size;
     }
 
-    public static double calcHrvSDNN(List<Float> list) {
-        return Math.sqrt(variance(list));
+    public static float calcHrvSDNN(final float[] list, final int size) {
+        return (float) Math.sqrt(variance(list, size));
     }
 
     public static String getDate(final long time) {
@@ -147,13 +142,27 @@ public class Utils {
                         .setName(MainActivity.SESSION_NAME)
                         .setDescription("empatica_e4_session")
                         .setIdentifier(e4Session.getId())
-                        .setActivity(FitnessActivities.SLEEP)
+                        //.setActivity(FitnessActivities.SLEEP)
                         .setStartTime(e4Session.getStartTime(), TimeUnit.MILLISECONDS)
                         .setEndTime(e4Session.getStartTime() + e4Session.getDuration(), TimeUnit.MILLISECONDS)
                         .build();
 
 
                 if (!viewModel.getUploadedSessionIDs().contains(e4Session.getId())) {
+
+                    // Build a session insert request
+                    final SessionInsertRequest insertRequest = new SessionInsertRequest.Builder()
+                            .setSession(fitSession)
+                            .build();
+                    // invoke the Sessions API to insert the session and await the result,
+                    Fitness.getSessionsClient(MainActivity.context, Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(MainActivity.context)))
+                            .insertSession(insertRequest).addOnCompleteListener(new OnCompleteListener<Void>() {
+                        @Override
+                        public void onComplete(@NonNull Task<Void> task) {
+                            Log.d(MainActivity.TAG, "created session: " + fitSession.toString());
+                        }
+                    });
+
                     Log.d(MainActivity.TAG, "uploading " + fitSession.toString());
 
                     if (processFile(e4Session, fitSession)) {
@@ -255,16 +264,22 @@ public class Utils {
 
 
         private synchronized void uploadFile(final File file, final DataSource dataSource, final Session session) {
+
+            Log.d(MainActivity.TAG, "uploading " + file.getName());
+
             double[] xBuf = new double[1000];
             float[] yBuf = new float[1000];
             int index = 0;
 
+            final DataSet.Builder dataSetBuilder = DataSet.builder(dataSource);
+
             try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
                 final double initialTime = Double.parseDouble(reader.readLine());
                 final double samplingRate = 1d / Double.parseDouble(reader.readLine());
-                String line;
                 int lineNumber = 0;
-                int chunksProcessed = 0;
+                float sum = 0f;
+                String line;
+
                 while ((line = reader.readLine()) != null) {
                     final double timestamp = initialTime + samplingRate * lineNumber++;
 
@@ -277,14 +292,24 @@ public class Utils {
                         continue;
                     }
 
-                    if (index < 999) {
-                        index++;
-                    } else {
-                        uploadDataChunk(xBuf, yBuf, index, session, dataSource, ++chunksProcessed);
+                    sum += yBuf[index];
+                    index++;
+
+                    if (index > 999) {
+                        // insert mean for every 1000 data points
+                        // fixme: rounding double to closest long..
+                        dataSetBuilder.add(DataPoint.builder(dataSource)
+                                .setTimeInterval(Math.round(xBuf[0]), Math.round(xBuf[index - 1]), TimeUnit.MILLISECONDS)
+                                .setFloatValues(sum / index)
+                                .build());
+                        Log.d(MainActivity.TAG, "inserted average value: " + sum / index);
+
+                        sum = 0f;
                         index = 0;
                     }
                 }
-                uploadDataChunk(xBuf, yBuf, index, session, dataSource, ++chunksProcessed);
+
+                uploadAveragedDataChunk(dataSetBuilder.build());
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -295,14 +320,18 @@ public class Utils {
         private synchronized void uploadAccFile(File file, DataSource dataSource, Session session) {
             double[] xBuf = new double[1000];
             float[] yBuf = new float[1000];
+
             int index = 0;
+
+            final DataSet.Builder dataSetBuilder = DataSet.builder(dataSource);
 
             try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
                 final double initialTime = Double.parseDouble(reader.readLine().split(",")[0]);
                 final double samplingRate = 1d / Double.parseDouble(reader.readLine().split(",")[0]);
+                float sum = 0f;
+
                 String line;
                 int lineNumber = 0;
-                int chunksProcessed = 0;
 
                 while ((line = reader.readLine()) != null) {
                     final String[] acc = line.split(",");
@@ -320,15 +349,25 @@ public class Utils {
 
                     xBuf[index] = timestamp;
                     yBuf[index] = magnitude;
+                    sum += magnitude;
+                    index++;
 
-                    if (index < 999) {
-                        index++;
-                    } else {
-                        uploadDataChunk(xBuf, yBuf, index, session, dataSource, ++chunksProcessed);
+                    if (index > 999) {
+                        // insert mean for every 1000 data points
+                        // fixme: rounding double to closest long..
+                        dataSetBuilder.add(DataPoint.builder(dataSource)
+                                .setTimeInterval(Math.round(xBuf[0]), Math.round(xBuf[index - 1]), TimeUnit.MILLISECONDS)
+                                .setFloatValues(sum / index)
+                                .build());
+                        Log.d(MainActivity.TAG, "inserted average ACC magnitude: " + sum / index);
+
+
+                        sum = 0f;
                         index = 0;
                     }
                 }
-                uploadDataChunk(xBuf, yBuf, index, session, dataSource, ++chunksProcessed);
+
+                uploadAveragedDataChunk(dataSetBuilder.build());
 
 
             } catch (IOException e) {
@@ -344,7 +383,7 @@ public class Utils {
             try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
                 final double initialTime = Double.parseDouble(reader.readLine().split(",")[0]);
                 double timestamp;
-                int chunksProcessed = 0;
+                float sum = 0f;
 
                 String line;
 
@@ -354,6 +393,10 @@ No sample rate is needed for this file.
 The first column is the time (respect to the initial time) of the detected inter-beat interval expressed in seconds (s).
 The second column is the duration in seconds (s) of the detected inter-beat interval (i.e., the distance in seconds from the previous beat).
                  */
+
+                final DataSet.Builder hrDataSetBuilder = DataSet.builder(dataSource);
+                final DataSet.Builder hrvDataSetBuilder = DataSet.builder(dataSource);
+
                 while ((line = reader.readLine()) != null) {
                     final String[] split = line.split(",");
                     final double plusTime = Double.parseDouble(split[0]);
@@ -369,15 +412,33 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
 
                     xBuf[index] = timestamp;
                     yBuf[index] = ibi;
+                    sum += ibi;
+                    index++;
 
-                    if (index < 999) {
-                        index++;
-                    } else {
-                        uploadDataChunk(xBuf, yBuf, index, session, dataSource, ++chunksProcessed);
+                    if (index > 999) {
+                        // insert mean for every 1000 data points
+                        // fixme: rounding double to closest long..
+                        hrDataSetBuilder.add(DataPoint.builder(dataSource)
+                                .setTimeInterval(Math.round(xBuf[0]), Math.round(xBuf[index - 1]), TimeUnit.MILLISECONDS)
+                                .setFloatValues(sum / index)
+                                .build());
+                        Log.d(MainActivity.TAG, "inserted average IBI: " + sum / index);
+
+                        float avgHrv = Utils.calcHrvSDNN(yBuf, index);
+                        // fixme: rounding double to closest long..
+                        hrvDataSetBuilder.add(DataPoint.builder(dataSource)
+                                .setTimeInterval(Math.round(xBuf[0]), Math.round(xBuf[index - 1]), TimeUnit.MILLISECONDS)
+                                .setFloatValues(avgHrv)
+                                .build());
+                        Log.d(MainActivity.TAG, "inserted average HRV: " + avgHrv);
+
+                        sum = 0f;
                         index = 0;
                     }
                 }
-                uploadDataChunk(xBuf, yBuf, index, session, dataSource, ++chunksProcessed);
+
+                uploadAveragedDataChunk(hrDataSetBuilder.build());
+                uploadAveragedDataChunk(hrvDataSetBuilder.build());
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -385,37 +446,9 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
         }
 
 
-        private synchronized void uploadDataChunk(double[] timestamps, float[] values, final int index, Session session, final DataSource dataSource, final int chunksProcessed) {
+        private synchronized void uploadAveragedDataChunk(final DataSet dataSet) {
 
-            if (index < 10 ) return;
-
-            final DataSet.Builder dataSetBuilder = DataSet.builder(dataSource);
-
-            float sum = 0f;
-
-            for (int i = 0; i < index; i++) {
-                final float value = values[i];
-                final double timestamp = timestamps[i];
-
-                sum += value;
-            }
-
-            // we only upload the mean to save on data volume
-            final DataPoint dataPoint = DataPoint.builder(dataSource)
-                    // fixme: rounding double to closest long..
-                    .setTimeInterval(Math.round(timestamps[0]), Math.round(timestamps[index - 1]),TimeUnit.MILLISECONDS)
-                    .setFloatValues(sum / index)
-                    .build();
-
-            dataSetBuilder.add(dataPoint);
-
-            @SuppressLint("DefaultLocale") final String message = String.format("Session %s: uploading %s chunk %d",
-                    session.getIdentifier(), dataSource.getDataType().getName(), chunksProcessed);
-
-            insertData(session, dataSetBuilder.build(), message);
-        }
-
-        private synchronized void insertData(final Session session, final DataSet dataSet, final String message) {
+            if (dataSet.isEmpty()) return;
 
             while (isUploading) {
                 SystemClock.sleep(250);
@@ -426,58 +459,21 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
             Fitness.getHistoryClient(MainActivity.context,
                     Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(MainActivity.context)))
                     .insertData(dataSet).addOnCompleteListener(new OnCompleteListener<Void>() {
-                        @Override
-                        public void onComplete(@NonNull Task<Void> task) {
-                            publishProgress(message);
-                            Log.i(MainActivity.TAG, message + " successful.");
-                            isUploading = false;
-                        }
-                    }).addOnCanceledListener(new OnCanceledListener() {
-                        @Override
-                        public void onCanceled() {
-                            Log.i(MainActivity.TAG, message + " failed.");
-                            isUploading = false;
-                        }
-                    }).addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            Log.i(MainActivity.TAG, message + " canceled.");
-                            isUploading = false;
-                        }
-                    });
-
-            /*
-            // Build a session insert request
-            final SessionInsertRequest insertRequest = new SessionInsertRequest.Builder()
-                    .setSession(session)
-                    .addDataSet(dataSet)
-                    .build();
-
-            // invoke the Sessions API to insert the session and await the result,
-            Fitness.getSessionsClient(MainActivity.context, Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(MainActivity.context)))
-                    .insertSession(insertRequest)
-                    .addOnSuccessListener(new OnSuccessListener<Void>() {
-                        @Override
-                        public void onSuccess(Void aVoid) {
-                            // At this point, the session has been inserted and can be read.
-                            publishProgress(message);
-                            Log.i(MainActivity.TAG, message + " successful.");
-                        }
-                    })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            publishProgress(String.format("There was a problem inserting session %s: %s",
-                                    session.getIdentifier(), e.getLocalizedMessage()));
-                        }
-                    }).addOnCompleteListener(new OnCompleteListener<Void>() {
                 @Override
                 public void onComplete(@NonNull Task<Void> task) {
+                    publishProgress(dataSet.toString());
                     isUploading = false;
+
+                    if (task.isSuccessful()) {
+                        // At this point, the data has been inserted and can be read.
+                        publishProgress("Data insert was successful!");
+                    } else {
+                        publishProgress("There was a problem inserting the dataset.");
+                        Log.e(MainActivity.TAG,  "There was a problem inserting the dataset.", task.getException());
+                    }
                 }
             });
 
-        */
         }
 
         @Override
@@ -487,6 +483,7 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
             if (values.length > 0) viewModel.getSessionStatus().setValue(values[0]);
         }
     }
+
 
 
     // we cannot afford to load BVP and ACC data into memory for sessions longer than about 8 hours

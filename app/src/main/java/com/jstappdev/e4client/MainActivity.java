@@ -91,7 +91,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     public static final String PREF_PASSWORD = "pass";
     public static final String PREFS_DATATYPES_CREATED = "types_created";
 
-    private static final String[] customDataTypes = new String[]{"eda", "temp", "bvp", "ibi", "acc"};
+    private static final String[] customDataTypes = new String[]{"eda", "temp", "bvp", "ibi", "acc", "hrv"};
     public static ArrayList<DataType> dataTypes;
 
     public static OkHttpClient okHttpClient;
@@ -490,6 +490,10 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
             Log.d("e4", "creating custom datatypes");
 
             GoogleSignInAccount googleSignInAccount = GoogleSignIn.getLastSignedInAccount(activity.get());
+
+            Log.d(MainActivity.TAG, "CreateCustomDataTypes() signed in as " +
+                    googleSignInAccount.getDisplayName());
+
 
             dataTypes = new ArrayList<>();
 

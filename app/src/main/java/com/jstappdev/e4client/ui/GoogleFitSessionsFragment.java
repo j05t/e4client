@@ -3,7 +3,6 @@ package com.jstappdev.e4client.ui;
 import android.annotation.SuppressLint;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
-import android.provider.ContactsContract;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,7 +15,6 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProviders;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.fitness.Fitness;
 import com.google.android.gms.fitness.FitnessOptions;
@@ -25,14 +23,9 @@ import com.google.android.gms.fitness.data.DataSet;
 import com.google.android.gms.fitness.data.DataSource;
 import com.google.android.gms.fitness.data.DataType;
 import com.google.android.gms.fitness.data.Field;
-import com.google.android.gms.fitness.data.Session;
 import com.google.android.gms.fitness.request.DataReadRequest;
-import com.google.android.gms.fitness.request.SessionReadRequest;
 import com.google.android.gms.fitness.result.DataReadResponse;
-import com.google.android.gms.fitness.result.SessionReadResponse;
 import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.jstappdev.e4client.MainActivity;
 import com.jstappdev.e4client.R;
@@ -41,7 +34,6 @@ import com.jstappdev.e4client.Utils;
 
 import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -78,12 +70,11 @@ public class GoogleFitSessionsFragment extends Fragment {
         final long startTime = cal.getTimeInMillis();
 
         final FitnessOptions.Builder fitnessOptionsBuilder = FitnessOptions.builder();
-
+        fitnessOptionsBuilder.addDataType(DataType.TYPE_HEART_RATE_BPM, FitnessOptions.ACCESS_READ);
         for (DataType dataType : MainActivity.dataTypes) {
             Log.d(MainActivity.TAG, "adding datatype to fitnessoptions: " + dataType.toString());
             fitnessOptionsBuilder.addDataType(dataType, FitnessOptions.ACCESS_READ);
         }
-        fitnessOptionsBuilder.addDataType(DataType.TYPE_HEART_RATE_BPM, FitnessOptions.ACCESS_READ);
 
         FitnessOptions fitnessOptions = fitnessOptionsBuilder.build();
 
@@ -94,30 +85,42 @@ public class GoogleFitSessionsFragment extends Fragment {
 
         if (!GoogleSignIn.hasPermissions(
                 GoogleSignIn.getLastSignedInAccount(MainActivity.context),
-                fitnessOptions
-        )
+                fitnessOptions)
         ) {
-            Log.e("GOOGLE_FIT", "no permission");
+            Log.e(MainActivity.TAG, "no permission");
             GoogleSignIn.requestPermissions(
                     MainActivity.context, // your activity
                     MainActivity.GOOGLE_FIT_PERMISSIONS_REQUEST_CODE,
                     GoogleSignIn.getLastSignedInAccount(MainActivity.context),
                     fitnessOptions);
         } else {
-            Log.e("GOOGLE_FIT", "has permission");
+            Log.e(MainActivity.TAG, "has permission");
         }
 
+        Log.d(MainActivity.TAG, "signed in as " +
+                GoogleSignIn.getLastSignedInAccount(MainActivity.context).getDisplayName());
+
+        Fitness.getConfigClient(MainActivity.context,
+                GoogleSignIn.getLastSignedInAccount(MainActivity.context))
+                .readDataType("com.jstappdev.e4client.eda").addOnCompleteListener(new OnCompleteListener<DataType>() {
+            @Override
+            public void onComplete(@NonNull Task<DataType> task) {
+                Log.e(MainActivity.TAG, "read com.jstappdev.e4client.eda: " + task.getResult().toString());
+            }
+        });
+
         DataSource dataSource = new DataSource.Builder()
-                .setDataType(DataType.TYPE_HEART_RATE_BPM)
+                .setDataType(MainActivity.dataTypes.get(0))
                 .setType(DataSource.TYPE_RAW)
-                //.setStreamName("heart_rate")
-                //.setAppPackageName(MainActivity.context.getPackageName())
+                .setAppPackageName(MainActivity.context.getPackageName())
                 .build();
 
         DataReadRequest readRequest = new DataReadRequest.Builder()
                 .read(dataSource).enableServerQueries()
                 .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
                 .build();
+
+        Log.d(MainActivity.TAG, "read request: " + readRequest.toString());
 
         Task<DataReadResponse> result = Fitness.getHistoryClient(MainActivity.context,
                 Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(MainActivity.context)))
@@ -127,7 +130,10 @@ public class GoogleFitSessionsFragment extends Fragment {
         result.addOnCompleteListener(new OnCompleteListener<DataReadResponse>() {
             @Override
             public void onComplete(@NonNull Task<DataReadResponse> task) {
-                StringBuilder sb = new StringBuilder(task.getResult().toString());
+                StringBuilder sb = new StringBuilder(readRequest.toString());
+
+                sb.append(task.getResult().getStatus().toString());
+                sb.append(task.getResult().getDataSets().toString());
                 for (DataSet dataSet : task.getResult().getDataSets()) {
                     sb.append(dataSet.getDataPoints());
                 }
@@ -201,7 +207,10 @@ public class GoogleFitSessionsFragment extends Fragment {
                         Log.i(MainActivity.TAG, "Failed to read session");
                     }
                 });
+
+         */
     }
+
 
     private static void dumpDataSet(DataSet dataSet) {
         Log.i(MainActivity.TAG, "Data returned for Data type: " + dataSet.getDataType().getName());
@@ -216,7 +225,6 @@ public class GoogleFitSessionsFragment extends Fragment {
             }
         }
 
-         */
     }
 
 

@@ -201,12 +201,12 @@ public class ChartsFragment extends Fragment {
                 Collections.addAll(edaChart.getAnnotations(), verticalLine);
             }
 
-            // fixme: annotation not visible
+            // fixme: read IBI here and calculate HRV
             // display heart rate variability
-            final double hrv = Utils.calcHrvSDNN(sharedViewModel.getSessionData().getHr());
+/*
             Log.d(MainActivity.TAG, "calulated HRV: " + hrv);
             hrvAxisMarker.setY1(hrv);
-
+*/
             edaChart.animateZoomExtents(500);
 
             return;
