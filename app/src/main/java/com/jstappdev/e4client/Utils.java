@@ -18,9 +18,7 @@ import com.google.android.gms.fitness.data.DataSource;
 import com.google.android.gms.fitness.data.DataType;
 import com.google.android.gms.fitness.data.Session;
 import com.google.android.gms.fitness.request.SessionInsertRequest;
-import com.google.android.gms.tasks.OnCanceledListener;
 import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
 import com.jstappdev.e4client.data.CSVFile;
 import com.jstappdev.e4client.data.E4Session;
@@ -53,24 +51,24 @@ public class Utils {
 
     public static boolean isUploading = false;
 
-    private static double variance(final float[] list, final int size) {
+    private static double variance(final List<Float> list) {
         double sum = 0;
 
-        for (int i = 0; i < size; i++)
-            sum += list[i];
+        for (float f : list) sum += f;
 
-        double mean = sum / (double) size;
+        double mean = sum / (double) list.size();
 
         // Compute sum of squared differences with mean
         double sqDiff = 0;
 
         for (float f : list) sqDiff += (f - mean) * (f - mean);
 
-        return sqDiff / size;
+        return sqDiff / list.size();
     }
 
-    public static float calcHrvSDNN(final float[] list, final int size) {
-        return (float) Math.sqrt(variance(list, size));
+    // todo: correct for outliers in the data
+    public static float calcHrvSDNN(final List<Float> list) {
+        return (float) Math.sqrt(variance(list));
     }
 
     public static String getDate(final long time) {
@@ -267,8 +265,7 @@ public class Utils {
 
             Log.d(MainActivity.TAG, "uploading " + file.getName());
 
-            double[] xBuf = new double[1000];
-            float[] yBuf = new float[1000];
+            double startTime = 0;
             int index = 0;
 
             final DataSet.Builder dataSetBuilder = DataSet.builder(dataSource);
@@ -283,8 +280,7 @@ public class Utils {
                 while ((line = reader.readLine()) != null) {
                     final double timestamp = initialTime + samplingRate * lineNumber++;
 
-                    xBuf[index] = timestamp;
-                    yBuf[index] = Float.parseFloat(line);
+                    if (startTime == 0) startTime = timestamp;
 
                     // fixme
                     if (timestamp > session.getEndTime(TimeUnit.MILLISECONDS)) {
@@ -292,35 +288,26 @@ public class Utils {
                         continue;
                     }
 
-                    sum += yBuf[index];
+                    sum += Float.parseFloat(line);
                     index++;
 
                     if (index > 999) {
-                        // insert mean for every 1000 data points
-                        // fixme: rounding double to closest long..
-                        dataSetBuilder.add(DataPoint.builder(dataSource)
-                                .setTimeInterval(Math.round(xBuf[0]), Math.round(xBuf[index - 1]), TimeUnit.MILLISECONDS)
-                                .setFloatValues(sum / index)
-                                .build());
-                        Log.d(MainActivity.TAG, "inserted average value: " + sum / index);
-
+                        insertMeanIntoDataSetBuilder(dataSetBuilder, dataSource, startTime, timestamp, sum, index);
                         sum = 0f;
                         index = 0;
+                        startTime = 0;
                     }
                 }
 
-                uploadAveragedDataChunk(dataSetBuilder.build());
+                uploadDataSet(dataSetBuilder.build());
 
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
 
-
         private synchronized void uploadAccFile(File file, DataSource dataSource, Session session) {
-            double[] xBuf = new double[1000];
-            float[] yBuf = new float[1000];
-
+            double startTime = 0;
             int index = 0;
 
             final DataSet.Builder dataSetBuilder = DataSet.builder(dataSource);
@@ -347,27 +334,21 @@ public class Utils {
                         continue;
                     }
 
-                    xBuf[index] = timestamp;
-                    yBuf[index] = magnitude;
                     sum += magnitude;
                     index++;
 
-                    if (index > 999) {
-                        // insert mean for every 1000 data points
-                        // fixme: rounding double to closest long..
-                        dataSetBuilder.add(DataPoint.builder(dataSource)
-                                .setTimeInterval(Math.round(xBuf[0]), Math.round(xBuf[index - 1]), TimeUnit.MILLISECONDS)
-                                .setFloatValues(sum / index)
-                                .build());
-                        Log.d(MainActivity.TAG, "inserted average ACC magnitude: " + sum / index);
+                    if (startTime == 0) startTime = timestamp;
 
+                    if (index > 999) {
+                        insertMeanIntoDataSetBuilder(dataSetBuilder, dataSource, startTime, timestamp, sum, index);
 
                         sum = 0f;
                         index = 0;
+                        startTime = 0;
                     }
                 }
 
-                uploadAveragedDataChunk(dataSetBuilder.build());
+                uploadDataSet(dataSetBuilder.build());
 
 
             } catch (IOException e) {
@@ -375,28 +356,25 @@ public class Utils {
             }
         }
 
-        private synchronized void uploadIbiFile(File file, DataSource dataSource, Session session) {
-            double[] xBuf = new double[1000];
-            float[] yBuf = new float[1000];
-            int index = 0;
-
-            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-                final double initialTime = Double.parseDouble(reader.readLine().split(",")[0]);
-                double timestamp;
-                float sum = 0f;
-
-                String line;
-
-                /* IBI
+        /* IBI
 Time between individuals heart beats extracted from the BVP signal.
 No sample rate is needed for this file.
 The first column is the time (respect to the initial time) of the detected inter-beat interval expressed in seconds (s).
 The second column is the duration in seconds (s) of the detected inter-beat interval (i.e., the distance in seconds from the previous beat).
-                 */
+ */
+        private synchronized void uploadIbiFile(File file, DataSource dataSource, Session session) {
+            double startTime = 0;
+            int index = 0;
+
+            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+                final double initialTime = Double.parseDouble(reader.readLine().split(",")[0]);
+                double timestamp = initialTime;
+                float sum = 0f;
 
                 final DataSet.Builder hrDataSetBuilder = DataSet.builder(dataSource);
-                final DataSet.Builder hrvDataSetBuilder = DataSet.builder(dataSource);
+                final List<Float> values = new ArrayList<>();
 
+                String line;
                 while ((line = reader.readLine()) != null) {
                     final String[] split = line.split(",");
                     final double plusTime = Double.parseDouble(split[0]);
@@ -404,41 +382,58 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
 
                     timestamp = initialTime + plusTime;
 
+                    if (startTime == 0) startTime = timestamp;
+
                     // fixme
                     if (timestamp > session.getEndTime(TimeUnit.MILLISECONDS)) {
                         Log.e(MainActivity.TAG, "skipping IBI beyond endtime with timestamp " + timestamp);
                         continue;
                     }
 
-                    xBuf[index] = timestamp;
-                    yBuf[index] = ibi;
+                    values.add(ibi);
                     sum += ibi;
                     index++;
 
                     if (index > 999) {
-                        // insert mean for every 1000 data points
-                        // fixme: rounding double to closest long..
-                        hrDataSetBuilder.add(DataPoint.builder(dataSource)
-                                .setTimeInterval(Math.round(xBuf[0]), Math.round(xBuf[index - 1]), TimeUnit.MILLISECONDS)
-                                .setFloatValues(sum / index)
-                                .build());
-                        Log.d(MainActivity.TAG, "inserted average IBI: " + sum / index);
-
-                        float avgHrv = Utils.calcHrvSDNN(yBuf, index);
-                        // fixme: rounding double to closest long..
-                        hrvDataSetBuilder.add(DataPoint.builder(dataSource)
-                                .setTimeInterval(Math.round(xBuf[0]), Math.round(xBuf[index - 1]), TimeUnit.MILLISECONDS)
-                                .setFloatValues(avgHrv)
-                                .build());
-                        Log.d(MainActivity.TAG, "inserted average HRV: " + avgHrv);
+                        insertMeanIntoDataSetBuilder(hrDataSetBuilder, dataSource, startTime, timestamp, sum, index);
 
                         sum = 0f;
                         index = 0;
+                        startTime = 0;
                     }
                 }
 
-                uploadAveragedDataChunk(hrDataSetBuilder.build());
-                uploadAveragedDataChunk(hrvDataSetBuilder.build());
+                uploadDataSet(hrDataSetBuilder.build());
+
+
+                // heart rate variability
+                // todo: this should be uploaded in session insert request if possible
+                DataType hrvDataType = null;
+                for (DataType dt : MainActivity.dataTypes) {
+                    if (dt.getName().equals(MainActivity.context.getPackageName() + ".hrv"))
+                        hrvDataType = dt;
+                }
+                if (hrvDataType != null) {
+                    final DataSource hrvDataSource =
+                            new DataSource.Builder()
+                                    .setAppPackageName(MainActivity.context.getPackageName())
+                                    .setDataType(hrvDataType)
+                                    .setStreamName("heart_rate_variability")
+                                    .setType(DataSource.TYPE_RAW)
+                                    .build();
+                    final DataSet.Builder hrvDataSetBuilder = DataSet.builder(hrvDataSource);
+
+                    final float hrv = Utils.calcHrvSDNN(values);
+
+                    // fixme: rounding double to closest long..
+                    hrvDataSetBuilder.add(DataPoint.builder(hrvDataSource)
+                            .setTimeInterval(Math.round(initialTime), Math.round(timestamp), TimeUnit.MILLISECONDS)
+                            .setFloatValues(hrv)
+                            .build());
+                    Log.d(MainActivity.TAG, "total HRV for session from IBIS: " + hrv);
+
+                    uploadDataSet(hrvDataSetBuilder.build());
+                }
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -446,7 +441,18 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
         }
 
 
-        private synchronized void uploadAveragedDataChunk(final DataSet dataSet) {
+        private void insertMeanIntoDataSetBuilder(DataSet.Builder dataSetBuilder, DataSource dataSource, double startTime, double timestamp, float sum, int index) {
+            final float mean = sum / index;
+            // fixme: rounding double to closest long..
+            dataSetBuilder.add(DataPoint.builder(dataSource)
+                    .setTimeInterval(Math.round(startTime), Math.round(timestamp), TimeUnit.MILLISECONDS)
+                    .setFloatValues(mean)
+                    .build());
+            Log.d(MainActivity.TAG, dataSource.getDataType().getName() + " inserted average value: " + mean);
+        }
+
+
+        private synchronized void uploadDataSet(final DataSet dataSet) {
 
             if (dataSet.isEmpty()) return;
 
@@ -469,7 +475,7 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
                         publishProgress("Data insert was successful!");
                     } else {
                         publishProgress("There was a problem inserting the dataset.");
-                        Log.e(MainActivity.TAG,  "There was a problem inserting the dataset.", task.getException());
+                        Log.e(MainActivity.TAG, "There was a problem inserting the dataset.", task.getException());
                     }
                 }
             });
@@ -483,7 +489,6 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
             if (values.length > 0) viewModel.getSessionStatus().setValue(values[0]);
         }
     }
-
 
 
     // we cannot afford to load BVP and ACC data into memory for sessions longer than about 8 hours
