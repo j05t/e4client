@@ -11,6 +11,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -40,6 +41,13 @@ public class SettingsFragment extends Fragment {
 
         edt_username = root.findViewById(R.id.e4username);
         edt_password = root.findViewById(R.id.e4password);
+
+        root.findViewById(R.id.saveButton).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                savePreferences();
+            }
+        });
 
         edt_username.addTextChangedListener(new TextWatcher() {
             @Override
@@ -88,7 +96,7 @@ public class SettingsFragment extends Fragment {
 
     private void loadPreferences() {
 
-        SharedPreferences settings = requireContext().getSharedPreferences(MainActivity.PREFS_NAME,
+        final SharedPreferences settings = requireContext().getSharedPreferences(MainActivity.PREFS_NAME,
                 Context.MODE_PRIVATE);
 
         sharedViewModel.setUsername(settings.getString(MainActivity.PREF_UNAME, ""));
@@ -96,12 +104,6 @@ public class SettingsFragment extends Fragment {
 
         edt_username.setText(sharedViewModel.getUsername());
         edt_password.setText(sharedViewModel.getPassword());
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        savePreferences();
     }
 
     private void savePreferences() {
@@ -113,5 +115,7 @@ public class SettingsFragment extends Fragment {
         editor.putString(MainActivity.PREF_PASSWORD, sharedViewModel.getPassword());
 
         editor.apply();
+
+        Toast.makeText(MainActivity.context, "Settings saved!", Toast.LENGTH_SHORT).show();
     }
 }

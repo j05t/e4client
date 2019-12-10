@@ -339,11 +339,11 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     @Override
     public void didUpdateStatus(EmpaStatus status) {
         // Update the UI
-        sharedViewModel.setStatus(status.name());
+        sharedViewModel.setSessionStatus(status.name());
 
         // The device manager is ready for use
         if (status == EmpaStatus.READY) {
-            sharedViewModel.setStatus(status.name() + " - Turn on your device");
+            sharedViewModel.setSessionStatus(status.name() + " - Turn on your device");
 
             // Start scanning
             try {

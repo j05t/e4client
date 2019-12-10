@@ -16,7 +16,7 @@ import java.util.List;
 public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     private MutableLiveData<Boolean> onWrist;
-    private MutableLiveData<String> status;
+    private MutableLiveData<String> sessionStatus;
     private MutableLiveData<Boolean> isConnected;
     private MutableLiveData<String> deviceName;
     private MutableLiveData<Float> battery;
@@ -29,11 +29,12 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     private MutableLiveData<Integer> lastIbi;
     private MutableLiveData<Integer> lastTemp;
 
-    public MutableLiveData<String> getSessionStatus() {
-        return sessionStatus;
+
+    public MutableLiveData<String> getCurrentStatus() {
+        return currentStatus;
     }
 
-    private MutableLiveData<String> sessionStatus;
+    private MutableLiveData<String> currentStatus;
 
     private List<String> uploadedSessionIDs;
 
@@ -65,7 +66,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         e4SessionData = E4SessionData.getInstance();
 
         onWrist = new MutableLiveData<>();
-        status = new MutableLiveData<>();
+        sessionStatus = new MutableLiveData<>();
         isConnected = new MutableLiveData<>();
         deviceName = new MutableLiveData<>();
         battery = new MutableLiveData<>();
@@ -77,7 +78,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         lastTemp = new MutableLiveData<>();
         tag = new MutableLiveData<>();
 
-        sessionStatus = new MutableLiveData<>();
+        currentStatus = new MutableLiveData<>();
 
         isConnected.setValue(false);
 
@@ -130,12 +131,12 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         this.onWrist.postValue(onWrist);
     }
 
-    public LiveData<String> getStatus() {
-        return status;
+    public LiveData<String> getSessionStatus() {
+        return sessionStatus;
     }
 
-    void setStatus(String name) {
-        this.status.postValue(name);
+    void setSessionStatus(String name) {
+        this.sessionStatus.postValue(name);
     }
 
     public LiveData<String> getDeviceName() {

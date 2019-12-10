@@ -472,9 +472,10 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
 
                     if (task.isSuccessful()) {
                         // At this point, the data has been inserted and can be read.
-                        publishProgress("Data insert was successful!");
+                        publishProgress("Data insert was successful for dataset" + dataSet.getDataType().getName());
+                        Log.d(MainActivity.TAG, dataSet.getDataPoints().toString());
                     } else {
-                        publishProgress("There was a problem inserting the dataset.");
+                        publishProgress("There was a problem inserting the dataset " + dataSet.getDataType().getName());
                         Log.e(MainActivity.TAG, "There was a problem inserting the dataset.", task.getException());
                     }
                 }
@@ -486,7 +487,7 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
         protected void onProgressUpdate(String... values) {
             super.onProgressUpdate(values);
 
-            if (values.length > 0) viewModel.getSessionStatus().setValue(values[0]);
+            if (values.length > 0) viewModel.getCurrentStatus().setValue(values[0]);
         }
     }
 
@@ -528,18 +529,19 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
                     final File tagFile = new File(basePath + "tags.csv");
 
                     publishProgress("Processing tag data");
-                    try (BufferedReader reader = new BufferedReader(new FileReader(tagFile))) {
-                        String line;
+                    if (tagFile.exists())
+                        try (BufferedReader reader = new BufferedReader(new FileReader(tagFile))) {
+                            String line;
 
-                        while ((line = reader.readLine()) != null) {
-                            Log.d(MainActivity.TAG, "loaded tag " + line);
+                            while ((line = reader.readLine()) != null) {
+                                Log.d(MainActivity.TAG, "loaded tag " + line);
 
-                            e4SessionData.getTags().add(Double.parseDouble(line));
+                                e4SessionData.getTags().add(Double.parseDouble(line));
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            return false;
                         }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        return false;
-                    }
 
                     // same file format for EDA, HR, BVP, TEMP
                     final File edaFile = new File(basePath + "EDA.csv");
@@ -580,7 +582,7 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
                     publishProgress(String.format("Loaded data for session %s", e4Session.getId()));
 
                 } catch (FileNotFoundException e) {
-                    publishProgress("File not found.");
+                    publishProgress("File not found: " + e.getMessage());
                     return false;
                 } catch (ZipException e) {
                     publishProgress("Corrupted ZIP file.");
@@ -599,7 +601,7 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
         protected void onProgressUpdate(String... values) {
             super.onProgressUpdate(values);
 
-            if (values.length > 0) viewModel.getSessionStatus().setValue(values[0]);
+            if (values.length > 0) viewModel.getCurrentStatus().setValue(values[0]);
         }
 
         @Override
@@ -688,7 +690,7 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
             super.onProgressUpdate(values);
 
             if (values.length > 0)
-                sharedViewModel.getSessionStatus().setValue(values[0]);
+                sharedViewModel.getCurrentStatus().setValue(values[0]);
 
             adapter.notifyDataSetChanged();
         }
@@ -701,7 +703,7 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
 
             adapter.notifyDataSetChanged();
 
-            sharedViewModel.getSessionStatus().setValue(s);
+            sharedViewModel.getCurrentStatus().setValue(s);
         }
 
     }

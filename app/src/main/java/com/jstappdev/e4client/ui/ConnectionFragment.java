@@ -8,6 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -19,7 +20,18 @@ import androidx.lifecycle.ViewModelProviders;
 import com.jstappdev.e4client.MainActivity;
 import com.jstappdev.e4client.R;
 import com.jstappdev.e4client.SharedViewModel;
+import com.jstappdev.e4client.Utils;
+import com.jstappdev.e4client.data.E4Session;
+import com.jstappdev.e4client.data.E4SessionData;
 
+import net.lingala.zip4j.ZipFile;
+import net.lingala.zip4j.exception.ZipException;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.sql.Timestamp;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -59,7 +71,7 @@ public class ConnectionFragment extends Fragment {
         final View root = inflater.inflate(R.layout.fragment_connection, container, false);
         final TextView textView = root.findViewById(R.id.status);
 
-        sharedViewModel.getStatus().observe(this, new Observer<String>() {
+        sharedViewModel.getSessionStatus().observe(this, new Observer<String>() {
             @Override
             public void onChanged(@Nullable String s) {
                 textView.setText(s);
@@ -91,15 +103,97 @@ public class ConnectionFragment extends Fragment {
                 MainActivity.context.disconnect();
                 dataArea.setVisibility(View.GONE);
 
-                // todo: save recorded session data to CSV files
+                saveSessionToFile();
             }
         });
 
         MainActivity.context.initEmpaticaDeviceManager();
     }
 
+    @SuppressLint("DefaultLocale")
+    private synchronized void saveSessionToFile() {
+        final E4SessionData sd = sharedViewModel.getSessionData();
+        final E4Session e4Session = new E4Session("local", sd.getInitialTime(), new Timestamp(System.currentTimeMillis()).getTime() - sd.getInitialTime(), sharedViewModel.getDeviceName().getValue(), "local", sharedViewModel.getDeviceName().getValue(), "0", "0");
+        e4Session.setE4SessionData(sd);
+
+        final File sessionFile = new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename());
+
+        Utils.trimCache(MainActivity.context);
+
+        final String basePath = MainActivity.context.getCacheDir().getPath() + "/";
+
+        final File edaFile = new File(basePath + "EDA.csv");
+        final File tempFile = new File(basePath + "TEMP.csv");
+        final File bvpFile = new File(basePath + "BVP.csv");
+        final File hrFile = new File(basePath + "HR.csv");
+        final File tagFile = new File(basePath + "tags.csv");
+        final File ibiFile = new File(basePath + "IBI.csv");
+        final File accFile = new File(basePath + "ACC.csv");
+
+        try (final PrintWriter writer = new PrintWriter(new FileWriter(edaFile))) {
+            writer.println(e4Session.getStartTime());
+            writer.println("4.000000");
+            for (float f : sd.getGsr()) writer.println(f);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try (final PrintWriter writer = new PrintWriter(new FileWriter(tempFile))) {
+            writer.println(e4Session.getStartTime());
+            writer.println("4.000000");
+            for (float f : sd.getTemp()) writer.println(f);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try (final PrintWriter writer = new PrintWriter(new FileWriter(bvpFile))) {
+            writer.println(e4Session.getStartTime());
+            writer.println("4.000000");
+            for (float f : sd.getBvp()) writer.println(f);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try (final PrintWriter writer = new PrintWriter(new FileWriter(hrFile))) {
+            writer.println(e4Session.getStartTime());
+            writer.println("1.000000");
+            for (float f : sd.getHr()) writer.println(f);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try (final PrintWriter writer = new PrintWriter(new FileWriter(tagFile))) {
+            for (Double f : sd.getTags()) writer.println(f);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try (final PrintWriter writer = new PrintWriter(new FileWriter(ibiFile))) {
+            writer.println(e4Session.getStartTime() + ", IBI");
+            writer.println("1.000000");
+            for (int i = 0; i < sd.getIbi().size(); i++) {
+                writer.println(String.format("%s,%s", sd.getIbiTimestamps().get(i) - e4Session.getStartTime(), sd.getIbi().get(i)));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try (final PrintWriter writer = new PrintWriter(new FileWriter(accFile))) {
+            writer.println(e4Session.getStartTime() + ", " + e4Session.getStartTime() + ", " + e4Session.getStartTime());
+            writer.println("32.000000, 32.000000, 32.000000");
+            for (int i = 0; i < sd.getIbi().size(); i++) {
+                writer.println(String.format("%s,%s,%s", sd.getAcc().get(0), sd.getAcc().get(1), sd.getAcc().get(2)));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        try {
+            new ZipFile(sessionFile).addFiles(Arrays.asList(edaFile, tempFile, bvpFile, accFile, hrFile, ibiFile, tagFile));
+            Toast.makeText(requireContext(), "Session saved to local storage: " + sessionFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
+        } catch (ZipException e) {
+            e.printStackTrace();
+            Toast.makeText(requireContext(), "Error saving file!", Toast.LENGTH_LONG).show();
+        }
+    }
+
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
+
         super.onActivityCreated(savedInstanceState);
 
         final LifecycleOwner owner = getViewLifecycleOwner();
@@ -117,7 +211,7 @@ public class ConnectionFragment extends Fragment {
                 deviceNameLabel.setText(deviceName);
             }
         });
-        sharedViewModel.getStatus().observe(owner, new Observer<String>() {
+        sharedViewModel.getSessionStatus().observe(owner, new Observer<String>() {
             @Override
             public void onChanged(String status) {
                 statusLabel.setText(status);

@@ -141,7 +141,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                     Log.d(MainActivity.TAG, "deleting session " + e4Session);
 
                     if (!file.delete()) {
-                        sharedViewModel.setStatus("Failed to delete session data.");
+                        sharedViewModel.setSessionStatus("Failed to delete session data.");
                     }
 
                     final ArrayList<E4Session> downloadMe = new ArrayList<>();
@@ -248,14 +248,14 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         protected void onProgressUpdate(String... values) {
             super.onProgressUpdate(values);
 
-            viewModel.getSessionStatus().setValue(values[0]);
+            viewModel.getCurrentStatus().setValue(values[0]);
         }
 
         @Override
         protected void onPostExecute(Boolean done) {
 
             if (done) {
-                viewModel.getSessionStatus().setValue("Session deleted.");
+                viewModel.getCurrentStatus().setValue("Session deleted.");
                 viewModel.getE4Sessions().remove(position);
                 adapter.notifyItemRemoved(position);
             }

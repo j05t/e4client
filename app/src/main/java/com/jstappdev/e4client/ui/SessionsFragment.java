@@ -80,7 +80,7 @@ public class SessionsFragment extends Fragment {
         root.findViewById(R.id.button_sync_empatica).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                sharedViewModel.getSessionStatus().setValue("Syncing with Empatica cloud account..");
+                sharedViewModel.getCurrentStatus().setValue("Syncing with Empatica cloud account..");
                 new LoginAndGetAllSessions(mAdapter).execute();
             }
         });
@@ -114,7 +114,7 @@ public class SessionsFragment extends Fragment {
             }
         });
 
-        sharedViewModel.getSessionStatus().observe(getViewLifecycleOwner(), new Observer<String>() {
+        sharedViewModel.getCurrentStatus().observe(getViewLifecycleOwner(), new Observer<String>() {
             @Override
             public void onChanged(String s) {
                 statusTextView.setText(s);
@@ -132,7 +132,7 @@ public class SessionsFragment extends Fragment {
         final File[] files = directory.listFiles();
 
         if (files == null || files.length == 0) {
-            sharedViewModel.getSessionStatus().setValue("No sessions in local storage.");
+            sharedViewModel.getCurrentStatus().setValue("No sessions in local storage.");
         } else {
             for (final File file : files) {
                 final String filename = file.getName();
@@ -153,14 +153,14 @@ public class SessionsFragment extends Fragment {
 
                 final E4Session e4Session = new E4Session(id, start_time, duration, device_id, label, device, status, exit_code);
 
-                sharedViewModel.getSessionStatus().setValue(String.format("Found session %s", e4Session));
+                sharedViewModel.getCurrentStatus().setValue(String.format("Found session %s", e4Session));
 
                 if (!sharedViewModel.getE4Sessions().contains(e4Session))
                     sharedViewModel.getE4Sessions().add(e4Session);
             }
         }
 
-        sharedViewModel.getSessionStatus().setValue("Sessions in local storage: " + sharedViewModel.getE4Sessions().size());
+        sharedViewModel.getCurrentStatus().setValue("Sessions in local storage: " + sharedViewModel.getE4Sessions().size());
 
         if (!Utils.isUploading)
             Collections.sort(sharedViewModel.getE4Sessions());
@@ -168,7 +168,7 @@ public class SessionsFragment extends Fragment {
         mAdapter.notifyDataSetChanged();
 
         if (sharedViewModel.getUsername().isEmpty() || sharedViewModel.getPassword().isEmpty()) {
-            sharedViewModel.getSessionStatus().setValue("Please edit your Empatica account settings.");
+            sharedViewModel.getCurrentStatus().setValue("Please edit your Empatica account settings.");
         } else if (sharedViewModel.getUserId() == null) {
             new LoginAndGetAllSessions(mAdapter).execute();
         }
@@ -266,7 +266,7 @@ public class SessionsFragment extends Fragment {
 
         @Override
         protected void onPostExecute(String result) {
-            sharedViewModel.getSessionStatus().setValue(result);
+            sharedViewModel.getCurrentStatus().setValue(result);
             adapter.notifyDataSetChanged();
         }
 
