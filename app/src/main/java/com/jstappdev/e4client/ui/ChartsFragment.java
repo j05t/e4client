@@ -18,7 +18,7 @@ import androidx.lifecycle.ViewModelProviders;
 import com.jstappdev.e4client.MainActivity;
 import com.jstappdev.e4client.R;
 import com.jstappdev.e4client.SharedViewModel;
-import com.jstappdev.e4client.Utils;
+import com.jstappdev.e4client.util.Utils;
 import com.scichart.charting.Direction2D;
 import com.scichart.charting.model.dataSeries.XyDataSeries;
 import com.scichart.charting.numerics.labelProviders.DateLabelProvider;
@@ -43,28 +43,22 @@ import butterknife.ButterKnife;
 
 public class ChartsFragment extends Fragment {
 
+    private static final int AXIS_MARKER_COLOR = 0xFFFFA500;
+    private static final int HRV_MARKER_COLOR = 0x00FFA500;
+    private static float averageHr = -1.0f;
     private final SciChartVerticalGroup verticalGroup = new SciChartVerticalGroup();
     private final DateRange sharedXRange = new DateRange();
 
-    @BindView(R.id.edaChart)
-    SciChartSurface edaChart;
-
-    @BindView(R.id.hrChart)
-    SciChartSurface hrChart;
-
-    @BindView(R.id.tempChart)
-    SciChartSurface tempChart;
-
     // @BindView(R.id.bvpChart)
     //SciChartSurface bvpChart;
-
+    @BindView(R.id.edaChart)
+    SciChartSurface edaChart;
+    @BindView(R.id.hrChart)
+    SciChartSurface hrChart;
+    @BindView(R.id.tempChart)
+    SciChartSurface tempChart;
     private SharedViewModel sharedViewModel;
     private SciChartBuilder sciChartBuilder;
-
-    private static final int AXIS_MARKER_COLOR = 0xFFFFA500;
-    private static final int HRV_MARKER_COLOR = 0x00FFA500;
-
-    private static float averageHr = -1.0f;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -93,14 +87,6 @@ public class ChartsFragment extends Fragment {
         super.onDestroy();
 
         SciChartBuilder.dispose();
-    }
-
-    public static class DateLabelProviderEx extends DateLabelProvider {
-        @Override
-        public String formatLabel(Comparable dataValue) {
-            // return a formatting string for tick labels
-            return Utils.getDuration(Math.round((Double) dataValue));
-        }
     }
 
     private void setupChart(SciChartSurface chartSurface, final String yAxisTitle, XyDataSeries<Double, Float> lineData, boolean isFirstPane) {
@@ -278,6 +264,14 @@ public class ChartsFragment extends Fragment {
         });
 
 
+    }
+
+    public static class DateLabelProviderEx extends DateLabelProvider {
+        @Override
+        public String formatLabel(Comparable dataValue) {
+            // return a formatting string for tick labels
+            return Utils.getDuration(Math.round((Double) dataValue));
+        }
     }
 
 }

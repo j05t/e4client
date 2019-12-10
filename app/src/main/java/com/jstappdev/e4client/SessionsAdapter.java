@@ -18,6 +18,9 @@ import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.jstappdev.e4client.data.E4Session;
+import com.jstappdev.e4client.util.DownloadSessions;
+import com.jstappdev.e4client.util.LoadAndViewSessionData;
+import com.jstappdev.e4client.util.Utils;
 import com.squareup.okhttp.Request;
 
 import java.io.File;
@@ -27,54 +30,6 @@ import java.util.ArrayList;
 public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.Adapter<SessionsAdapter.MyViewHolder> {
 
     private SharedViewModel sharedViewModel;
-
-    private SessionsAdapter instance;
-
-    public SessionsAdapter(SharedViewModel sharedViewModel) {
-        this.sharedViewModel = sharedViewModel;
-        this.instance = this;
-    }
-
-
-    // Provide a reference to the views for each data item
-    // Complex data items may need more than one view per item, and
-    // you provide access to all the views for a data item in a view holder
-    static class MyViewHolder extends RecyclerView.ViewHolder {
-        // each data item is just a string in this case
-        TextView id;
-        TextView start_time;
-        TextView duration;
-        TextView device_id;
-        TextView label;
-        TextView device;
-        CheckedTextView isDownloaded;
-        CheckedTextView isUploaded;
-
-        MyViewHolder(View v) {
-            super(v);
-
-            id = v.findViewById(R.id.session_id);
-            start_time = v.findViewById(R.id.session_start_time);
-            duration = v.findViewById(R.id.session_duration);
-            device_id = v.findViewById(R.id.session_device_id);
-            label = v.findViewById(R.id.session_label);
-            device = v.findViewById(R.id.session_device);
-            isDownloaded = v.findViewById(R.id.isDownloaded);
-            isUploaded = v.findViewById(R.id.isUploaded);
-        }
-    }
-
-
-    @NonNull
-    @Override
-    public MyViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-
-        View v = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.sessions_list_item, parent, false);
-
-        return new MyViewHolder(v);
-    }
-
     private final View.OnClickListener onClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
@@ -103,7 +58,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                     })
                     .setNeutralButton("View Data", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
-                            new Utils.LoadAndViewSessionData().execute(e4Session);
+                            new LoadAndViewSessionData().execute(e4Session);
                             dialog.dismiss();
                         }
                     })
@@ -114,7 +69,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                     }).create().show();
         }
     };
-
+    private SessionsAdapter instance;
     private final View.OnLongClickListener onLongClickListener = new View.OnLongClickListener() {
         @Override
         public boolean onLongClick(View v) {
@@ -148,7 +103,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                     downloadMe.add(e4Session);
 
                     //noinspection unchecked
-                    new Utils.DownloadSessions(instance).execute(downloadMe);
+                    new DownloadSessions(instance).execute(downloadMe);
 
                     instance.notifyItemChanged(position);
 
@@ -160,6 +115,21 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         }
     };
 
+
+    public SessionsAdapter(SharedViewModel sharedViewModel) {
+        this.sharedViewModel = sharedViewModel;
+        this.instance = this;
+    }
+
+    @NonNull
+    @Override
+    public MyViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+
+        View v = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.sessions_list_item, parent, false);
+
+        return new MyViewHolder(v);
+    }
 
     @SuppressLint("SetTextI18n")
     @Override
@@ -199,6 +169,33 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         return sharedViewModel.getE4Sessions().size();
     }
 
+    // Provide a reference to the views for each data item
+    // Complex data items may need more than one view per item, and
+    // you provide access to all the views for a data item in a view holder
+    static class MyViewHolder extends RecyclerView.ViewHolder {
+        // each data item is just a string in this case
+        TextView id;
+        TextView start_time;
+        TextView duration;
+        TextView device_id;
+        TextView label;
+        TextView device;
+        CheckedTextView isDownloaded;
+        CheckedTextView isUploaded;
+
+        MyViewHolder(View v) {
+            super(v);
+
+            id = v.findViewById(R.id.session_id);
+            start_time = v.findViewById(R.id.session_start_time);
+            duration = v.findViewById(R.id.session_duration);
+            device_id = v.findViewById(R.id.session_device_id);
+            label = v.findViewById(R.id.session_label);
+            device = v.findViewById(R.id.session_device);
+            isDownloaded = v.findViewById(R.id.isDownloaded);
+            isUploaded = v.findViewById(R.id.isUploaded);
+        }
+    }
 
     private static class DeleteSession extends AsyncTask<E4Session, String, Boolean> {
 

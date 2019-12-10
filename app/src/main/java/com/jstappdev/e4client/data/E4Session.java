@@ -2,7 +2,7 @@ package com.jstappdev.e4client.data;
 
 import android.annotation.SuppressLint;
 
-import com.jstappdev.e4client.Utils;
+import com.jstappdev.e4client.util.Utils;
 
 import java.util.Objects;
 

@@ -30,7 +30,7 @@ import com.google.android.gms.tasks.Task;
 import com.jstappdev.e4client.MainActivity;
 import com.jstappdev.e4client.R;
 import com.jstappdev.e4client.SharedViewModel;
-import com.jstappdev.e4client.Utils;
+import com.jstappdev.e4client.util.Utils;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -42,6 +42,21 @@ public class GoogleFitSessionsFragment extends Fragment {
     private SharedViewModel sharedViewModel;
 
     private TextView textView;
+
+    private static void dumpDataSet(DataSet dataSet) {
+        Log.i(MainActivity.TAG, "Data returned for Data type: " + dataSet.getDataType().getName());
+
+        for (DataPoint dp : dataSet.getDataPoints()) {
+            Log.i(MainActivity.TAG, "Data point:");
+            Log.i(MainActivity.TAG, "\tType: " + dp.getDataType().getName());
+            Log.i(MainActivity.TAG, "\tStart: " + Utils.getDate(dp.getStartTime(TimeUnit.MILLISECONDS)));
+            Log.i(MainActivity.TAG, "\tEnd: " + Utils.getDate(dp.getEndTime(TimeUnit.MILLISECONDS)));
+            for (Field field : dp.getDataType().getFields()) {
+                Log.i(MainActivity.TAG, "\tField: " + field.getName() + " Value: " + dp.getValue(field));
+            }
+        }
+
+    }
 
     @SuppressLint("SourceLockedOrientationActivity")
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -57,7 +72,6 @@ public class GoogleFitSessionsFragment extends Fragment {
 
         return root;
     }
-
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
@@ -209,22 +223,6 @@ public class GoogleFitSessionsFragment extends Fragment {
                 });
 
          */
-    }
-
-
-    private static void dumpDataSet(DataSet dataSet) {
-        Log.i(MainActivity.TAG, "Data returned for Data type: " + dataSet.getDataType().getName());
-
-        for (DataPoint dp : dataSet.getDataPoints()) {
-            Log.i(MainActivity.TAG, "Data point:");
-            Log.i(MainActivity.TAG, "\tType: " + dp.getDataType().getName());
-            Log.i(MainActivity.TAG, "\tStart: " + Utils.getDate(dp.getStartTime(TimeUnit.MILLISECONDS)));
-            Log.i(MainActivity.TAG, "\tEnd: " + Utils.getDate(dp.getEndTime(TimeUnit.MILLISECONDS)));
-            for (Field field : dp.getDataType().getFields()) {
-                Log.i(MainActivity.TAG, "\tField: " + field.getName() + " Value: " + dp.getValue(field));
-            }
-        }
-
     }
 
 

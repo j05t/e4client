@@ -52,6 +52,7 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Tasks;
 import com.google.android.material.navigation.NavigationView;
+import com.jstappdev.e4client.util.Utils;
 import com.squareup.okhttp.OkHttpClient;
 
 import java.lang.ref.WeakReference;
@@ -70,34 +71,24 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     public static final String TAG = "e4";
 
     public static final String SESSION_NAME = "e4session";
-
-    private static final int REQUEST_ENABLE_BT = 1;
-    private static final int REQUEST_PERMISSION_ACCESS_COARSE_LOCATION = 1;
-
-    private static final String EMPATICA_API_KEY = BuildConfig.EMPATICA_API_KEY;
-    private static final String SCICHART_LICENSE = BuildConfig.SCICHART_LICENSE;
     public static final int GOOGLE_FIT_PERMISSIONS_REQUEST_CODE = 42;
-
-    private static boolean googleFitCustomDatatypesCreated;
-
-    private EmpaDeviceManager deviceManager;
-    private AppBarConfiguration mAppBarConfiguration;
-    private SharedViewModel sharedViewModel;
-
-    public static MainActivity context;
-
     public static final String PREFS_NAME = "prefs";
     public static final String PREF_UNAME = "uname";
     public static final String PREF_PASSWORD = "pass";
     public static final String PREFS_DATATYPES_CREATED = "types_created";
-
+    private static final int REQUEST_ENABLE_BT = 1;
+    private static final int REQUEST_PERMISSION_ACCESS_COARSE_LOCATION = 1;
+    private static final String EMPATICA_API_KEY = BuildConfig.EMPATICA_API_KEY;
+    private static final String SCICHART_LICENSE = BuildConfig.SCICHART_LICENSE;
     private static final String[] customDataTypes = new String[]{"eda", "temp", "bvp", "ibi", "acc", "hrv"};
+    public static MainActivity context;
     public static ArrayList<DataType> dataTypes;
-
     public static OkHttpClient okHttpClient;
-
     public static FitnessOptions fitnessOptions;
-
+    private static boolean googleFitCustomDatatypesCreated;
+    private EmpaDeviceManager deviceManager;
+    private AppBarConfiguration mAppBarConfiguration;
+    private SharedViewModel sharedViewModel;
     private NavController navController;
 
 
@@ -527,7 +518,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
             fitnessOptions = fitnessOptionsBuilder.build();
 
             Log.d(TAG, "created fitnessOptions with scopes");
-            for(Scope s : fitnessOptions.getImpliedScopes()) {
+            for (Scope s : fitnessOptions.getImpliedScopes()) {
                 Log.d(TAG, s.toString());
             }
 

@@ -28,40 +28,13 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     private MutableLiveData<Integer> lastGsr;
     private MutableLiveData<Integer> lastIbi;
     private MutableLiveData<Integer> lastTemp;
-
-
-    public MutableLiveData<String> getCurrentStatus() {
-        return currentStatus;
-    }
-
     private MutableLiveData<String> currentStatus;
-
     private List<String> uploadedSessionIDs;
-
     private ArrayList<E4Session> e4Sessions = new ArrayList<>();
     private E4SessionData e4SessionData;
-
     private String username;
     private String password;
     private String userId;
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-
     public SharedViewModel() {
         e4SessionData = E4SessionData.getInstance();
 
@@ -83,6 +56,26 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         isConnected.setValue(false);
 
         uploadedSessionIDs = new ArrayList<>();
+    }
+
+    public MutableLiveData<String> getCurrentStatus() {
+        return currentStatus;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public MutableLiveData<Boolean> getIsConnected() {

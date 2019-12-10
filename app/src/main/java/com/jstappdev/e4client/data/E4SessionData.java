@@ -66,11 +66,6 @@ public class E4SessionData {
         this.bvpTimestamps = bvpTimestamps;
     }
 
-    public void setHr(LinkedList<Float> hr) {
-        this.hr = hr;
-    }
-
-
     public LinkedList<Double> getGsrTimestamps() {
         return gsrTimestamps;
     }
@@ -105,6 +100,10 @@ public class E4SessionData {
 
     public LinkedList<Float> getHr() {
         return this.hr;
+    }
+
+    public void setHr(LinkedList<Float> hr) {
+        this.hr = hr;
     }
 
     public long getInitialTime() {
