@@ -22,7 +22,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class LoginAndGetAllSessions extends AsyncTask<Void, Void, String> {
-    private SharedViewModel sharedViewModel = ViewModelProviders.of(MainActivity.context).get(SharedViewModel.class);
+    private final SharedViewModel sharedViewModel = ViewModelProviders.of(MainActivity.context).get(SharedViewModel.class);
     private SessionsAdapter adapter;
 
     public LoginAndGetAllSessions(SessionsAdapter mAdapter) {

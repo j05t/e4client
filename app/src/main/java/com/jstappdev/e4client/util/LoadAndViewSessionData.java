@@ -24,8 +24,8 @@ import java.io.IOException;
 // we cannot afford to load BVP and ACC data into memory for sessions longer than about 8 hours
 public class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean> {
 
-    final SharedViewModel viewModel = ViewModelProviders.of(MainActivity.context).get(SharedViewModel.class);
-    final E4SessionData e4SessionData = viewModel.getSessionData();
+    private final SharedViewModel viewModel = ViewModelProviders.of(MainActivity.context).get(SharedViewModel.class);
+    private final E4SessionData e4SessionData = viewModel.getSessionData();
 
     @Override
     protected Boolean doInBackground(final E4Session... e4Sessions) {

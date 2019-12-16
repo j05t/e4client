@@ -152,6 +152,10 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
         sharedViewModel.setUsername(settings.getString(PREF_UNAME, ""));
         sharedViewModel.setPassword(settings.getString(PREF_PASSWORD, ""));
+
+        if (sharedViewModel.getUsername().length() == 0) {
+            navController.navigate(R.id.nav_settings);
+        }
     }
 
     private void setUpSciChartLicense() {

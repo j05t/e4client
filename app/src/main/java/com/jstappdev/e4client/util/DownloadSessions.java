@@ -23,7 +23,7 @@ import java.util.Collections;
 
 public class DownloadSessions extends AsyncTask<ArrayList<E4Session>, String, String> {
 
-    private SharedViewModel sharedViewModel = ViewModelProviders.of(MainActivity.context).get(SharedViewModel.class);
+    final private SharedViewModel sharedViewModel = ViewModelProviders.of(MainActivity.context).get(SharedViewModel.class);
     private SessionsAdapter adapter;
 
     public DownloadSessions(SessionsAdapter sessionsAdapter) {
