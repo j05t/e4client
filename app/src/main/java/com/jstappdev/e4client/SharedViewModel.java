@@ -28,6 +28,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     private MutableLiveData<Integer> lastGsr;
     private MutableLiveData<Integer> lastIbi;
     private MutableLiveData<Integer> lastTemp;
+
     private MutableLiveData<String> currentStatus;
     private List<String> uploadedSessionIDs;
     private ArrayList<E4Session> e4Sessions = new ArrayList<>();
@@ -35,6 +36,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     private String username;
     private String password;
     private String userId;
+
     public SharedViewModel() {
         e4SessionData = E4SessionData.getInstance();
 

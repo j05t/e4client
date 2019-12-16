@@ -35,6 +35,9 @@ import com.scichart.extensions.builders.SciChartBuilder;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Objects;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -51,6 +54,8 @@ public class ChartsFragment extends Fragment {
     private final SciChartVerticalGroup verticalGroup = new SciChartVerticalGroup();
     private final DateRange sharedXRange = new DateRange();
 
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+
     // @BindView(R.id.bvpChart)
     //SciChartSurface bvpChart;
     @BindView(R.id.edaChart)
@@ -62,6 +67,14 @@ public class ChartsFragment extends Fragment {
 
     private SharedViewModel sharedViewModel;
     private SciChartBuilder sciChartBuilder;
+
+    private XyDataSeries<Double, Float> edaLineData;
+    private XyDataSeries<Double, Float> hrLineData;
+    private XyDataSeries<Double, Float> tempLineData;
+
+    private AxisMarkerAnnotation hrAxisMarker;
+    private AxisMarkerAnnotation hrvAxisMarker;
+    private AxisMarkerAnnotation tempAxisMarker;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -77,6 +90,17 @@ public class ChartsFragment extends Fragment {
         SciChartBuilder.init(requireActivity());
         sciChartBuilder = SciChartBuilder.instance();
 
+        edaLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
+        hrLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
+        tempLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
+
+        hrAxisMarker = sciChartBuilder.newAxisMarkerAnnotation()
+                .withY1(0d).withBackgroundColor(AXIS_MARKER_COLOR).build();
+        hrvAxisMarker = sciChartBuilder.newAxisMarkerAnnotation()
+                .withY1(0d).withBackgroundColor(HRV_MARKER_COLOR).build();
+        tempAxisMarker = sciChartBuilder.newAxisMarkerAnnotation()
+                .withY1(0d).withBackgroundColor(AXIS_MARKER_COLOR).build();
+
         return root;
     }
 
@@ -90,6 +114,13 @@ public class ChartsFragment extends Fragment {
         super.onDestroy();
 
         SciChartBuilder.dispose();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        scheduler.shutdown();
     }
 
     private void setupChart(SciChartSurface chartSurface, final String yAxisTitle, XyDataSeries<Double, Float> lineData, boolean isFirstPane) {
@@ -129,25 +160,9 @@ public class ChartsFragment extends Fragment {
     private void setupCharts() {
         final LifecycleOwner owner = getViewLifecycleOwner();
 
-        // Create a couple of DataSeries for numeric data
-        final XyDataSeries<Double, Float> edaLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
-        final XyDataSeries<Double, Float> hrLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
-        final XyDataSeries<Double, Float> tempLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
-        // final XyDataSeries<Double, Float> bvpLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
-        // final XyDataSeries<Double, Float> ibiLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
-
-        final AxisMarkerAnnotation hrAxisMarker = sciChartBuilder.newAxisMarkerAnnotation()
-                .withY1(0d).withBackgroundColor(AXIS_MARKER_COLOR).build();
-        final AxisMarkerAnnotation hrvAxisMarker = sciChartBuilder.newAxisMarkerAnnotation()
-                .withY1(0d).withBackgroundColor(HRV_MARKER_COLOR).build();
-        final AxisMarkerAnnotation tempAxisMarker = sciChartBuilder.newAxisMarkerAnnotation()
-                .withY1(0d).withBackgroundColor(AXIS_MARKER_COLOR).build();
-
         setupChart(edaChart, edaAxisTitle, edaLineData, true);
         setupChart(hrChart, hrAxisTitle, hrLineData, false);
         setupChart(tempChart, tempAxisTitle, tempLineData, false);
-        // setupChart(bvpChart, "BVP", bvpLineData, false);
-        //setupChart(ibiChart, "IBI", ibiLineData);
 
         // axis marker showing current value
         Collections.addAll(hrChart.getAnnotations(), hrAxisMarker, hrvAxisMarker);
@@ -156,8 +171,6 @@ public class ChartsFragment extends Fragment {
         verticalGroup.addSurfaceToGroup(edaChart);
         verticalGroup.addSurfaceToGroup(hrChart);
         verticalGroup.addSurfaceToGroup(tempChart);
-        //verticalGroup.addSurfaceToGroup(bvpChart);
-
 
         //noinspection ConstantConditions
         if (!sharedViewModel.getIsConnected().getValue()) {
@@ -173,7 +186,6 @@ public class ChartsFragment extends Fragment {
             edaLineData.append(sharedViewModel.getSessionData().getGsrTimestamps(), sharedViewModel.getSessionData().getGsr());
             hrLineData.append(sharedViewModel.getSessionData().getHrTimestamps(), sharedViewModel.getSessionData().getHr());
             tempLineData.append(sharedViewModel.getSessionData().getTempTimestamps(), sharedViewModel.getSessionData().getTemp());
-            //   bvpLineData.append(sharedViewModel.getSesssionData().getBvpTimestamps(), sharedViewModel.getSesssionData().getBvp());
 
             for (double tag : sharedViewModel.getSessionData().getTags()) {
                 VerticalLineAnnotation verticalLine = sciChartBuilder.newVerticalLineAnnotation()
@@ -186,64 +198,21 @@ public class ChartsFragment extends Fragment {
                 Collections.addAll(edaChart.getAnnotations(), verticalLine);
             }
 
-            // fixme: read IBI here and calculate HRV
-            // display heart rate variability
-/*
+            // todo: read IBI here and calculate HRV
+            /*
             Log.d(MainActivity.TAG, "calulated HRV: " + hrv);
             hrvAxisMarker.setY1(hrv);
-*/
+            */
+
             edaChart.animateZoomExtents(500);
 
-        } else { // display live sensor data
-            sharedViewModel.getLastGsr().observe(owner, new Observer<Integer>() {
-                private int x = 0;
-
-                @Override
-                public void onChanged(Integer lastGsr) {
-                    if (x++ % 100 == 0) {
-                        edaLineData.append(sharedViewModel.getSessionData().getGsrTimestamps().getLast(), sharedViewModel.getSessionData().getGsr().get(lastGsr));
-                        edaChart.zoomExtents();
-                    }
-                }
-            });
-        /*
-        sharedViewModel.getLastBvp().observe(owner, new Observer<Integer>() {
-            @Override
-            public void onChanged(Integer lastBvp) {
-                bvpLineData.append(sharedViewModel.getSessionData().getBvpTimestamps().getLast(), sharedViewModel.getSesssionData().getBvp().get(lastBvp));
-                bvpChart.zoomExtents();
-            }
-        });
-         */
-            sharedViewModel.getLastTemp().observe(owner, new Observer<Integer>() {
-                @Override
-                public void onChanged(Integer lastTemp) {
-                    tempLineData.append(sharedViewModel.getSessionData().getTempTimestamps().getLast(), sharedViewModel.getSessionData().getTemp().get(lastTemp));
-                    tempAxisMarker.setY1(sharedViewModel.getSessionData().getTemp().get(lastTemp));
-                    tempChart.zoomExtents();
-                }
-            });
-
-            sharedViewModel.getLastIbi().observe(owner, new Observer<Integer>() {
-                private int x = 0;
-
-                @Override
-                public void onChanged(Integer lastIbi) {
-                    final float currentHr = 60.0f / sharedViewModel.getSessionData().getIbi().getLast();
-
-                    // heart rate may theoretically reach 600, but we assume 300 max
-                    // https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3273956/
-                    if (averageHr != 0.0f && currentHr < 300f) {
-                        averageHr = 0.8f * averageHr + 0.2f * currentHr;
-                    }
-
-                    if (x++ % 100 == 0) {
-                        hrLineData.append(sharedViewModel.getSessionData().getIbiTimestamps().getLast(), currentHr);
-                        hrAxisMarker.setY1(averageHr);
-                        hrChart.zoomExtents();
-                    }
-                }
-            });
+        } else { // display live sensor data at 30fps
+            scheduler.scheduleAtFixedRate
+                    (new Runnable() {
+                        public void run() {
+                            updateCharts();
+                        }
+                    }, 1000, 30, TimeUnit.MILLISECONDS);
 
             sharedViewModel.getTag().observe(owner, new Observer<Double>() {
                 @Override
@@ -258,7 +227,35 @@ public class ChartsFragment extends Fragment {
                     Collections.addAll(edaChart.getAnnotations(), verticalLine);
                 }
             });
+
+            sharedViewModel.getLastIbi().observe(owner, new Observer<Integer>() {
+                @Override
+                public void onChanged(Integer lastIbi) {
+                    final float currentHr = 60.0f / sharedViewModel.getSessionData().getIbi().getLast();
+
+                    // heart rate may theoretically reach 600, but we assume 300 max
+                    // https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3273956/
+                    if (averageHr != 0.0f && currentHr < 300f) {
+                        averageHr = 0.8f * averageHr + 0.2f * currentHr;
+                    }
+                }
+            });
         }
+    }
+
+    private void updateCharts() {
+
+        final double lastTimestamp = sharedViewModel.getSessionData().getGsrTimestamps().getLast();
+
+        edaLineData.append(lastTimestamp, sharedViewModel.getSessionData().getGsr().getLast());
+        tempLineData.append(lastTimestamp, sharedViewModel.getSessionData().getTemp().getLast());
+        tempAxisMarker.setY1(sharedViewModel.getSessionData().getTemp().getLast());
+
+        final float currentHr = 60.0f / sharedViewModel.getSessionData().getIbi().getLast();
+        hrLineData.append(lastTimestamp, currentHr);
+        hrAxisMarker.setY1(averageHr);
+
+        edaChart.zoomExtents();
     }
 
     public static class DateLabelProviderEx extends DateLabelProvider {

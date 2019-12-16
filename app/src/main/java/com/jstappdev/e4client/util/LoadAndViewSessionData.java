@@ -31,9 +31,9 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean
     protected Boolean doInBackground(final E4Session... e4Sessions) {
         final E4Session e4Session = e4Sessions[0];
 
-        publishProgress(String.format("Loading session %s data..", e4Session.getId()));
-
         if (Utils.isSessionDownloaded(e4Session)) {
+
+            publishProgress(String.format("Loading session %s data..", e4Session.getId()));
 
             try {
                 final File sessionFile = new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename());
@@ -75,8 +75,8 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean
                 // same file format for EDA, HR, BVP, TEMP
                 final File edaFile = new File(basePath + "EDA.csv");
                 final File tempFile = new File(basePath + "TEMP.csv");
-                //   final File bvpFile = new File(basePath + "BVP.csv");
                 final File hrFile = new File(basePath + "HR.csv");
+                //   final File bvpFile = new File(basePath + "BVP.csv");
 
                 CSVFile data;
 
@@ -98,13 +98,6 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean
                 e4SessionData.setHrTimestamps(data.getX());
                 e4SessionData.setHr(data.getY());
                 hrFile.delete();
-
-                /*
-                data = new CSVFile(new FileInputStream(bvpFile));
-                e4SessionData.setBvpTimestamps(data.getX());
-                e4SessionData.setBvp(data.getY());
-                bvpFile.delete();
-                */
 
                 e4SessionData.setInitialTime(e4Session.getStartTime());
 
