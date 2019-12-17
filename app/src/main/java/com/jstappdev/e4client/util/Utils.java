@@ -31,9 +31,9 @@ public class Utils {
         return sqDiff / list.size();
     }
 
-    // todo: correct for outliers in the data
+    // todo: remove anomalies in IBI data to calculate SDNN
     public static float calcHrvSDRR(final List<Float> list) {
-        return (float) Math.sqrt(variance(list));
+        return (float) (1000f * Math.sqrt(variance(list)));
     }
 
     public static String getDate(final long time) {

@@ -25,7 +25,6 @@ import java.io.IOException;
 public class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean> {
 
     private final SharedViewModel viewModel = ViewModelProviders.of(MainActivity.context).get(SharedViewModel.class);
-    private final E4SessionData e4SessionData = viewModel.getSessionData();
 
     @Override
     protected Boolean doInBackground(final E4Session... e4Sessions) {
@@ -34,6 +33,10 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean
         if (Utils.isSessionDownloaded(e4Session)) {
 
             publishProgress(String.format("Loading session %s data..", e4Session.getId()));
+
+            E4SessionData.clear();
+
+            final E4SessionData e4SessionData = viewModel.getSessionData();
 
             try {
                 final File sessionFile = new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename());

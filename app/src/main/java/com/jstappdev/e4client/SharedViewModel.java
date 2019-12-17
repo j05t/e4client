@@ -216,7 +216,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     }
 
     public E4SessionData getSessionData() {
-        return this.e4SessionData;
+        return E4SessionData.getInstance();
     }
 
     public List<String> getUploadedSessionIDs() {

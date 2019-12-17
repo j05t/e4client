@@ -213,7 +213,7 @@ public class ChartsFragment extends Fragment {
                             .withCoordinateMode(AnnotationCoordinateMode.Relative)
                             .withHorizontalAnchorPoint(HorizontalAnchorPoint.Left)
                             .withVerticalAnchorPoint(VerticalAnchorPoint.Bottom)
-                            .withText(String.format("HRV (SDRR): %.4f", hrvSDRR))
+                            .withText(String.format("HRV (SDRR): %.0f ms", hrvSDRR))
                             .withFontStyle(12, ColorUtil.White)
                             .withBackgroundDrawableId(R.drawable.annotation_bg_1)
                             .build());
