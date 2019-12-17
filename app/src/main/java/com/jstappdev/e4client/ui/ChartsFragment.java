@@ -208,13 +208,14 @@ public class ChartsFragment extends Fragment {
 
             Collections.addAll(hrChart.getAnnotations(),
                     sciChartBuilder.newTextAnnotation()
-                            .withX1(0.05)
-                            .withY1(0.95)
+                            .withX1(0.005)
+                            .withY1(0.2)
                             .withCoordinateMode(AnnotationCoordinateMode.Relative)
                             .withHorizontalAnchorPoint(HorizontalAnchorPoint.Left)
                             .withVerticalAnchorPoint(VerticalAnchorPoint.Bottom)
                             .withText(String.format("HRV (SDRR): %.4f", hrvSDRR))
                             .withFontStyle(12, ColorUtil.White)
+                            .withBackgroundDrawableId(R.drawable.annotation_bg_1)
                             .build());
 
             edaChart.animateZoomExtents(500);
