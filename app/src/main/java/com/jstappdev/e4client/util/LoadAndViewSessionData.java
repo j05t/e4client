@@ -51,12 +51,10 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean
                 basePath += File.separator;
 
                 /*
-                final File ibiFile = new File(basePath + "IBI.csv");
                 final File accFile = new File(basePath + "ACC.csv");
                  */
 
                 final File tagFile = new File(basePath + "tags.csv");
-
                 publishProgress("Processing tag data");
                 if (tagFile.exists())
                     try (BufferedReader reader = new BufferedReader(new FileReader(tagFile))) {
@@ -66,6 +64,28 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean
                             Log.d(MainActivity.TAG, "loaded tag " + line);
 
                             e4SessionData.getTags().add(Double.parseDouble(line));
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        return false;
+                    }
+
+                final File ibiFile = new File(basePath + "IBI.csv");
+                publishProgress("Processing IBI data");
+                if (tagFile.exists())
+                    try (BufferedReader reader = new BufferedReader(new FileReader(ibiFile))) {
+                        String line;
+
+                        final double initialTime = Double.parseDouble(reader.readLine().split(",")[0]);
+                        double timestamp = initialTime;
+
+                        while ((line = reader.readLine()) != null) {
+                            final String[] split = line.split(",");
+                            final double plusTime = Double.parseDouble(split[0]);
+                            final float ibi = Float.parseFloat(split[1]);
+                            timestamp = initialTime + plusTime;
+
+                            e4SessionData.getIbi().add(ibi);
                         }
                     } catch (IOException e) {
                         e.printStackTrace();

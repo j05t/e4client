@@ -162,6 +162,7 @@ public class SessionsFragment extends Fragment {
         if (sharedViewModel.getUsername().isEmpty() || sharedViewModel.getPassword().isEmpty()) {
             sharedViewModel.getCurrentStatus().setValue("Please edit your Empatica account settings.");
         } else if (sharedViewModel.getUserId() == null) {
+            sharedViewModel.getCurrentStatus().setValue("Syncing with Empatica cloud account..");
             new LoginAndGetAllSessions(mAdapter).execute();
         }
 

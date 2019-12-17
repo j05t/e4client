@@ -336,7 +336,7 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
                                 .build();
                 final DataSet.Builder hrvDataSetBuilder = DataSet.builder(hrvDataSource);
 
-                final float hrv = Utils.calcHrvSDNN(values);
+                final float hrv = Utils.calcHrvSDRR(values);
 
                 // fixme: rounding double to closest long..
                 hrvDataSetBuilder.add(DataPoint.builder(hrvDataSource)

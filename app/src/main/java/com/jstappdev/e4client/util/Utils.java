@@ -32,7 +32,7 @@ public class Utils {
     }
 
     // todo: correct for outliers in the data
-    static float calcHrvSDNN(final List<Float> list) {
+    public static float calcHrvSDRR(final List<Float> list) {
         return (float) Math.sqrt(variance(list));
     }
 

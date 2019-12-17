@@ -1,7 +1,9 @@
 package com.jstappdev.e4client.ui;
 
+import android.annotation.SuppressLint;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,6 +16,7 @@ import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
 
+import com.jstappdev.e4client.MainActivity;
 import com.jstappdev.e4client.R;
 import com.jstappdev.e4client.SharedViewModel;
 import com.jstappdev.e4client.util.Utils;
@@ -21,7 +24,10 @@ import com.scichart.charting.Direction2D;
 import com.scichart.charting.model.dataSeries.XyDataSeries;
 import com.scichart.charting.numerics.labelProviders.DateLabelProvider;
 import com.scichart.charting.visuals.SciChartSurface;
+import com.scichart.charting.visuals.annotations.AnnotationCoordinateMode;
 import com.scichart.charting.visuals.annotations.AxisMarkerAnnotation;
+import com.scichart.charting.visuals.annotations.HorizontalAnchorPoint;
+import com.scichart.charting.visuals.annotations.VerticalAnchorPoint;
 import com.scichart.charting.visuals.annotations.VerticalLineAnnotation;
 import com.scichart.charting.visuals.axes.AutoRange;
 import com.scichart.charting.visuals.axes.IAxis;
@@ -157,16 +163,13 @@ public class ChartsFragment extends Fragment {
         chartSurface.getRenderableSeries().add(lineSeries);
     }
 
+    @SuppressLint("DefaultLocale")
     private void setupCharts() {
         final LifecycleOwner owner = getViewLifecycleOwner();
 
         setupChart(edaChart, edaAxisTitle, edaLineData, true);
         setupChart(hrChart, hrAxisTitle, hrLineData, false);
         setupChart(tempChart, tempAxisTitle, tempLineData, false);
-
-        // axis marker showing current value
-        Collections.addAll(hrChart.getAnnotations(), hrAxisMarker, hrvAxisMarker);
-        Collections.addAll(tempChart.getAnnotations(), tempAxisMarker);
 
         verticalGroup.addSurfaceToGroup(edaChart);
         verticalGroup.addSurfaceToGroup(hrChart);
@@ -198,15 +201,30 @@ public class ChartsFragment extends Fragment {
                 Collections.addAll(edaChart.getAnnotations(), verticalLine);
             }
 
-            // todo: read IBI here and calculate HRV
-            /*
-            Log.d(MainActivity.TAG, "calulated HRV: " + hrv);
-            hrvAxisMarker.setY1(hrv);
-            */
+
+            final float hrvSDRR = Utils.calcHrvSDRR(sharedViewModel.getSessionData().getIbi());
+            Log.d(MainActivity.TAG, "IBIs: " + sharedViewModel.getSessionData().getIbi().size());
+            Log.d(MainActivity.TAG, "calulated HRV (SDRR): " + hrvSDRR);
+
+            Collections.addAll(hrChart.getAnnotations(),
+                    sciChartBuilder.newTextAnnotation()
+                            .withX1(0.05)
+                            .withY1(0.95)
+                            .withCoordinateMode(AnnotationCoordinateMode.Relative)
+                            .withHorizontalAnchorPoint(HorizontalAnchorPoint.Left)
+                            .withVerticalAnchorPoint(VerticalAnchorPoint.Bottom)
+                            .withText(String.format("HRV (SDRR): %.4f", hrvSDRR))
+                            .withFontStyle(12, ColorUtil.White)
+                            .build());
 
             edaChart.animateZoomExtents(500);
 
         } else { // display live sensor data at 30fps
+
+            // axis markers showing current values for heart rate and temperature
+            Collections.addAll(hrChart.getAnnotations(), hrAxisMarker, hrvAxisMarker);
+            Collections.addAll(tempChart.getAnnotations(), tempAxisMarker);
+
             scheduler.scheduleAtFixedRate
                     (new Runnable() {
                         public void run() {
