@@ -38,6 +38,8 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean
 
             final E4SessionData e4SessionData = viewModel.getSessionData();
 
+            e4SessionData.setDescription(String.format("%s\nSession ID: %s\nDuration: %s", e4Session.getStartDate(), e4Session.getId(), e4Session.getDurationAsString()));
+
             try {
                 final File sessionFile = new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename());
 

@@ -218,6 +218,18 @@ public class ChartsFragment extends Fragment {
                             .withBackgroundDrawableId(R.drawable.annotation_bg_1)
                             .build());
 
+            Collections.addAll(edaChart.getAnnotations(),
+                    sciChartBuilder.newTextAnnotation()
+                            .withX1(0.005)
+                            .withY1(0.3)
+                            .withCoordinateMode(AnnotationCoordinateMode.Relative)
+                            .withHorizontalAnchorPoint(HorizontalAnchorPoint.Left)
+                            .withVerticalAnchorPoint(VerticalAnchorPoint.Bottom)
+                            .withText(sharedViewModel.getSessionData().getDescription())
+                            .withBackgroundDrawableId(R.drawable.annotation_bg_1)
+                            .withFontStyle(12, ColorUtil.White)
+                            .build());
+
             edaChart.animateZoomExtents(500);
 
         } else { // display live sensor data at 30fps

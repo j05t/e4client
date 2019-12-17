@@ -10,6 +10,8 @@ public class E4SessionData {
 
     private long initialTime;
 
+    private String description;
+
     private LinkedList<List<Integer>> acc;
     private LinkedList<Float> bvp;
     private LinkedList<Float> gsr;
@@ -52,6 +54,14 @@ public class E4SessionData {
 
     public static void clear() {
         INSTANCE = new E4SessionData();
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public LinkedList<Double> getAccTimestamps() {
