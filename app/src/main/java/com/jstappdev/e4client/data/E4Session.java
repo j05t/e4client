@@ -17,6 +17,8 @@ public class E4Session implements Comparable<E4Session> {
     private String status;
     private String exit_code;
     private E4SessionData e4SessionData;
+    private boolean isDownloaded;
+    private boolean isUploaded;
 
     public E4Session(String id, Long startTime, Long duration, String deviceId, String label, String device, String status, String exit_code) {
         this.id = id;
@@ -149,4 +151,21 @@ public class E4Session implements Comparable<E4Session> {
     public int hashCode() {
         return Objects.hash(id, startTime, duration);
     }
+
+    public void setIsDownloaded(boolean isDownloaded) {
+        this.isDownloaded = isDownloaded;
+    }
+
+    public boolean isDownloaded() {
+        return this.isDownloaded;
+    }
+
+    public void setIsUploaded(boolean isUploaded) {
+        this.isUploaded = isUploaded;
+    }
+
+    public boolean isUploaded() {
+        return this.isUploaded;
+    }
+
 }

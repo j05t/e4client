@@ -24,8 +24,6 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
-import androidx.lifecycle.Lifecycle;
-import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
 import androidx.navigation.NavController;
@@ -396,7 +394,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
     void connectionDisconnected() {
         // may be called before connection is established
-        if(sharedViewModel.getIsConnected().getValue()) {
+        if (sharedViewModel.getIsConnected().getValue()) {
             sharedViewModel.setIsConnected(false);
             saveSessionToFile();
         }
@@ -644,10 +642,22 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
         try {
             new ZipFile(sessionFile).addFiles(Arrays.asList(edaFile, tempFile, bvpFile, accFile, hrFile, ibiFile, tagFile));
-            sharedViewModel.getCurrentStatus().setValue("Session saved to local storage: " + sessionFile.getAbsolutePath());
+
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(MainActivity.context, "Session saved to local storage: " + sessionFile.getAbsolutePath(), Toast.LENGTH_SHORT).show();
+
+                }
+            });
         } catch (ZipException e) {
             e.printStackTrace();
-            sharedViewModel.getCurrentStatus().setValue("Error saving file: " + sessionFile.getAbsolutePath());
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(MainActivity.context, "Error writing file: " + sessionFile.getAbsolutePath(), Toast.LENGTH_SHORT).show();
+                }
+            });
         }
     }
 }

@@ -143,8 +143,6 @@ public class SessionsFragment extends Fragment {
 
                 final E4Session e4Session = new E4Session(id, start_time, duration, device_id, label, device, status, exit_code);
 
-                sharedViewModel.getCurrentStatus().setValue(String.format("Found session %s", e4Session));
-
                 if (!sharedViewModel.getE4Sessions().contains(e4Session))
                     sharedViewModel.getE4Sessions().add(e4Session);
             }

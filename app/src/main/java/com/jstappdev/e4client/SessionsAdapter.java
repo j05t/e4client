@@ -35,9 +35,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         public void onClick(View v) {
             final int position = (int) v.getTag();
 
-            if (position >= sharedViewModel.getE4Sessions().size()) {
-                return;
-            }
+            if (position >= sharedViewModel.getE4Sessions().size()) return;
 
             final E4Session e4Session = sharedViewModel.getE4Sessions().get(position);
 
@@ -90,7 +88,9 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                     .setCancelable(true)
                     .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
-                            new DeleteSession(instance, sharedViewModel, position).execute(e4Session);
+
+                            if (e4Session.isDownloaded() || e4Session.isUploaded())
+                                new DeleteSession(instance, sharedViewModel, position).execute(e4Session);
                         }
                     })
                     .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -158,17 +158,21 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         if (Utils.isSessionDownloaded(e4Session)) {
             holder.isDownloaded.setCheckMarkDrawable(android.R.drawable.checkbox_on_background);
             holder.isDownloaded.setChecked(true);
+            e4Session.setIsDownloaded(true);
         } else {
             holder.isDownloaded.setCheckMarkDrawable(android.R.drawable.checkbox_off_background);
             holder.isDownloaded.setChecked(false);
+            e4Session.setIsDownloaded(false);
         }
 
         if (sharedViewModel.getUploadedSessionIDs().contains(e4Session.getId())) {
             holder.isUploaded.setCheckMarkDrawable(android.R.drawable.checkbox_on_background);
             holder.isUploaded.setChecked(true);
+            e4Session.setIsUploaded(true);
         } else {
             holder.isUploaded.setCheckMarkDrawable(android.R.drawable.checkbox_off_background);
             holder.isUploaded.setChecked(false);
+            e4Session.setIsUploaded(false);
         }
     }
 
@@ -236,13 +240,12 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                 viewModel.getE4Sessions().remove(position);
                 adapter.notifyItemRemoved(position);
 
-                publishProgress("Deleting session in Empatica cloud..");
-
-                if (MainActivity.okHttpClient.newCall(request).execute().isSuccessful()) {
-                    publishProgress("Deleted remote data.");
-                } else {
-                    publishProgress("Failed to delete remote data.");
-                }
+                if (e4Session.isUploaded())
+                    if (MainActivity.okHttpClient.newCall(request).execute().isSuccessful()) {
+                        publishProgress("Deleted remote data.");
+                    } else {
+                        publishProgress("Failed to delete remote data.");
+                    }
 
                 return true;
             } catch (IOException e) {
