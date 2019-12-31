@@ -34,6 +34,11 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         @Override
         public void onClick(View v) {
             final int position = (int) v.getTag();
+
+            if (position >= sharedViewModel.getE4Sessions().size()) {
+                return;
+            }
+
             final E4Session e4Session = sharedViewModel.getE4Sessions().get(position);
 
             new AlertDialog.Builder(v.getContext())
@@ -74,6 +79,9 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         @Override
         public boolean onLongClick(View v) {
             final int position = (int) v.getTag();
+
+            if (position >= sharedViewModel.getE4Sessions().size()) return false;
+
             final E4Session e4Session = sharedViewModel.getE4Sessions().get(position);
 
             new AlertDialog.Builder(v.getContext())
@@ -225,6 +233,9 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                     }
                 }
 
+                viewModel.getE4Sessions().remove(position);
+                adapter.notifyItemRemoved(position);
+
                 publishProgress("Deleting session in Empatica cloud..");
 
                 if (MainActivity.okHttpClient.newCall(request).execute().isSuccessful()) {
@@ -253,8 +264,6 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
 
             if (done) {
                 viewModel.getCurrentStatus().setValue("Session deleted.");
-                viewModel.getE4Sessions().remove(position);
-                adapter.notifyItemRemoved(position);
             }
 
         }

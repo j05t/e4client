@@ -84,15 +84,11 @@ public class SettingsFragment extends Fragment {
             }
         });
 
+        loadPreferences();
+
         return root;
     }
 
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        loadPreferences();
-    }
 
     private void loadPreferences() {
 

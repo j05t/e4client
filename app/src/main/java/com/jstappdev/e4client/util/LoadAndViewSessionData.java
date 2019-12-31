@@ -36,9 +36,7 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean
 
             E4SessionData.clear();
 
-            final E4SessionData e4SessionData = viewModel.getSessionData();
-
-            e4SessionData.setDescription(String.format("%s\nSession ID: %s\nDuration: %s", e4Session.getStartDate(), e4Session.getId(), e4Session.getDurationAsString()));
+            E4SessionData.getInstance().setDescription(String.format("%s\nSession ID: %s\nDuration: %s", e4Session.getStartDate(), e4Session.getId(), e4Session.getDurationAsString()));
 
             try {
                 final File sessionFile = new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename());
@@ -68,7 +66,7 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean
                         while ((line = reader.readLine()) != null) {
                             Log.d(MainActivity.TAG, "loaded tag " + line);
 
-                            e4SessionData.getTags().add(Double.parseDouble(line));
+                            E4SessionData.getInstance().getTags().add(Double.parseDouble(line));
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -90,7 +88,7 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean
                             final float ibi = Float.parseFloat(split[1]);
                             timestamp = initialTime + plusTime;
 
-                            e4SessionData.getIbi().add(ibi);
+                            E4SessionData.getInstance().getIbi().add(ibi);
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -107,24 +105,24 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean
 
                 publishProgress("Processing EDA data");
                 data = new CSVFile(new FileInputStream(edaFile));
-                e4SessionData.setInitialTime((long) data.getInitialTime());
-                e4SessionData.setGsrTimestamps(data.getX());
-                e4SessionData.setGsr(data.getY());
+                E4SessionData.getInstance().setInitialTime((long) data.getInitialTime());
+                E4SessionData.getInstance().setGsrTimestamps(data.getX());
+                E4SessionData.getInstance().setGsr(data.getY());
                 edaFile.delete();
 
                 publishProgress("Processing TEMP data");
                 data = new CSVFile(new FileInputStream(tempFile));
-                e4SessionData.setTempTimestamps(data.getX());
-                e4SessionData.setTemp(data.getY());
+                E4SessionData.getInstance().setTempTimestamps(data.getX());
+                E4SessionData.getInstance().setTemp(data.getY());
                 tempFile.delete();
 
                 publishProgress("Processing HR data");
                 data = new CSVFile(new FileInputStream(hrFile));
-                e4SessionData.setHrTimestamps(data.getX());
-                e4SessionData.setHr(data.getY());
+                E4SessionData.getInstance().setHrTimestamps(data.getX());
+                E4SessionData.getInstance().setHr(data.getY());
                 hrFile.delete();
 
-                e4SessionData.setInitialTime(e4Session.getStartTime());
+                E4SessionData.getInstance().setInitialTime(e4Session.getStartTime());
 
                 publishProgress(String.format("Loaded data for session %s", e4Session.getId()));
 

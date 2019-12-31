@@ -45,7 +45,7 @@ public class E4SessionData {
         tempTimestamps = new LinkedList<>();
     }
 
-    public static E4SessionData getInstance() {
+    public synchronized static E4SessionData getInstance() {
         if (INSTANCE == null) {
             INSTANCE = new E4SessionData();
         }

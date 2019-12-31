@@ -8,6 +8,7 @@ import com.jstappdev.e4client.data.E4Session;
 
 import java.io.File;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -48,6 +49,14 @@ public class Utils {
         cal.setTimeZone(TimeZone.getTimeZone("UTC"));
         cal.setTimeInMillis(time * 1000);
         return DateFormat.format("HH:mm:ss", cal).toString();
+    }
+
+    public static long getCurrentTimestamp() {
+        final Calendar cal = Calendar.getInstance();
+        final Date now = new Date();
+        cal.setTime(now);
+
+        return cal.getTimeInMillis() + TimeZone.getDefault().getRawOffset();
     }
 
     public static boolean isSessionDownloaded(final E4Session e4Session) {

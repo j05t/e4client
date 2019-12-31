@@ -2,6 +2,7 @@ package com.jstappdev.e4client.ui;
 
 import android.annotation.SuppressLint;
 import android.content.pm.ActivityInfo;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
@@ -19,6 +20,7 @@ import androidx.lifecycle.ViewModelProviders;
 import com.jstappdev.e4client.MainActivity;
 import com.jstappdev.e4client.R;
 import com.jstappdev.e4client.SharedViewModel;
+import com.jstappdev.e4client.data.E4SessionData;
 import com.jstappdev.e4client.util.Utils;
 import com.scichart.charting.Direction2D;
 import com.scichart.charting.model.dataSeries.XyDataSeries;
@@ -27,6 +29,7 @@ import com.scichart.charting.visuals.SciChartSurface;
 import com.scichart.charting.visuals.annotations.AnnotationCoordinateMode;
 import com.scichart.charting.visuals.annotations.AxisMarkerAnnotation;
 import com.scichart.charting.visuals.annotations.HorizontalAnchorPoint;
+import com.scichart.charting.visuals.annotations.TextAnnotation;
 import com.scichart.charting.visuals.annotations.VerticalAnchorPoint;
 import com.scichart.charting.visuals.annotations.VerticalLineAnnotation;
 import com.scichart.charting.visuals.axes.AutoRange;
@@ -41,9 +44,6 @@ import com.scichart.extensions.builders.SciChartBuilder;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Objects;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -59,8 +59,6 @@ public class ChartsFragment extends Fragment {
     private static float averageHr = -1.0f;
     private final SciChartVerticalGroup verticalGroup = new SciChartVerticalGroup();
     private final DateRange sharedXRange = new DateRange();
-
-    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     // @BindView(R.id.bvpChart)
     //SciChartSurface bvpChart;
@@ -122,13 +120,6 @@ public class ChartsFragment extends Fragment {
         SciChartBuilder.dispose();
     }
 
-    @Override
-    public void onPause() {
-        super.onPause();
-
-        scheduler.shutdown();
-    }
-
     private void setupChart(SciChartSurface chartSurface, final String yAxisTitle, XyDataSeries<Double, Float> lineData, boolean isFirstPane) {
 
         final IAxis xAxis = sciChartBuilder.newDateAxis()
@@ -178,7 +169,7 @@ public class ChartsFragment extends Fragment {
         //noinspection ConstantConditions
         if (!sharedViewModel.getIsConnected().getValue()) {
 
-            sharedXRange.setMin(new Date(sharedViewModel.getSessionData().getInitialTime()));
+            sharedXRange.setMin(new Date(E4SessionData.getInstance().getInitialTime()));
 
             Collections.addAll(edaChart.getChartModifiers(), sciChartBuilder.newModifierGroup()
                     .withXAxisDragModifier().build()
@@ -186,11 +177,11 @@ public class ChartsFragment extends Fragment {
                     .withZoomExtentsModifier().build()
                     .build());
 
-            edaLineData.append(sharedViewModel.getSessionData().getGsrTimestamps(), sharedViewModel.getSessionData().getGsr());
-            hrLineData.append(sharedViewModel.getSessionData().getHrTimestamps(), sharedViewModel.getSessionData().getHr());
-            tempLineData.append(sharedViewModel.getSessionData().getTempTimestamps(), sharedViewModel.getSessionData().getTemp());
+            edaLineData.append(E4SessionData.getInstance().getGsrTimestamps(), E4SessionData.getInstance().getGsr());
+            hrLineData.append(E4SessionData.getInstance().getHrTimestamps(), E4SessionData.getInstance().getHr());
+            tempLineData.append(E4SessionData.getInstance().getTempTimestamps(), E4SessionData.getInstance().getTemp());
 
-            for (double tag : sharedViewModel.getSessionData().getTags()) {
+            for (double tag : E4SessionData.getInstance().getTags()) {
                 VerticalLineAnnotation verticalLine = sciChartBuilder.newVerticalLineAnnotation()
                         .withPosition(tag, 0.5d)
                         .withStroke(2, ColorUtil.Orange)
@@ -202,8 +193,8 @@ public class ChartsFragment extends Fragment {
             }
 
 
-            final float hrvSDRR = Utils.calcHrvSDRR(sharedViewModel.getSessionData().getIbi());
-            Log.d(MainActivity.TAG, "IBIs: " + sharedViewModel.getSessionData().getIbi().size());
+            final float hrvSDRR = Utils.calcHrvSDRR(E4SessionData.getInstance().getIbi());
+            Log.d(MainActivity.TAG, "IBIs: " + E4SessionData.getInstance().getIbi().size());
             Log.d(MainActivity.TAG, "calulated HRV (SDRR): " + hrvSDRR);
 
             Collections.addAll(hrChart.getAnnotations(),
@@ -225,25 +216,34 @@ public class ChartsFragment extends Fragment {
                             .withCoordinateMode(AnnotationCoordinateMode.Relative)
                             .withHorizontalAnchorPoint(HorizontalAnchorPoint.Left)
                             .withVerticalAnchorPoint(VerticalAnchorPoint.Bottom)
-                            .withText(sharedViewModel.getSessionData().getDescription())
+                            .withText(E4SessionData.getInstance().getDescription())
                             .withBackgroundDrawableId(R.drawable.annotation_bg_1)
                             .withFontStyle(12, ColorUtil.White)
                             .build());
 
             edaChart.animateZoomExtents(500);
 
-        } else { // display live sensor data at 30fps
+        } else { // display live sensor data
+
+            // Create a watermark using a TextAnnotation
+            TextAnnotation textAnnotation = sciChartBuilder.newTextAnnotation()
+                    .withX1(0.5)
+                    .withY1(0.5)
+                    .withFontStyle(Typeface.DEFAULT_BOLD, 42, 0x22FFFFFF)
+                    .withCoordinateMode(AnnotationCoordinateMode.Relative)
+                    .withHorizontalAnchorPoint(HorizontalAnchorPoint.Center)
+                    .withVerticalAnchorPoint(VerticalAnchorPoint.Center)
+                    .withText("Streaming")
+                    .withTextGravity(Gravity.CENTER)
+                    .build();
+            // Add the annotation to the AnnotationsCollection of a surface
+            Collections.addAll(edaChart.getAnnotations(), textAnnotation);
+
 
             // axis markers showing current values for heart rate and temperature
             Collections.addAll(hrChart.getAnnotations(), hrAxisMarker, hrvAxisMarker);
             Collections.addAll(tempChart.getAnnotations(), tempAxisMarker);
 
-            scheduler.scheduleAtFixedRate
-                    (new Runnable() {
-                        public void run() {
-                            updateCharts();
-                        }
-                    }, 1000, 30, TimeUnit.MILLISECONDS);
 
             sharedViewModel.getTag().observe(owner, new Observer<Double>() {
                 @Override
@@ -262,32 +262,49 @@ public class ChartsFragment extends Fragment {
             sharedViewModel.getLastIbi().observe(owner, new Observer<Integer>() {
                 @Override
                 public void onChanged(Integer lastIbi) {
-                    final float currentHr = 60.0f / sharedViewModel.getSessionData().getIbi().getLast();
+                    try {
+                        final float currentHr = 60.0f / E4SessionData.getInstance().getIbi().getLast();
 
-                    // heart rate may theoretically reach 600, but we assume 300 max
-                    // https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3273956/
-                    if (averageHr != 0.0f && currentHr < 300f) {
-                        averageHr = 0.8f * averageHr + 0.2f * currentHr;
+                        // heart rate may theoretically reach 600, but we assume 300 max
+                        // https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3273956/
+                        if (averageHr != 0.0f && currentHr < 300f) {
+                            averageHr = 0.8f * averageHr + 0.2f * currentHr;
+                        }
+
+                        hrLineData.append(E4SessionData.getInstance().getHrTimestamps().getLast(), currentHr);
+                        hrAxisMarker.setY1(averageHr);
+                    } catch (Exception e) {
+                        Log.e(MainActivity.TAG, "updateCharts() " + e.getMessage());
                     }
                 }
             });
+
+            sharedViewModel.getLastGsr().observe(owner, new Observer<Integer>() {
+                @Override
+                public void onChanged(Integer integer) {
+                    try {
+                        edaLineData.append(E4SessionData.getInstance().getGsrTimestamps().getLast(), E4SessionData.getInstance().getGsr().getLast());
+                    } catch (Exception e) {
+                        Log.e(MainActivity.TAG, "updateCharts() " + e.getMessage());
+                    }
+                }
+            });
+
+            sharedViewModel.getLastGsr().observe(owner, new Observer<Integer>() {
+                @Override
+                public void onChanged(Integer integer) {
+                    try {
+                        tempLineData.append(E4SessionData.getInstance().getTempTimestamps().getLast(), E4SessionData.getInstance().getTemp().getLast());
+                        tempAxisMarker.setY1(E4SessionData.getInstance().getTemp().getLast());
+                    } catch (Exception e) {
+                        Log.e(MainActivity.TAG, "updateCharts() " + e.getMessage());
+                    }
+                }
+            });
+
         }
     }
 
-    private void updateCharts() {
-
-        final double lastTimestamp = sharedViewModel.getSessionData().getGsrTimestamps().getLast();
-
-        edaLineData.append(lastTimestamp, sharedViewModel.getSessionData().getGsr().getLast());
-        tempLineData.append(lastTimestamp, sharedViewModel.getSessionData().getTemp().getLast());
-        tempAxisMarker.setY1(sharedViewModel.getSessionData().getTemp().getLast());
-
-        final float currentHr = 60.0f / sharedViewModel.getSessionData().getIbi().getLast();
-        hrLineData.append(lastTimestamp, currentHr);
-        hrAxisMarker.setY1(averageHr);
-
-        edaChart.zoomExtents();
-    }
 
     public static class DateLabelProviderEx extends DateLabelProvider {
         @Override

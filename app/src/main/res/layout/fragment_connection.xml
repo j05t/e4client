@@ -40,12 +40,11 @@
 
             <TextView
                 android:id="@+id/wrist_status_label"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="8dp"
                 android:text="@string/emptyText"
                 android:textAlignment="center"
-                android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+                android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
 
             <TextView
                 android:id="@+id/accel_label"

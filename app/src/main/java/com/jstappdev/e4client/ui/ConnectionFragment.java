@@ -3,6 +3,7 @@ package com.jstappdev.e4client.ui;
 import android.annotation.SuppressLint;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,14 +31,12 @@ import net.lingala.zip4j.exception.ZipException;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
-import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 
 public class ConnectionFragment extends Fragment {
-
-    private static final int CALIBRATION_SAMPLES = 42;
 
     private SharedViewModel sharedViewModel;
 
@@ -102,93 +101,12 @@ public class ConnectionFragment extends Fragment {
             public void onClick(View v) {
                 MainActivity.context.disconnect();
                 dataArea.setVisibility(View.GONE);
-
-                saveSessionToFile();
             }
         });
 
-        MainActivity.context.initEmpaticaDeviceManager();
-    }
-
-    @SuppressLint("DefaultLocale")
-    private synchronized void saveSessionToFile() {
-        final E4SessionData sd = sharedViewModel.getSessionData();
-        final E4Session e4Session = new E4Session("local", sd.getInitialTime(), new Timestamp(System.currentTimeMillis()).getTime() - sd.getInitialTime(), sharedViewModel.getDeviceName().getValue(), "local", sharedViewModel.getDeviceName().getValue(), "0", "0");
-        e4Session.setE4SessionData(sd);
-
-        final File sessionFile = new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename());
-
-        Utils.trimCache(MainActivity.context);
-
-        final String basePath = MainActivity.context.getCacheDir().getPath() + "/";
-
-        final File edaFile = new File(basePath + "EDA.csv");
-        final File tempFile = new File(basePath + "TEMP.csv");
-        final File bvpFile = new File(basePath + "BVP.csv");
-        final File hrFile = new File(basePath + "HR.csv");
-        final File tagFile = new File(basePath + "tags.csv");
-        final File ibiFile = new File(basePath + "IBI.csv");
-        final File accFile = new File(basePath + "ACC.csv");
-
-        try (final PrintWriter writer = new PrintWriter(new FileWriter(edaFile))) {
-            writer.println(e4Session.getStartTime());
-            writer.println("4.000000");
-            for (float f : sd.getGsr()) writer.println(f);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        try (final PrintWriter writer = new PrintWriter(new FileWriter(tempFile))) {
-            writer.println(e4Session.getStartTime());
-            writer.println("4.000000");
-            for (float f : sd.getTemp()) writer.println(f);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        try (final PrintWriter writer = new PrintWriter(new FileWriter(bvpFile))) {
-            writer.println(e4Session.getStartTime());
-            writer.println("4.000000");
-            for (float f : sd.getBvp()) writer.println(f);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        try (final PrintWriter writer = new PrintWriter(new FileWriter(hrFile))) {
-            writer.println(e4Session.getStartTime());
-            writer.println("1.000000");
-            for (float f : sd.getHr()) writer.println(f);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        try (final PrintWriter writer = new PrintWriter(new FileWriter(tagFile))) {
-            for (Double f : sd.getTags()) writer.println(f);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        try (final PrintWriter writer = new PrintWriter(new FileWriter(ibiFile))) {
-            writer.println(e4Session.getStartTime() + ", IBI");
-            writer.println("1.000000");
-            for (int i = 0; i < sd.getIbi().size(); i++) {
-                writer.println(String.format("%s,%s", sd.getIbiTimestamps().get(i) - e4Session.getStartTime(), sd.getIbi().get(i)));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        try (final PrintWriter writer = new PrintWriter(new FileWriter(accFile))) {
-            writer.println(e4Session.getStartTime() + ", " + e4Session.getStartTime() + ", " + e4Session.getStartTime());
-            writer.println("32.000000, 32.000000, 32.000000");
-            for (int i = 0; i < sd.getIbi().size(); i++) {
-                writer.println(String.format("%s,%s,%s", sd.getAcc().get(0), sd.getAcc().get(1), sd.getAcc().get(2)));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        try {
-            new ZipFile(sessionFile).addFiles(Arrays.asList(edaFile, tempFile, bvpFile, accFile, hrFile, ibiFile, tagFile));
-            Toast.makeText(requireContext(), "Session saved to local storage: " + sessionFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
-        } catch (ZipException e) {
-            e.printStackTrace();
-            Toast.makeText(requireContext(), "Error saving file!", Toast.LENGTH_LONG).show();
-        }
+        //noinspection ConstantConditions
+        if (!sharedViewModel.getIsConnected().getValue())
+            MainActivity.context.initEmpaticaDeviceManager();
     }
 
     @Override
@@ -201,8 +119,15 @@ public class ConnectionFragment extends Fragment {
         sharedViewModel.getIsConnected().observe(owner, new Observer<Boolean>() {
             @Override
             public void onChanged(Boolean isConnected) {
-                if (isConnected) dataArea.setVisibility(View.VISIBLE);
-                else dataArea.setVisibility(View.GONE);
+                if (isConnected) {
+                    dataArea.setVisibility(View.VISIBLE);
+
+                    E4SessionData.clear();
+
+                    E4SessionData.getInstance().setInitialTime(Utils.getCurrentTimestamp());
+                } else {
+                    dataArea.setVisibility(View.GONE);
+                }
             }
         });
         sharedViewModel.getDeviceName().observe(owner, new Observer<String>() {
@@ -247,45 +172,60 @@ public class ConnectionFragment extends Fragment {
 
         sharedViewModel.getLastAcc().observe(owner, new Observer<Integer>() {
             public void onChanged(Integer lastAcc) {
-                if (lastAcc < CALIBRATION_SAMPLES) return;
+                try {
 
-                accel_xLabel.setText(String.format(Locale.getDefault(), "%d", sharedViewModel.getSessionData().getAcc().getLast().get(0)));
-                accel_yLabel.setText(String.format(Locale.getDefault(), "%d", sharedViewModel.getSessionData().getAcc().getLast().get(1)));
-                accel_zLabel.setText(String.format(Locale.getDefault(), "%d", sharedViewModel.getSessionData().getAcc().getLast().get(2)));
+                    accel_xLabel.setText(String.format(Locale.getDefault(), "%d", E4SessionData.getInstance().getAcc().getLast().get(0)));
+                    accel_yLabel.setText(String.format(Locale.getDefault(), "%d", E4SessionData.getInstance().getAcc().getLast().get(1)));
+                    accel_zLabel.setText(String.format(Locale.getDefault(), "%d", E4SessionData.getInstance().getAcc().getLast().get(2)));
+                } catch (NoSuchElementException e) {
+                    Log.e("e4", "no such element");
+                }
             }
         });
         sharedViewModel.getLastGsr().observe(owner, new Observer<Integer>() {
             @Override
             public void onChanged(Integer lastGsr) {
-                if (lastGsr < CALIBRATION_SAMPLES) return;
+                try {
 
-                edaLabel.setText(String.format(Locale.getDefault(), "%.0f", sharedViewModel.getSessionData().getGsr().getLast()));
+                    edaLabel.setText(String.format(Locale.getDefault(), "%.0f", E4SessionData.getInstance().getGsr().getLast()));
+                } catch (NoSuchElementException e) {
+                    Log.e("e4", "no such element");
+                }
             }
         });
         sharedViewModel.getLastIbi().observe(owner, new Observer<Integer>() {
             @Override
             public void onChanged(Integer lastIbi) {
-                if (lastIbi < CALIBRATION_SAMPLES) return;
+                try {
 
-                ibiLabel.setText(String.format(Locale.getDefault(), "%.0f", sharedViewModel.getSessionData().getIbi().getLast()));
+                    ibiLabel.setText(String.format(Locale.getDefault(), "%.0f", E4SessionData.getInstance().getIbi().getLast()));
+                } catch (NoSuchElementException e) {
+                    Log.e("e4", "no such element");
+                }
             }
         });
         sharedViewModel.getLastTemp().observe(owner, new Observer<Integer>() {
             @Override
             public void onChanged(Integer lastTemp) {
-                if (lastTemp < CALIBRATION_SAMPLES) return;
+                try {
 
-                temperatureLabel.setText(String.format(Locale.getDefault(), "%.0f", sharedViewModel.getSessionData().getTemp().getLast()));
+                    temperatureLabel.setText(String.format(Locale.getDefault(), "%.0f", E4SessionData.getInstance().getTemp().getLast()));
+                } catch (NoSuchElementException e) {
+                    Log.e("e4", "no such element in " + E4SessionData.getInstance());
+                }
             }
         });
         sharedViewModel.getLastBvp().observe(owner, new Observer<Integer>() {
             @Override
             public void onChanged(Integer lastBvp) {
-                if (lastBvp < CALIBRATION_SAMPLES) return;
 
-                bvpLabel.setText(String.format(Locale.getDefault(), "%.0f", sharedViewModel.getSessionData().getBvp().getLast()));
+                try {
+                    bvpLabel.setText(String.format(Locale.getDefault(), "%.0f", E4SessionData.getInstance().getBvp().getLast()));
+                } catch (NoSuchElementException e) {
+                    Log.e("e4", "no such element ");
+                }
             }
         });
-    }
 
+    }
 }

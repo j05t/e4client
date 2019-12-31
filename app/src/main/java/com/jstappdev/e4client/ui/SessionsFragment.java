@@ -6,7 +6,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -50,7 +49,6 @@ public class SessionsFragment extends Fragment {
         sharedViewModel = ViewModelProviders.of(Objects.requireNonNull(getActivity())).get(SharedViewModel.class);
 
         final View root = inflater.inflate(R.layout.fragment_sessions, container, false);
-        final TextView statusTextView = root.findViewById(R.id.text_sessions);
         final RecyclerView recyclerView = root.findViewById(R.id.recyclerview);
 
         // use this setting to improve performance if you know that changes
@@ -109,7 +107,7 @@ public class SessionsFragment extends Fragment {
         sharedViewModel.getCurrentStatus().observe(getViewLifecycleOwner(), new Observer<String>() {
             @Override
             public void onChanged(String s) {
-                statusTextView.setText(s);
+                Toast.makeText(MainActivity.context, s, Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -161,10 +159,12 @@ public class SessionsFragment extends Fragment {
 
         if (sharedViewModel.getUsername().isEmpty() || sharedViewModel.getPassword().isEmpty()) {
             sharedViewModel.getCurrentStatus().setValue("Please edit your Empatica account settings.");
-        } else if (sharedViewModel.getUserId() == null) {
+        } /*
+        else if (sharedViewModel.getUserId() == null) {
             sharedViewModel.getCurrentStatus().setValue("Syncing with Empatica cloud account..");
             new LoginAndGetAllSessions(mAdapter).execute();
         }
+        */
 
     }
 

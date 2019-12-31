@@ -24,6 +24,9 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.LifecycleOwner;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -52,14 +55,23 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Tasks;
 import com.google.android.material.navigation.NavigationView;
+import com.jstappdev.e4client.data.E4Session;
+import com.jstappdev.e4client.data.E4SessionData;
 import com.jstappdev.e4client.util.Utils;
 import com.squareup.okhttp.OkHttpClient;
 
+import net.lingala.zip4j.ZipFile;
+import net.lingala.zip4j.exception.ZipException;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.lang.ref.WeakReference;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -139,6 +151,13 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         }
 
         createGoogleFitClient();
+
+        sharedViewModel.getCurrentStatus().observe(this, new Observer<String>() {
+            @Override
+            public void onChanged(String s) {
+                Toast.makeText(MainActivity.context, s, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     public void openCharts() {
@@ -376,7 +395,11 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     }
 
     void connectionDisconnected() {
-        sharedViewModel.setIsConnected(false);
+        // may be called before connection is established
+        if(sharedViewModel.getIsConnected().getValue()) {
+            sharedViewModel.setIsConnected(false);
+            saveSessionToFile();
+        }
     }
 
 
@@ -546,4 +569,85 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         }
     }
 
+    @SuppressLint("DefaultLocale")
+    private synchronized void saveSessionToFile() {
+        final E4SessionData sd = E4SessionData.getInstance();
+        final E4Session e4Session = new E4Session("id", sd.getInitialTime() / 1000, Utils.getCurrentTimestamp() / 1000 - sd.getInitialTime() / 1000, "E4", "label", "device", "0", "0");
+        e4Session.setE4SessionData(sd);
+
+        Log.d(MainActivity.TAG, "Saving as " + e4Session.getZIPFilename());
+
+        final File sessionFile = new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename());
+
+        Utils.trimCache(MainActivity.context);
+
+        final String basePath = MainActivity.context.getCacheDir().getPath() + "/";
+
+        final File edaFile = new File(basePath + "EDA.csv");
+        final File tempFile = new File(basePath + "TEMP.csv");
+        final File bvpFile = new File(basePath + "BVP.csv");
+        final File hrFile = new File(basePath + "HR.csv");
+        final File tagFile = new File(basePath + "tags.csv");
+        final File ibiFile = new File(basePath + "IBI.csv");
+        final File accFile = new File(basePath + "ACC.csv");
+
+        try (final PrintWriter writer = new PrintWriter(new FileWriter(edaFile))) {
+            writer.println(e4Session.getStartTime());
+            writer.println("4.000000");
+            for (float f : sd.getGsr()) writer.println(f);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try (final PrintWriter writer = new PrintWriter(new FileWriter(tempFile))) {
+            writer.println(e4Session.getStartTime());
+            writer.println("4.000000");
+            for (float f : sd.getTemp()) writer.println(f);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try (final PrintWriter writer = new PrintWriter(new FileWriter(bvpFile))) {
+            writer.println(e4Session.getStartTime());
+            writer.println("4.000000");
+            for (float f : sd.getBvp()) writer.println(f);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try (final PrintWriter writer = new PrintWriter(new FileWriter(hrFile))) {
+            writer.println(e4Session.getStartTime());
+            writer.println("1.000000");
+            for (float f : sd.getHr()) writer.println(f);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try (final PrintWriter writer = new PrintWriter(new FileWriter(tagFile))) {
+            for (Double f : sd.getTags()) writer.println(f);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try (final PrintWriter writer = new PrintWriter(new FileWriter(ibiFile))) {
+            writer.println(e4Session.getStartTime() + ", IBI");
+            for (int i = 0; i < sd.getIbi().size(); i++) {
+                writer.println(String.format("%s,%s", sd.getIbiTimestamps().get(i), sd.getIbi().get(i)));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try (final PrintWriter writer = new PrintWriter(new FileWriter(accFile))) {
+            writer.println(e4Session.getStartTime() + ", " + e4Session.getStartTime() + ", " + e4Session.getStartTime());
+            writer.println("32.000000, 32.000000, 32.000000");
+            for (int i = 0; i < sd.getIbi().size(); i++) {
+                writer.println(String.format("%s,%s,%s", sd.getAcc().get(0), sd.getAcc().get(1), sd.getAcc().get(2)));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        try {
+            new ZipFile(sessionFile).addFiles(Arrays.asList(edaFile, tempFile, bvpFile, accFile, hrFile, ibiFile, tagFile));
+            sharedViewModel.getCurrentStatus().setValue("Session saved to local storage: " + sessionFile.getAbsolutePath());
+        } catch (ZipException e) {
+            e.printStackTrace();
+            sharedViewModel.getCurrentStatus().setValue("Error saving file: " + sessionFile.getAbsolutePath());
+        }
+    }
 }

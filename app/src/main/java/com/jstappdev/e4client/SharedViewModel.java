@@ -22,7 +22,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     private MutableLiveData<Float> battery;
     private MutableLiveData<Double> tag;
 
-    // we just keep track of the position of the last sensor reading
+    // we just keep track of the index of the last sensor reading
     private MutableLiveData<Integer> lastAcc;
     private MutableLiveData<Integer> lastBvp;
     private MutableLiveData<Integer> lastGsr;
@@ -32,14 +32,11 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     private MutableLiveData<String> currentStatus;
     private List<String> uploadedSessionIDs;
     private ArrayList<E4Session> e4Sessions = new ArrayList<>();
-    private E4SessionData e4SessionData;
     private String username;
     private String password;
     private String userId;
 
     public SharedViewModel() {
-        e4SessionData = E4SessionData.getInstance();
-
         onWrist = new MutableLiveData<>();
         sessionStatus = new MutableLiveData<>();
         isConnected = new MutableLiveData<>();
@@ -85,8 +82,6 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     }
 
     void setIsConnected(boolean isConnected) {
-        if (isConnected) E4SessionData.clear();
-
         this.isConnected.postValue(isConnected);
     }
 
@@ -148,14 +143,14 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         acceleration.add(x);
         acceleration.add(y);
         acceleration.add(z);
-        e4SessionData.addAcc(acceleration, timestamp);
-        lastAcc.postValue(e4SessionData.getAcc().size() - 1);
+        E4SessionData.getInstance().addAcc(acceleration, timestamp);
+        lastAcc.postValue(E4SessionData.getInstance().getAcc().size() - 1);
     }
 
     @Override
     public void didReceiveBVP(float bvp, double timestamp) {
-        e4SessionData.addBvp(bvp, timestamp);
-        this.lastBvp.postValue(e4SessionData.getBvp().size() - 1);
+        E4SessionData.getInstance().addBvp(bvp, timestamp);
+        this.lastBvp.postValue(E4SessionData.getInstance().getBvp().size() - 1);
     }
 
     //@Override
@@ -177,25 +172,25 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     @Override
     public void didReceiveGSR(float gsr, double timestamp) {
-        e4SessionData.addGsr(gsr, timestamp);
-        this.lastGsr.postValue(e4SessionData.getGsr().size() - 1);
+        E4SessionData.getInstance().addGsr(gsr, timestamp);
+        this.lastGsr.postValue(E4SessionData.getInstance().getGsr().size() - 1);
     }
 
     @Override
     public void didReceiveIBI(float ibi, double timestamp) {
-        e4SessionData.addIbi(ibi, timestamp);
-        this.lastIbi.postValue(e4SessionData.getIbi().size() - 1);
+        E4SessionData.getInstance().addIbi(ibi, timestamp);
+        this.lastIbi.postValue(E4SessionData.getInstance().getIbi().size() - 1);
     }
 
     @Override
     public void didReceiveTemperature(float temp, double timestamp) {
-        e4SessionData.addTemp(temp, timestamp);
-        this.lastTemp.postValue(e4SessionData.getTemp().size() - 1);
+        E4SessionData.getInstance().addTemp(temp, timestamp);
+        this.lastTemp.postValue(E4SessionData.getInstance().getTemp().size() - 1);
     }
 
     @Override
     public void didReceiveTag(double timestamp) {
-        e4SessionData.addTag(timestamp);
+        E4SessionData.getInstance().addTag(timestamp);
         this.tag.postValue(timestamp);
     }
 
@@ -213,10 +208,6 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     public void setE4Sessions(ArrayList<E4Session> e4Sessions) {
         this.e4Sessions = e4Sessions;
-    }
-
-    public E4SessionData getSessionData() {
-        return E4SessionData.getInstance();
     }
 
     public List<String> getUploadedSessionIDs() {
