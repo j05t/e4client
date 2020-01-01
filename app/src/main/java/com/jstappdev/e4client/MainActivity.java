@@ -493,80 +493,6 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
                 });
     }
 
-    private static class CreateCustomDataTypes extends AsyncTask<Void, String, Void> {
-        WeakReference<MainActivity> activity;
-
-        CreateCustomDataTypes(MainActivity activity) {
-            this.activity = new WeakReference<>(activity);
-        }
-
-        @Override
-        protected Void doInBackground(Void... voids) {
-
-            Log.d("e4", "creating custom datatypes");
-
-            GoogleSignInAccount googleSignInAccount = GoogleSignIn.getLastSignedInAccount(activity.get());
-
-            Log.d(MainActivity.TAG, "CreateCustomDataTypes() signed in as " +
-                    googleSignInAccount.getDisplayName());
-
-
-            dataTypes = new ArrayList<>();
-
-            // todo: tags
-            // the only predefined data type we can use is com.google.heart_rate.bpm
-            for (final String s : customDataTypes) {
-                try {
-                    DataType dataType = Tasks.await(Fitness.getConfigClient(activity.get(), googleSignInAccount)
-                            .createCustomDataType(new DataTypeCreateRequest.Builder()
-                                    .setName("com.jstappdev.e4client." + s)
-                                    .addField(s.toUpperCase(), Field.FORMAT_FLOAT)
-                                    .build()));
-
-                    dataTypes.add(dataType);
-                    publishProgress("added custom datatype " + dataType);
-
-                } catch (ExecutionException | InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            final FitnessOptions.Builder fitnessOptionsBuilder = FitnessOptions.builder();
-
-            for (DataType dataType : dataTypes) {
-                Log.d(TAG, "adding datatype to fitnessoptions: " + dataType.toString());
-                fitnessOptionsBuilder.addDataType(dataType, FitnessOptions.ACCESS_WRITE);
-            }
-
-            fitnessOptionsBuilder.addDataType(DataType.TYPE_HEART_RATE_BPM, FitnessOptions.ACCESS_WRITE);
-
-            fitnessOptions = fitnessOptionsBuilder.build();
-
-            Log.d(TAG, "created fitnessOptions with scopes");
-            for (Scope s : fitnessOptions.getImpliedScopes()) {
-                Log.d(TAG, s.toString());
-            }
-
-            return null;
-        }
-
-        @Override
-        protected void onProgressUpdate(String... values) {
-            super.onProgressUpdate(values);
-
-            if (values != null && values.length > 0)
-                Log.d("e4", "created custom datatype " + values[0]);
-        }
-
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
-
-            // todo: save in sharedpreferences
-            googleFitCustomDatatypesCreated = true;
-        }
-    }
-
     @SuppressLint("DefaultLocale")
     private synchronized void saveSessionToFile() {
         final E4SessionData sd = E4SessionData.getInstance();
@@ -575,11 +501,11 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
         Log.d(MainActivity.TAG, "Saving as " + e4Session.getZIPFilename());
 
-        final File sessionFile = new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename());
+        final File sessionFile = new File(context.getFilesDir(), e4Session.getZIPFilename());
 
-        Utils.trimCache(MainActivity.context);
+        Utils.trimCache(context);
 
-        final String basePath = MainActivity.context.getCacheDir().getPath() + "/";
+        final String basePath = context.getCacheDir().getPath() + "/";
 
         final File edaFile = new File(basePath + "EDA.csv");
         final File tempFile = new File(basePath + "TEMP.csv");
@@ -658,6 +584,80 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
                     Toast.makeText(MainActivity.context, "Error writing file: " + sessionFile.getAbsolutePath(), Toast.LENGTH_SHORT).show();
                 }
             });
+        }
+    }
+
+    private static class CreateCustomDataTypes extends AsyncTask<Void, String, Void> {
+        WeakReference<MainActivity> activity;
+
+        CreateCustomDataTypes(MainActivity activity) {
+            this.activity = new WeakReference<>(activity);
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+
+            Log.d("e4", "creating custom datatypes");
+
+            GoogleSignInAccount googleSignInAccount = GoogleSignIn.getLastSignedInAccount(activity.get());
+
+            Log.d(MainActivity.TAG, "CreateCustomDataTypes() signed in as " +
+                    googleSignInAccount.getDisplayName());
+
+
+            dataTypes = new ArrayList<>();
+
+            // todo: tags
+            // the only predefined data type we can use is com.google.heart_rate.bpm
+            for (final String s : customDataTypes) {
+                try {
+                    DataType dataType = Tasks.await(Fitness.getConfigClient(activity.get(), googleSignInAccount)
+                            .createCustomDataType(new DataTypeCreateRequest.Builder()
+                                    .setName("com.jstappdev.e4client." + s)
+                                    .addField(s.toUpperCase(), Field.FORMAT_FLOAT)
+                                    .build()));
+
+                    dataTypes.add(dataType);
+                    publishProgress("added custom datatype " + dataType);
+
+                } catch (ExecutionException | InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            final FitnessOptions.Builder fitnessOptionsBuilder = FitnessOptions.builder();
+
+            for (DataType dataType : dataTypes) {
+                Log.d(TAG, "adding datatype to fitnessoptions: " + dataType.toString());
+                fitnessOptionsBuilder.addDataType(dataType, FitnessOptions.ACCESS_WRITE);
+            }
+
+            fitnessOptionsBuilder.addDataType(DataType.TYPE_HEART_RATE_BPM, FitnessOptions.ACCESS_WRITE);
+
+            fitnessOptions = fitnessOptionsBuilder.build();
+
+            Log.d(TAG, "created fitnessOptions with scopes");
+            for (Scope s : fitnessOptions.getImpliedScopes()) {
+                Log.d(TAG, s.toString());
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(String... values) {
+            super.onProgressUpdate(values);
+
+            if (values != null && values.length > 0)
+                Log.d("e4", "created custom datatype " + values[0]);
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+
+            // todo: save in sharedpreferences
+            googleFitCustomDatatypesCreated = true;
         }
     }
 }

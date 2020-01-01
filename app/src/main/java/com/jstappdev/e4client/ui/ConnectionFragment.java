@@ -9,7 +9,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -21,17 +20,9 @@ import androidx.lifecycle.ViewModelProviders;
 import com.jstappdev.e4client.MainActivity;
 import com.jstappdev.e4client.R;
 import com.jstappdev.e4client.SharedViewModel;
-import com.jstappdev.e4client.data.E4Session;
 import com.jstappdev.e4client.data.E4SessionData;
 import com.jstappdev.e4client.util.Utils;
 
-import net.lingala.zip4j.ZipFile;
-import net.lingala.zip4j.exception.ZipException;
-
-import java.io.File;
-import java.io.FileWriter;
-import java.io.PrintWriter;
-import java.util.Arrays;
 import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -46,6 +37,8 @@ public class ConnectionFragment extends Fragment {
     private TextView bvpLabel;
     private TextView edaLabel;
     private TextView ibiLabel;
+    private TextView hrLabel;
+    private TextView hrvLabel;
     private TextView temperatureLabel;
     private TextView batteryLabel;
     private TextView statusLabel;
@@ -89,6 +82,8 @@ public class ConnectionFragment extends Fragment {
         bvpLabel = view.findViewById(R.id.bvp);
         edaLabel = view.findViewById(R.id.eda);
         ibiLabel = view.findViewById(R.id.ibi);
+        hrvLabel = view.findViewById(R.id.hrv);
+        hrLabel = view.findViewById(R.id.hr);
         temperatureLabel = view.findViewById(R.id.temperature);
         batteryLabel = view.findViewById(R.id.battery);
         deviceNameLabel = view.findViewById(R.id.deviceName);
@@ -173,7 +168,6 @@ public class ConnectionFragment extends Fragment {
         sharedViewModel.getLastAcc().observe(owner, new Observer<Integer>() {
             public void onChanged(Integer lastAcc) {
                 try {
-
                     accel_xLabel.setText(String.format(Locale.getDefault(), "%d", E4SessionData.getInstance().getAcc().getLast().get(0)));
                     accel_yLabel.setText(String.format(Locale.getDefault(), "%d", E4SessionData.getInstance().getAcc().getLast().get(1)));
                     accel_zLabel.setText(String.format(Locale.getDefault(), "%d", E4SessionData.getInstance().getAcc().getLast().get(2)));
@@ -186,8 +180,7 @@ public class ConnectionFragment extends Fragment {
             @Override
             public void onChanged(Integer lastGsr) {
                 try {
-
-                    edaLabel.setText(String.format(Locale.getDefault(), "%.0f", E4SessionData.getInstance().getGsr().getLast()));
+                    edaLabel.setText(String.format(Locale.getDefault(), "%.2f uS", E4SessionData.getInstance().getGsr().getLast()));
                 } catch (NoSuchElementException e) {
                     Log.e("e4", "no such element");
                 }
@@ -197,8 +190,13 @@ public class ConnectionFragment extends Fragment {
             @Override
             public void onChanged(Integer lastIbi) {
                 try {
-
-                    ibiLabel.setText(String.format(Locale.getDefault(), "%.0f", E4SessionData.getInstance().getIbi().getLast()));
+                    // HR/HRV is calculated from IBI
+                    ibiLabel.setText(String.format(Locale.getDefault(), "%.2f s", E4SessionData.getInstance().getIbi().getLast()));
+                    hrLabel.setText(String.format(Locale.getDefault(), "%.0f BPM", E4SessionData.getInstance().getHr().getLast()));
+                    if (lastIbi % 10 == 0) {
+                        final float hrv = Utils.calcHrvSDRR(E4SessionData.getInstance().getIbi());
+                        hrvLabel.setText(String.format(Locale.getDefault(), "%.0f ms", hrv));
+                    }
                 } catch (NoSuchElementException e) {
                     Log.e("e4", "no such element");
                 }
@@ -208,8 +206,7 @@ public class ConnectionFragment extends Fragment {
             @Override
             public void onChanged(Integer lastTemp) {
                 try {
-
-                    temperatureLabel.setText(String.format(Locale.getDefault(), "%.0f", E4SessionData.getInstance().getTemp().getLast()));
+                    temperatureLabel.setText(String.format(Locale.getDefault(), "%.2f C", E4SessionData.getInstance().getTemp().getLast()));
                 } catch (NoSuchElementException e) {
                     Log.e("e4", "no such element in " + E4SessionData.getInstance());
                 }
@@ -218,14 +215,13 @@ public class ConnectionFragment extends Fragment {
         sharedViewModel.getLastBvp().observe(owner, new Observer<Integer>() {
             @Override
             public void onChanged(Integer lastBvp) {
-
                 try {
-                    bvpLabel.setText(String.format(Locale.getDefault(), "%.0f", E4SessionData.getInstance().getBvp().getLast()));
+                    if (lastBvp % 10 == 0)
+                        bvpLabel.setText(String.format(Locale.getDefault(), "%.0f", E4SessionData.getInstance().getBvp().getLast()));
                 } catch (NoSuchElementException e) {
                     Log.e("e4", "no such element ");
                 }
             }
         });
-
     }
 }

@@ -61,7 +61,7 @@ public class LoginAndGetAllSessions extends AsyncTask<Void, Void, String> {
                     Log.d("e4", "found userid: " + matcher.group(1));
                     sharedViewModel.setUserId(matcher.group(1));
                 } else {
-                    return "Error: User ID not found.";
+                    return "Error: User ID not found. Check Empatica account.";
                 }
 
                 final String loadAllSessions = "https://www.empatica.com/connect/connect.php/users/"

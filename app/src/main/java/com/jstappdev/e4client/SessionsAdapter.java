@@ -240,12 +240,11 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                 viewModel.getE4Sessions().remove(position);
                 adapter.notifyItemRemoved(position);
 
-                if (e4Session.isUploaded())
-                    if (MainActivity.okHttpClient.newCall(request).execute().isSuccessful()) {
-                        publishProgress("Deleted remote data.");
-                    } else {
-                        publishProgress("Failed to delete remote data.");
-                    }
+                if (MainActivity.okHttpClient.newCall(request).execute().isSuccessful()) {
+                    publishProgress("Deleted remote data.");
+                } else {
+                    publishProgress("Failed to delete remote data.");
+                }
 
                 return true;
             } catch (IOException e) {
