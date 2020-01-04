@@ -37,6 +37,38 @@ public class Utils {
         return (float) (1000f * Math.sqrt(variance(list)));
     }
 
+    // RMSSD ("root mean square of successive differences"), the square root of
+    // the mean of the squares of the successive differences between adjacent NNs.
+    public static float calcHrvRMSSD(final List<Float> list) {
+        double s = 0;
+        int c = 0;
+        for (int i = 0; i < list.size() - 1; i++) {
+            float d = list.get(i) - list.get(i + 1);
+            s += d * d;
+            c++;
+        }
+        return (float) (1000f * Math.sqrt(s / c));
+    }
+
+    // NN50, the number of pairs of successive NNs that differ by more than 50 ms.
+    public static int calcHrvNN50(final List<Float> list) {
+        return calcHrvNN(list, 0.05f);
+    }
+
+    // NN20, the number of pairs of successive NNs that differ by more than 20 ms.
+    public static int calcHrvNN20(final List<Float> list) {
+        return calcHrvNN(list, 0.02f);
+    }
+
+    private static int calcHrvNN(final List<Float> list, final float maxDiff) {
+        int c = 0;
+        for (int i = 0; i < list.size() - 1; i++) {
+            float d = list.get(i) - list.get(i + 1);
+            if (Math.abs(d) > maxDiff) c++;
+        }
+        return c;
+    }
+
     public static String getDate(final long time) {
         final Calendar cal = Calendar.getInstance(Locale.getDefault());
         cal.setTimeZone(TimeZone.getTimeZone("UTC"));

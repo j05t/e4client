@@ -46,10 +46,11 @@ public class ConnectionFragment extends Fragment {
     private TextView wristStatusLabel;
 
     private View dataArea;
-
     private ImageView batteryImageView;
 
     private int currentBatteryDrawableId = R.drawable.ic_battery_full;
+    private String microsiemens;
+    private String celsius;
 
 
     @SuppressLint("SourceLockedOrientationActivity")
@@ -90,6 +91,9 @@ public class ConnectionFragment extends Fragment {
         wristStatusLabel = view.findViewById(R.id.wrist_status_label);
         batteryImageView = view.findViewById(R.id.batteryImageView);
         dataArea = view.findViewById(R.id.dataArea);
+
+        microsiemens = getString(R.string.microsiemens);
+        celsius = getString(R.string.celsius);
 
         view.findViewById(R.id.disconnectButton).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -180,7 +184,7 @@ public class ConnectionFragment extends Fragment {
             @Override
             public void onChanged(Integer lastGsr) {
                 try {
-                    edaLabel.setText(String.format(Locale.getDefault(), "%.2f uS", E4SessionData.getInstance().getGsr().getLast()));
+                    edaLabel.setText(String.format(Locale.getDefault(), "%.2f %s", E4SessionData.getInstance().getGsr().getLast(), microsiemens));
                 } catch (NoSuchElementException e) {
                     Log.e("e4", "no such element");
                 }
@@ -206,7 +210,7 @@ public class ConnectionFragment extends Fragment {
             @Override
             public void onChanged(Integer lastTemp) {
                 try {
-                    temperatureLabel.setText(String.format(Locale.getDefault(), "%.2f C", E4SessionData.getInstance().getTemp().getLast()));
+                    temperatureLabel.setText(String.format(Locale.getDefault(), "%.2f %s", E4SessionData.getInstance().getTemp().getLast(), celsius));
                 } catch (NoSuchElementException e) {
                     Log.e("e4", "no such element in " + E4SessionData.getInstance());
                 }

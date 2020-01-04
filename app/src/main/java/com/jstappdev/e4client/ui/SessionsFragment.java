@@ -6,11 +6,9 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -89,7 +87,7 @@ public class SessionsFragment extends Fragment {
             public void onClick(View v) {
 
                 if (MainActivity.fitnessOptions == null) {
-                    Toast.makeText(MainActivity.context, "Failed to initialize Google Fit Options. Check Google API settings.", Toast.LENGTH_LONG).show();
+                    sharedViewModel.getCurrentStatus().setValue("Failed to initialize Google Fit Options. Check Google API settings.");
                 } else if (!GoogleSignIn.hasPermissions(GoogleSignIn.getLastSignedInAccount(MainActivity.context), MainActivity.fitnessOptions)) {
                     GoogleSignIn.requestPermissions(
                             MainActivity.context,
@@ -101,13 +99,6 @@ public class SessionsFragment extends Fragment {
                     //noinspection unchecked
                     new UploadE4SessionsToGoogleFit().execute(sharedViewModel.getE4Sessions());
                 }
-            }
-        });
-
-        sharedViewModel.getCurrentStatus().observe(getViewLifecycleOwner(), new Observer<String>() {
-            @Override
-            public void onChanged(String s) {
-                Toast.makeText(MainActivity.context, s, Toast.LENGTH_SHORT).show();
             }
         });
 

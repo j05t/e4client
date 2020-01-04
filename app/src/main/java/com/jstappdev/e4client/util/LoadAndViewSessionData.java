@@ -32,7 +32,7 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean
 
         if (Utils.isSessionDownloaded(e4Session)) {
 
-            publishProgress(String.format("Loading session %s data..", e4Session.getId()));
+            publishProgress(String.format("Loading session %s", e4Session.getId()));
 
             E4SessionData.clear();
 
@@ -58,7 +58,6 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean
                  */
 
                 final File tagFile = new File(basePath + "tags.csv");
-                publishProgress("Processing tag data");
                 if (tagFile.exists())
                     try (BufferedReader reader = new BufferedReader(new FileReader(tagFile))) {
                         String line;
@@ -74,7 +73,6 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean
                     }
 
                 final File ibiFile = new File(basePath + "IBI.csv");
-                publishProgress("Processing IBI data");
                 if (tagFile.exists())
                     try (BufferedReader reader = new BufferedReader(new FileReader(ibiFile))) {
                         String line;
@@ -103,28 +101,23 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean
 
                 CSVFile data;
 
-                publishProgress("Processing EDA data");
                 data = new CSVFile(new FileInputStream(edaFile));
                 E4SessionData.getInstance().setInitialTime((long) data.getInitialTime());
                 E4SessionData.getInstance().setGsrTimestamps(data.getX());
                 E4SessionData.getInstance().setGsr(data.getY());
                 edaFile.delete();
 
-                publishProgress("Processing TEMP data");
                 data = new CSVFile(new FileInputStream(tempFile));
                 E4SessionData.getInstance().setTempTimestamps(data.getX());
                 E4SessionData.getInstance().setTemp(data.getY());
                 tempFile.delete();
 
-                publishProgress("Processing HR data");
                 data = new CSVFile(new FileInputStream(hrFile));
                 E4SessionData.getInstance().setHrTimestamps(data.getX());
                 E4SessionData.getInstance().setHr(data.getY());
                 hrFile.delete();
 
                 E4SessionData.getInstance().setInitialTime(e4Session.getStartTime());
-
-                publishProgress(String.format("Loaded data for session %s", e4Session.getId()));
 
             } catch (FileNotFoundException e) {
                 publishProgress("File not found: " + e.getMessage());

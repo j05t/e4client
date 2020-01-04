@@ -1,14 +1,18 @@
 package com.jstappdev.e4client.ui;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -80,10 +84,18 @@ public class ChartsFragment extends Fragment {
     private AxisMarkerAnnotation hrvAxisMarker;
     private AxisMarkerAnnotation tempAxisMarker;
 
+    private boolean isVertical;
+
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
 
         requireActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+
+        Display display = ((WindowManager) MainActivity.context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+        int rotation = display.getRotation();
+        isVertical = rotation == Surface.ROTATION_0 || rotation == Surface.ROTATION_180;
+
+        Log.d(MainActivity.TAG, "orientation: " + requireActivity().getRequestedOrientation());
 
         sharedViewModel = ViewModelProviders.of(Objects.requireNonNull(requireActivity())).get(SharedViewModel.class);
 
@@ -194,31 +206,37 @@ public class ChartsFragment extends Fragment {
 
 
             final float hrvSDRR = Utils.calcHrvSDRR(E4SessionData.getInstance().getIbi());
-            Log.d(MainActivity.TAG, "IBIs: " + E4SessionData.getInstance().getIbi().size());
-            Log.d(MainActivity.TAG, "calulated HRV (SDRR): " + hrvSDRR);
+            final float hrvRMSSD = Utils.calcHrvRMSSD(E4SessionData.getInstance().getIbi());
+            final int hrvNN50 = Utils.calcHrvNN50(E4SessionData.getInstance().getIbi());
+            final int hrvNN20 = Utils.calcHrvNN20(E4SessionData.getInstance().getIbi());
 
-            Collections.addAll(hrChart.getAnnotations(),
-                    sciChartBuilder.newTextAnnotation()
-                            .withX1(0.005)
-                            .withY1(0.2)
-                            .withCoordinateMode(AnnotationCoordinateMode.Relative)
-                            .withHorizontalAnchorPoint(HorizontalAnchorPoint.Left)
-                            .withVerticalAnchorPoint(VerticalAnchorPoint.Bottom)
-                            .withText(String.format("HRV (SDRR): %.0f ms", hrvSDRR))
-                            .withFontStyle(12, ColorUtil.White)
-                            .withBackgroundDrawableId(R.drawable.annotation_bg_1)
-                            .build());
+            final int nnIntervals = E4SessionData.getInstance().getIbi().size();
+            final int hrvpNN50 = 100 * hrvNN50 / nnIntervals;
+            final int hrvpNN20 = 100 * hrvNN20 / nnIntervals;
+
 
             Collections.addAll(edaChart.getAnnotations(),
                     sciChartBuilder.newTextAnnotation()
                             .withX1(0.005)
-                            .withY1(0.3)
+                            .withY1(isVertical ? 0.16 : 0.3)
                             .withCoordinateMode(AnnotationCoordinateMode.Relative)
                             .withHorizontalAnchorPoint(HorizontalAnchorPoint.Left)
                             .withVerticalAnchorPoint(VerticalAnchorPoint.Bottom)
                             .withText(E4SessionData.getInstance().getDescription())
                             .withBackgroundDrawableId(R.drawable.annotation_bg_1)
                             .withFontStyle(12, ColorUtil.White)
+                            .build());
+
+            Collections.addAll(hrChart.getAnnotations(),
+                    sciChartBuilder.newTextAnnotation()
+                            .withX1(0.005)
+                            .withY1(isVertical ? 0.4 : 0.65)
+                            .withCoordinateMode(AnnotationCoordinateMode.Relative)
+                            .withHorizontalAnchorPoint(HorizontalAnchorPoint.Left)
+                            .withVerticalAnchorPoint(VerticalAnchorPoint.Bottom)
+                            .withText(String.format("RMSSD: %.0f ms\nSDRR: %.0f ms\nNN50: %d %d%%\nNN20: %d %d%%", hrvRMSSD, hrvSDRR, hrvNN50, hrvpNN50, hrvNN20, hrvpNN20))
+                            .withFontStyle(12, ColorUtil.White)
+                            .withBackgroundDrawableId(R.drawable.annotation_bg_1)
                             .build());
 
             edaChart.animateZoomExtents(500);

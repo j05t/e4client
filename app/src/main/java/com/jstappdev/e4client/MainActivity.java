@@ -307,7 +307,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
             try {
                 // Connect to the device
                 deviceManager.connectDevice(bluetoothDevice);
-                sharedViewModel.setDeviceName("To: " + deviceName);
+                sharedViewModel.setDeviceName(deviceName);
 
             } catch (ConnectionNotAllowedException e) {
                 // This should happen only if you try to connect when allowed == false.
@@ -392,8 +392,9 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         sharedViewModel.setIsConnected(true);
     }
 
+    // may be called before connection is established
     void connectionDisconnected() {
-        // may be called before connection is established
+        //noinspection ConstantConditions
         if (sharedViewModel.getIsConnected().getValue()) {
             sharedViewModel.setIsConnected(false);
             saveSessionToFile();
@@ -516,28 +517,28 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         final File accFile = new File(basePath + "ACC.csv");
 
         try (final PrintWriter writer = new PrintWriter(new FileWriter(edaFile))) {
-            writer.println(e4Session.getStartTime());
+            writer.println(sd.getGsrTimestamps().getFirst());
             writer.println("4.000000");
             for (float f : sd.getGsr()) writer.println(f);
         } catch (Exception e) {
             e.printStackTrace();
         }
         try (final PrintWriter writer = new PrintWriter(new FileWriter(tempFile))) {
-            writer.println(e4Session.getStartTime());
+            writer.println(sd.getTempTimestamps().getFirst());
             writer.println("4.000000");
             for (float f : sd.getTemp()) writer.println(f);
         } catch (Exception e) {
             e.printStackTrace();
         }
         try (final PrintWriter writer = new PrintWriter(new FileWriter(bvpFile))) {
-            writer.println(e4Session.getStartTime());
+            writer.println(sd.getBvpTimestamps().getFirst());
             writer.println("4.000000");
             for (float f : sd.getBvp()) writer.println(f);
         } catch (Exception e) {
             e.printStackTrace();
         }
         try (final PrintWriter writer = new PrintWriter(new FileWriter(hrFile))) {
-            writer.println(e4Session.getStartTime());
+            writer.println(sd.getHrTimestamps().getFirst());
             writer.println("1.000000");
             for (float f : sd.getHr()) writer.println(f);
         } catch (Exception e) {
@@ -549,15 +550,19 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
             e.printStackTrace();
         }
         try (final PrintWriter writer = new PrintWriter(new FileWriter(ibiFile))) {
-            writer.println(e4Session.getStartTime() + ", IBI");
+            // fixme: may not be the correct time
+            writer.println(sd.getInitialTime() + ", IBI");
             for (int i = 0; i < sd.getIbi().size(); i++) {
-                writer.println(String.format("%s,%s", sd.getIbiTimestamps().get(i), sd.getIbi().get(i)));
+                double time = sd.getIbiTimestamps().get(i) -  sd.getIbiTimestamps().getFirst();
+                writer.println(String.format("%s,%s", time, sd.getIbi().get(i)));
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
         try (final PrintWriter writer = new PrintWriter(new FileWriter(accFile))) {
-            writer.println(e4Session.getStartTime() + ", " + e4Session.getStartTime() + ", " + e4Session.getStartTime());
+            double firstAcc = sd.getAccTimestamps().getFirst();
+
+            writer.println(String.format("%s, %s, %s", firstAcc, firstAcc, firstAcc));
             writer.println("32.000000, 32.000000, 32.000000");
             for (int i = 0; i < sd.getIbi().size(); i++) {
                 writer.println(String.format("%s,%s,%s", sd.getAcc().get(0), sd.getAcc().get(1), sd.getAcc().get(2)));
