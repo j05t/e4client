@@ -78,6 +78,7 @@ public class ChartsFragment extends Fragment {
 
     private XyDataSeries<Double, Float> edaLineData;
     private XyDataSeries<Double, Float> hrLineData;
+    private XyDataSeries<Double, Float> cleanedGsrLineData;
     private XyDataSeries<Double, Float> tempLineData;
 
     private AxisMarkerAnnotation hrAxisMarker;
@@ -108,6 +109,7 @@ public class ChartsFragment extends Fragment {
 
         edaLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
         hrLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
+        cleanedGsrLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
         tempLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
 
         hrAxisMarker = sciChartBuilder.newAxisMarkerAnnotation()
@@ -159,7 +161,7 @@ public class ChartsFragment extends Fragment {
         // Create and configure a line series
         final IRenderableSeries lineSeries = sciChartBuilder.newLineSeries()
                 .withDataSeries(lineData)
-                .withStrokeStyle(ColorUtil.LightBlue, 2f, true)
+                .withStrokeStyle(ColorUtil.DarkGreen, 2f, false)
                 .build();
 
         chartSurface.getRenderableSeries().add(lineSeries);
@@ -192,6 +194,13 @@ public class ChartsFragment extends Fragment {
             hrLineData.append(E4SessionData.getInstance().getHrTimestamps(), E4SessionData.getInstance().getHr());
             tempLineData.append(E4SessionData.getInstance().getTempTimestamps(), E4SessionData.getInstance().getTemp());
 
+            cleanedGsrLineData.append(E4SessionData.getInstance().getGsrTimestamps(), Utils.removeAnomalies(E4SessionData.getInstance().getGsr()));
+            final IRenderableSeries lineSeries = sciChartBuilder.newLineSeries()
+                    .withDataSeries(cleanedGsrLineData)
+                    .withStrokeStyle(ColorUtil.Green, 1f, false)
+                    .build();
+            edaChart.getRenderableSeries().add(lineSeries);
+
             for (double tag : E4SessionData.getInstance().getTags()) {
                 VerticalLineAnnotation verticalLine = sciChartBuilder.newVerticalLineAnnotation()
                         .withPosition(tag, 0.5d)
@@ -202,20 +211,6 @@ public class ChartsFragment extends Fragment {
 
                 Collections.addAll(edaChart.getAnnotations(), verticalLine);
             }
-
-
-            final float hrvSDRR = Utils.calcHrvSDRR(E4SessionData.getInstance().getIbi());
-            final float hrvRMSSD = Utils.calcHrvRMSSD(E4SessionData.getInstance().getIbi());
-            final float hrvSDSD = Utils.calcHrvSDSD(E4SessionData.getInstance().getIbi());
-            final int hrvNN50 = Utils.calcHrvNN50(E4SessionData.getInstance().getIbi());
-            final int hrvNN20 = Utils.calcHrvNN20(E4SessionData.getInstance().getIbi());
-
-            int nnIntervals = E4SessionData.getInstance().getIbi().size();
-            if (nnIntervals == 0) nnIntervals = 1;
-
-            final int hrvpNN50 = 100 * hrvNN50 / nnIntervals;
-            final int hrvpNN20 = 100 * hrvNN20 / nnIntervals;
-
 
             Collections.addAll(edaChart.getAnnotations(),
                     sciChartBuilder.newTextAnnotation()
@@ -230,14 +225,27 @@ public class ChartsFragment extends Fragment {
                             .build());
 
 
+            final float hrvSDRR = Utils.calcHrvSDRR(E4SessionData.getInstance().getIbi());
+            final float hrvSDNN = Utils.calcHrvSDNN(E4SessionData.getInstance().getIbi());
+            final float hrvRMSSD = Utils.calcHrvRMSSD(E4SessionData.getInstance().getIbi());
+            final float hrvSDSD = Utils.calcHrvSDSD(E4SessionData.getInstance().getIbi());
+            final int hrvNN50 = Utils.calcHrvNN50(E4SessionData.getInstance().getIbi());
+            final int hrvNN20 = Utils.calcHrvNN20(E4SessionData.getInstance().getIbi());
+
+            int nnIntervals = E4SessionData.getInstance().getIbi().size();
+            if (nnIntervals == 0) nnIntervals = 1;
+
+            final int hrvpNN50 = 100 * hrvNN50 / nnIntervals;
+            final int hrvpNN20 = 100 * hrvNN20 / nnIntervals;
+
             final String hrvText = String.format(
-                    "NN20: %d %d%%\nNN50: %d %d%%\nRMSSD: %.0f ms\nSDRR: %.0f ms\nSDSD: %.0f ms",
-                    hrvNN20, hrvpNN20, hrvNN50, hrvpNN50, hrvRMSSD, hrvSDRR, hrvSDSD);
+                    "NN20: %d %d%%\nNN50: %d %d%%\nRMSSD: %.0f ms\nSDRR: %.0f ms\nSDNN: %.0f ms\nSDSD: %.0f ms",
+                    hrvNN20, hrvpNN20, hrvNN50, hrvpNN50, hrvRMSSD, hrvSDRR, hrvSDNN, hrvSDSD);
 
             Collections.addAll(hrChart.getAnnotations(),
                     sciChartBuilder.newTextAnnotation()
                             .withX1(0.005)
-                            .withY1(isVertical ? 0.4 : 0.67)
+                            .withY1(isVertical ? 0.48 : 0.8)
                             .withCoordinateMode(AnnotationCoordinateMode.Relative)
                             .withHorizontalAnchorPoint(HorizontalAnchorPoint.Left)
                             .withVerticalAnchorPoint(VerticalAnchorPoint.Bottom)
@@ -288,7 +296,7 @@ public class ChartsFragment extends Fragment {
                 @Override
                 public void onChanged(Integer lastIbi) {
                     try {
-                        final float currentHr = 60.0f / E4SessionData.getInstance().getIbi().getLast();
+                        final float currentHr = 60.0f / E4SessionData.getInstance().getIbi().get(lastIbi);
 
                         // heart rate may theoretically reach 600, but we assume 300 max
                         // https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3273956/
@@ -296,7 +304,7 @@ public class ChartsFragment extends Fragment {
                             averageHr = 0.8f * averageHr + 0.2f * currentHr;
                         }
 
-                        hrLineData.append(E4SessionData.getInstance().getHrTimestamps().getLast(), currentHr);
+                        hrLineData.append(E4SessionData.getInstance().getHrTimestamps().get(lastIbi), currentHr);
                         hrAxisMarker.setY1(averageHr);
                     } catch (Exception e) {
                         Log.e(MainActivity.TAG, "updateCharts() " + e.getMessage());
@@ -306,21 +314,21 @@ public class ChartsFragment extends Fragment {
 
             sharedViewModel.getLastGsr().observe(owner, new Observer<Integer>() {
                 @Override
-                public void onChanged(Integer integer) {
+                public void onChanged(Integer lastGsr) {
                     try {
-                        edaLineData.append(E4SessionData.getInstance().getGsrTimestamps().getLast(), E4SessionData.getInstance().getGsr().getLast());
+                        edaLineData.append(E4SessionData.getInstance().getGsrTimestamps().get(lastGsr), E4SessionData.getInstance().getGsr().get(lastGsr));
                     } catch (Exception e) {
                         Log.e(MainActivity.TAG, "updateCharts() " + e.getMessage());
                     }
                 }
             });
 
-            sharedViewModel.getLastGsr().observe(owner, new Observer<Integer>() {
+            sharedViewModel.getLastTemp().observe(owner, new Observer<Integer>() {
                 @Override
-                public void onChanged(Integer integer) {
+                public void onChanged(Integer lastTemp) {
                     try {
-                        tempLineData.append(E4SessionData.getInstance().getTempTimestamps().getLast(), E4SessionData.getInstance().getTemp().getLast());
-                        tempAxisMarker.setY1(E4SessionData.getInstance().getTemp().getLast());
+                        tempLineData.append(E4SessionData.getInstance().getTempTimestamps().get(lastTemp), E4SessionData.getInstance().getTemp().get(lastTemp));
+                        tempAxisMarker.setY1(E4SessionData.getInstance().getTemp().get(lastTemp));
                     } catch (Exception e) {
                         Log.e(MainActivity.TAG, "updateCharts() " + e.getMessage());
                     }

@@ -1,6 +1,6 @@
 package com.jstappdev.e4client.data;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -12,37 +12,37 @@ public class E4SessionData {
 
     private String description;
 
-    private LinkedList<List<Integer>> acc;
-    private LinkedList<Float> bvp;
-    private LinkedList<Float> gsr;
-    private LinkedList<Float> ibi;
-    private LinkedList<Float> temp;
-    private LinkedList<Float> hr;
-    private LinkedList<Double> tags;
+    private ArrayList<List<Integer>> acc;
+    private ArrayList<Float> bvp;
+    private ArrayList<Float> gsr;
+    private ArrayList<Float> ibi;
+    private ArrayList<Float> temp;
+    private ArrayList<Float> hr;
+    private ArrayList<Double> tags;
 
-    private LinkedList<Double> accTimestamps;
-    private LinkedList<Double> bvpTimestamps;
-    private LinkedList<Double> gsrTimestamps;
-    private LinkedList<Double> ibiTimestamps;
-    private LinkedList<Double> tempTimestamps;
-    private LinkedList<Double> hrTimestamps;
+    private ArrayList<Double> accTimestamps;
+    private ArrayList<Double> bvpTimestamps;
+    private ArrayList<Double> gsrTimestamps;
+    private ArrayList<Double> ibiTimestamps;
+    private ArrayList<Double> tempTimestamps;
+    private ArrayList<Double> hrTimestamps;
 
 
     private E4SessionData() {
-        acc = new LinkedList<>();
-        bvp = new LinkedList<>();
-        gsr = new LinkedList<>();
-        ibi = new LinkedList<>();
-        temp = new LinkedList<>();
-        hr = new LinkedList<>();
-        tags = new LinkedList<>();
+        acc = new ArrayList<>();
+        bvp = new ArrayList<>();
+        gsr = new ArrayList<>();
+        ibi = new ArrayList<>();
+        temp = new ArrayList<>();
+        hr = new ArrayList<>();
+        tags = new ArrayList<>();
 
-        accTimestamps = new LinkedList<>();
-        bvpTimestamps = new LinkedList<>();
-        gsrTimestamps = new LinkedList<>();
-        ibiTimestamps = new LinkedList<>();
-        hrTimestamps = new LinkedList<>();
-        tempTimestamps = new LinkedList<>();
+        accTimestamps = new ArrayList<>();
+        bvpTimestamps = new ArrayList<>();
+        gsrTimestamps = new ArrayList<>();
+        ibiTimestamps = new ArrayList<>();
+        hrTimestamps = new ArrayList<>();
+        tempTimestamps = new ArrayList<>();
     }
 
     public synchronized static E4SessionData getInstance() {
@@ -64,55 +64,55 @@ public class E4SessionData {
         this.description = description;
     }
 
-    public LinkedList<Double> getAccTimestamps() {
+    public ArrayList<Double> getAccTimestamps() {
         return accTimestamps;
     }
 
-    public LinkedList<Double> getBvpTimestamps() {
+    public ArrayList<Double> getBvpTimestamps() {
         return bvpTimestamps;
     }
 
-    public void setBvpTimestamps(LinkedList<Double> bvpTimestamps) {
+    public void setBvpTimestamps(ArrayList<Double> bvpTimestamps) {
         this.bvpTimestamps = bvpTimestamps;
     }
 
-    public LinkedList<Double> getGsrTimestamps() {
+    public ArrayList<Double> getGsrTimestamps() {
         return gsrTimestamps;
     }
 
-    public void setGsrTimestamps(LinkedList<Double> gsrTimestamps) {
+    public void setGsrTimestamps(ArrayList<Double> gsrTimestamps) {
         this.gsrTimestamps = gsrTimestamps;
     }
 
-    public LinkedList<Double> getIbiTimestamps() {
+    public ArrayList<Double> getIbiTimestamps() {
         return ibiTimestamps;
     }
 
-    public void setIbiTimestamps(LinkedList<Double> ibiTimestamps) {
+    public void setIbiTimestamps(ArrayList<Double> ibiTimestamps) {
         this.ibiTimestamps = ibiTimestamps;
     }
 
-    public LinkedList<Double> getTempTimestamps() {
+    public ArrayList<Double> getTempTimestamps() {
         return tempTimestamps;
     }
 
-    public void setTempTimestamps(LinkedList<Double> tempTimestamps) {
+    public void setTempTimestamps(ArrayList<Double> tempTimestamps) {
         this.tempTimestamps = tempTimestamps;
     }
 
-    public LinkedList<Double> getHrTimestamps() {
+    public ArrayList<Double> getHrTimestamps() {
         return hrTimestamps;
     }
 
-    public void setHrTimestamps(LinkedList<Double> hrTimestamps) {
+    public void setHrTimestamps(ArrayList<Double> hrTimestamps) {
         this.hrTimestamps = hrTimestamps;
     }
 
-    public LinkedList<Float> getHr() {
+    public ArrayList<Float> getHr() {
         return this.hr;
     }
 
-    public void setHr(LinkedList<Float> hr) {
+    public void setHr(ArrayList<Float> hr) {
         this.hr = hr;
     }
 
@@ -124,24 +124,24 @@ public class E4SessionData {
         this.initialTime = initialTime;
     }
 
-    public LinkedList<List<Integer>> getAcc() {
+    public List<List<Integer>> getAcc() {
         return acc;
     }
 
-    public void setAcc(LinkedList<List<Integer>> acc) {
+    public void setAcc(ArrayList<List<Integer>> acc) {
         this.acc = acc;
     }
 
-    public void addAcc(LinkedList<Integer> acc, double timestamp) {
+    public void addAcc(ArrayList<Integer> acc, double timestamp) {
         this.acc.add(acc);
         this.accTimestamps.add(timestamp);
     }
 
-    public LinkedList<Float> getBvp() {
+    public ArrayList<Float> getBvp() {
         return bvp;
     }
 
-    public void setBvp(LinkedList<Float> bvp) {
+    public void setBvp(ArrayList<Float> bvp) {
         this.bvp = bvp;
     }
 
@@ -150,11 +150,11 @@ public class E4SessionData {
         this.bvpTimestamps.add(timestamp);
     }
 
-    public LinkedList<Float> getGsr() {
+    public List<Float> getGsr() {
         return gsr;
     }
 
-    public void setGsr(LinkedList<Float> gsr) {
+    public void setGsr(ArrayList<Float> gsr) {
         this.gsr = gsr;
     }
 
@@ -163,11 +163,11 @@ public class E4SessionData {
         this.gsrTimestamps.add(timestamp);
     }
 
-    public LinkedList<Float> getIbi() {
+    public ArrayList<Float> getIbi() {
         return ibi;
     }
 
-    public void setIbi(LinkedList<Float> ibi) {
+    public void setIbi(ArrayList<Float> ibi) {
         this.ibi = ibi;
     }
 
@@ -182,11 +182,11 @@ public class E4SessionData {
         this.hrTimestamps.add(timestamp);
     }
 
-    public LinkedList<Float> getTemp() {
+    public ArrayList<Float> getTemp() {
         return temp;
     }
 
-    public void setTemp(LinkedList<Float> temp) {
+    public void setTemp(ArrayList<Float> temp) {
         this.temp = temp;
     }
 
@@ -195,11 +195,11 @@ public class E4SessionData {
         this.tempTimestamps.add(timestamp);
     }
 
-    public LinkedList<Double> getTags() {
+    public ArrayList<Double> getTags() {
         return tags;
     }
 
-    public void setTags(LinkedList<Double> tags) {
+    public void setTags(ArrayList<Double> tags) {
         this.tags = tags;
     }
 

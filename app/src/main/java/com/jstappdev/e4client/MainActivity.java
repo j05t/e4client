@@ -517,28 +517,28 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         final File accFile = new File(basePath + "ACC.csv");
 
         try (final PrintWriter writer = new PrintWriter(new FileWriter(edaFile))) {
-            writer.println(sd.getGsrTimestamps().getFirst());
+            writer.println(sd.getGsrTimestamps().get(0));
             writer.println("4.000000");
             for (float f : sd.getGsr()) writer.println(f);
         } catch (Exception e) {
             e.printStackTrace();
         }
         try (final PrintWriter writer = new PrintWriter(new FileWriter(tempFile))) {
-            writer.println(sd.getTempTimestamps().getFirst());
+            writer.println(sd.getTempTimestamps().get(0));
             writer.println("4.000000");
             for (float f : sd.getTemp()) writer.println(f);
         } catch (Exception e) {
             e.printStackTrace();
         }
         try (final PrintWriter writer = new PrintWriter(new FileWriter(bvpFile))) {
-            writer.println(sd.getBvpTimestamps().getFirst());
+            writer.println(sd.getBvpTimestamps().get(0));
             writer.println("4.000000");
             for (float f : sd.getBvp()) writer.println(f);
         } catch (Exception e) {
             e.printStackTrace();
         }
         try (final PrintWriter writer = new PrintWriter(new FileWriter(hrFile))) {
-            writer.println(sd.getHrTimestamps().getFirst());
+            writer.println(sd.getHrTimestamps().get(0));
             writer.println("1.000000");
             for (float f : sd.getHr()) writer.println(f);
         } catch (Exception e) {
@@ -553,14 +553,14 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
             // fixme: may not be the correct time
             writer.println(sd.getInitialTime() + ", IBI");
             for (int i = 0; i < sd.getIbi().size(); i++) {
-                double time = sd.getIbiTimestamps().get(i) -  sd.getIbiTimestamps().getFirst();
+                double time = sd.getIbiTimestamps().get(i) - sd.getIbiTimestamps().get(0);
                 writer.println(String.format("%s,%s", time, sd.getIbi().get(i)));
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
         try (final PrintWriter writer = new PrintWriter(new FileWriter(accFile))) {
-            double firstAcc = sd.getAccTimestamps().getFirst();
+            double firstAcc = sd.getAccTimestamps().get(0);
 
             writer.println(String.format("%s, %s, %s", firstAcc, firstAcc, firstAcc));
             writer.println("32.000000, 32.000000, 32.000000");

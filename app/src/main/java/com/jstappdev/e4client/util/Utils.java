@@ -18,6 +18,26 @@ public class Utils {
 
     public static boolean isUploading = false;
 
+
+    public static List<Float> removeAnomalies(final List<Float> values) {
+        List<Float> l = new ArrayList<>();
+
+        if (values.isEmpty()) return l;
+
+        l.add(values.get(0));
+
+        for (int i = 1; i < values.size(); i++) {
+            float d = values.get(i - 1) - values.get(i);
+
+            if (Math.abs(d) < 0.2 * values.get(i - 1))
+                l.add(values.get(i));
+            else
+                l.add(values.get(i - 1) + d * .1f);
+        }
+
+        return l;
+    }
+
     private static double variance(final List<Float> values) {
         double sum = 0;
 
@@ -33,9 +53,12 @@ public class Utils {
         return sqDiff / values.size();
     }
 
-    // todo: remove anomalies in IBI data to calculate SDNN
     public static float calcHrvSDRR(final List<Float> values) {
         return (float) (1000f * Math.sqrt(variance(values)));
+    }
+
+    public static float calcHrvSDNN(final List<Float> values) {
+        return (float) (1000f * Math.sqrt(variance(removeAnomalies(values))));
     }
 
     // RMSSD ("root mean square of successive differences"), the square root of

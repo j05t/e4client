@@ -4,12 +4,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.LinkedList;
+import java.util.ArrayList;
 
 public class CSVFile {
 
-    private LinkedList<Double> x = new LinkedList<>();
-    private LinkedList<Float> y = new LinkedList<>();
+    private ArrayList<Double> x = new ArrayList<>();
+    private ArrayList<Float> y = new ArrayList<>();
 
     private double initialTime;
     private double samplingRate;
@@ -43,11 +43,11 @@ public class CSVFile {
     }
 
 
-    public LinkedList<Double> getX() {
+    public ArrayList<Double> getX() {
         return this.x;
     }
 
-    public LinkedList<Float> getY() {
+    public ArrayList<Float> getY() {
         return this.y;
     }
 

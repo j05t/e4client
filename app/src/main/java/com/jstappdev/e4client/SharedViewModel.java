@@ -10,7 +10,6 @@ import com.jstappdev.e4client.data.E4Session;
 import com.jstappdev.e4client.data.E4SessionData;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 
 public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
@@ -139,7 +138,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     @Override
     public void didReceiveAcceleration(int x, int y, int z, double timestamp) {
-        LinkedList<Integer> acceleration = new LinkedList<Integer>();
+        ArrayList<Integer> acceleration = new ArrayList<Integer>();
         acceleration.add(x);
         acceleration.add(y);
         acceleration.add(z);
