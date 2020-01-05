@@ -8,6 +8,7 @@ import com.jstappdev.e4client.data.E4Session;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -18,8 +19,11 @@ public class Utils {
 
     public static boolean isUploading = false;
 
-
     public static List<Float> removeAnomalies(final List<Float> values) {
+        return median(values, 23);
+    }
+
+    private static List<Float> smooth(List<Float> values) {
         List<Float> l = new ArrayList<>();
 
         if (values.isEmpty()) return l;
@@ -33,6 +37,29 @@ public class Utils {
                 l.add(values.get(i));
             else
                 l.add(values.get(i - 1) + d * .1f);
+        }
+
+        return l;
+    }
+
+    private static List<Float> median(final List<Float> values, final int size) {
+        List<Float> l = new ArrayList<>();
+
+        if (values.isEmpty()) return l;
+
+        for (int i = 0; i < values.size(); i++) {
+            float[] a = new float[size];
+
+            for (int j = 0; j < size; j++) {
+                if (i + j < values.size())
+                    a[j] = values.get(i + j);
+                else
+                    a[j] = values.get(i);
+            }
+
+            Arrays.sort(a);
+
+            l.add(a[size / 2]);
         }
 
         return l;

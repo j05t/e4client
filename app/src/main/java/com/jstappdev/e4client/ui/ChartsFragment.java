@@ -197,7 +197,7 @@ public class ChartsFragment extends Fragment {
             cleanedGsrLineData.append(E4SessionData.getInstance().getGsrTimestamps(), Utils.removeAnomalies(E4SessionData.getInstance().getGsr()));
             final IRenderableSeries lineSeries = sciChartBuilder.newLineSeries()
                     .withDataSeries(cleanedGsrLineData)
-                    .withStrokeStyle(ColorUtil.Green, 1f, false)
+                    .withStrokeStyle(ColorUtil.Yellow, 1f, false)
                     .build();
             edaChart.getRenderableSeries().add(lineSeries);
 
