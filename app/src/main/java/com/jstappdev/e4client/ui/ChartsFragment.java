@@ -144,7 +144,6 @@ public class ChartsFragment extends Fragment {
 
         // Create a numeric Y axis
         final IAxis yAxis = sciChartBuilder.newNumericAxis()
-                .withTextFormatting(yAxisTitle.equals(hrAxisTitle) ? "0" : "0.0")
                 .withAutoRangeMode(AutoRange.Always)
                 .withAxisTitle(yAxisTitle)
                 .withDrawMinorGridLines(true)
@@ -207,10 +206,13 @@ public class ChartsFragment extends Fragment {
 
             final float hrvSDRR = Utils.calcHrvSDRR(E4SessionData.getInstance().getIbi());
             final float hrvRMSSD = Utils.calcHrvRMSSD(E4SessionData.getInstance().getIbi());
+            final float hrvSDSD = Utils.calcHrvSDSD(E4SessionData.getInstance().getIbi());
             final int hrvNN50 = Utils.calcHrvNN50(E4SessionData.getInstance().getIbi());
             final int hrvNN20 = Utils.calcHrvNN20(E4SessionData.getInstance().getIbi());
 
-            final int nnIntervals = E4SessionData.getInstance().getIbi().size();
+            int nnIntervals = E4SessionData.getInstance().getIbi().size();
+            if (nnIntervals == 0) nnIntervals = 1;
+
             final int hrvpNN50 = 100 * hrvNN50 / nnIntervals;
             final int hrvpNN20 = 100 * hrvNN20 / nnIntervals;
 
@@ -218,24 +220,29 @@ public class ChartsFragment extends Fragment {
             Collections.addAll(edaChart.getAnnotations(),
                     sciChartBuilder.newTextAnnotation()
                             .withX1(0.005)
-                            .withY1(isVertical ? 0.16 : 0.3)
+                            .withY1(isVertical ? 0.13 : 0.24)
                             .withCoordinateMode(AnnotationCoordinateMode.Relative)
                             .withHorizontalAnchorPoint(HorizontalAnchorPoint.Left)
                             .withVerticalAnchorPoint(VerticalAnchorPoint.Bottom)
                             .withText(E4SessionData.getInstance().getDescription())
                             .withBackgroundDrawableId(R.drawable.annotation_bg_1)
-                            .withFontStyle(12, ColorUtil.White)
+                            .withFontStyle(10, ColorUtil.White)
                             .build());
+
+
+            final String hrvText = String.format(
+                    "NN20: %d %d%%\nNN50: %d %d%%\nRMSSD: %.0f ms\nSDRR: %.0f ms\nSDSD: %.0f ms",
+                    hrvNN20, hrvpNN20, hrvNN50, hrvpNN50, hrvRMSSD, hrvSDRR, hrvSDSD);
 
             Collections.addAll(hrChart.getAnnotations(),
                     sciChartBuilder.newTextAnnotation()
                             .withX1(0.005)
-                            .withY1(isVertical ? 0.4 : 0.65)
+                            .withY1(isVertical ? 0.4 : 0.67)
                             .withCoordinateMode(AnnotationCoordinateMode.Relative)
                             .withHorizontalAnchorPoint(HorizontalAnchorPoint.Left)
                             .withVerticalAnchorPoint(VerticalAnchorPoint.Bottom)
-                            .withText(String.format("RMSSD: %.0f ms\nSDRR: %.0f ms\nNN50: %d %d%%\nNN20: %d %d%%", hrvRMSSD, hrvSDRR, hrvNN50, hrvpNN50, hrvNN20, hrvpNN20))
-                            .withFontStyle(12, ColorUtil.White)
+                            .withText(hrvText)
+                            .withFontStyle(10, ColorUtil.White)
                             .withBackgroundDrawableId(R.drawable.annotation_bg_1)
                             .build());
 

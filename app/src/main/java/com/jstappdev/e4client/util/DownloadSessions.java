@@ -47,7 +47,7 @@ public class DownloadSessions extends AsyncTask<ArrayList<E4Session>, String, St
 
             if (Utils.isSessionDownloaded(e4Session)) {
                 Log.d(MainActivity.TAG, "session exists: " + e4Session);
-                publishProgress("File " + filename + " already downloaded.");
+                //publishProgress("File " + filename + " already downloaded.");
                 continue;
             }
 
