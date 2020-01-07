@@ -49,7 +49,7 @@ public class Utils {
 
         if (values.isEmpty()) return l;
 
-        for (int i = 0; i < values.size(); i++)
+        for (int i = factor / 2; i < values.size() - factor / 2; i++)
             if (i % factor == 0) l.add(values.get(i));
 
         return l;
@@ -62,23 +62,19 @@ public class Utils {
 
         if (values.isEmpty()) return l;
 
-        for (int i = factor / 2; i < values.size() + factor / 2; i++) {
-            float[] a = new float[factor];
+        for (int i = factor / 2; i < values.size() - factor / 2; i++) {
+            if (i % factor == 0) {
+                float[] a = new float[factor];
 
-            for (int j = -factor / 2; j < factor / 2; j++) {
-                if (i + j > 0 && i + j < values.size())
+                for (int j = -factor / 2; j < factor / 2; j++) {
                     a[j + factor / 2] = values.get(i + j);
-                else if (i + j < 0)
-                    a[j + factor / 2] = values.get(0);
-                else if (i + j > values.size())
-                    a[j + factor / 2] = values.get(values.size() - 1);
-            }
+                }
 
-            float sum = 0;
-            for (float v : a) sum += v;
+                float sum = 0;
+                for (float v : a) sum += v;
 
-            if ((i - factor / 2) % factor == 0)
                 l.add(sum / factor);
+            }
         }
 
         return l;

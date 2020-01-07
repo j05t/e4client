@@ -47,6 +47,7 @@ import com.scichart.extensions.builders.SciChartBuilder;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 
 import butterknife.BindView;
@@ -194,9 +195,9 @@ public class ChartsFragment extends Fragment {
 
             edaLineData.append(E4SessionData.getInstance().getGsrTimestamps(), E4SessionData.getInstance().getGsr());
             hrLineData.append(E4SessionData.getInstance().getHrTimestamps(), E4SessionData.getInstance().getHr());
-            tempLineData.append(E4SessionData.getInstance().getTempTimestamps(), E4SessionData.getInstance().getTemp());
+            tempLineData.append(Utils.condenseSkip(E4SessionData.getInstance().getTempTimestamps(), 55), Utils.condenseAverage(E4SessionData.getInstance().getTemp(), 55));
 
-            cleanedEdaLineData.append(E4SessionData.getInstance().getGsrTimestamps(), Utils.medianFilter(E4SessionData.getInstance().getGsr(), 77));
+            cleanedEdaLineData.append(E4SessionData.getInstance().getGsrTimestamps(), Utils.averageFilter(Utils.medianFilter(E4SessionData.getInstance().getGsr(), 23), 55));
             final IRenderableSeries edaLineSeries = sciChartBuilder.newLineSeries()
                     .withDataSeries(cleanedEdaLineData)
                     .withStrokeStyle(ColorUtil.Yellow, 1f, false)
@@ -234,21 +235,20 @@ public class ChartsFragment extends Fragment {
                             .build());
 
 
-            final float hrvSDRR = Utils.calcHrvSDRR(E4SessionData.getInstance().getIbi());
-            final float hrvSDNN = Utils.calcHrvSDNN(E4SessionData.getInstance().getIbi());
-            final float hrvRMSSD = Utils.calcHrvRMSSD(E4SessionData.getInstance().getIbi());
-            final float hrvSDSD = Utils.calcHrvSDSD(E4SessionData.getInstance().getIbi());
-            final int hrvNN50 = Utils.calcHrvNN50(E4SessionData.getInstance().getIbi());
-            final int hrvNN20 = Utils.calcHrvNN20(E4SessionData.getInstance().getIbi());
+            final List<Float> ibis = E4SessionData.getInstance().getIbi();
+            final int hrvSDRR = Math.round(Utils.calcHrvSDRR(ibis));
+            final int hrvSDNN = Math.round(Utils.calcHrvSDNN(ibis));
+            final int hrvRMSSD = Math.round(Utils.calcHrvRMSSD(ibis));
+            final int hrvSDSD = Math.round(Utils.calcHrvSDSD(ibis));
+            final int hrvNN50 = Utils.calcHrvNN50(ibis);
+            final int hrvNN20 = Utils.calcHrvNN20(ibis);
 
-            int nnIntervals = E4SessionData.getInstance().getIbi().size();
-            if (nnIntervals == 0) nnIntervals = 1;
-
+            final int nnIntervals = ibis.size() == 0 ? 1 : ibis.size();
             final int hrvpNN50 = 100 * hrvNN50 / nnIntervals;
             final int hrvpNN20 = 100 * hrvNN20 / nnIntervals;
 
             final String hrvText = String.format(
-                    "NN20: %d %d%%\nNN50: %d %d%%\nRMSSD: %.0f ms\nSDRR: %.0f ms\nSDNN: %.0f ms\nSDSD: %.0f ms",
+                    "NN20: %d %d%%\nNN50: %d %d%%\nRMSSD: %d ms\nSDRR: %d ms\nSDNN: %d ms\nSDSD: %d ms",
                     hrvNN20, hrvpNN20, hrvNN50, hrvpNN50, hrvRMSSD, hrvSDRR, hrvSDNN, hrvSDSD);
 
             Collections.addAll(hrChart.getAnnotations(),
