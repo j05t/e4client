@@ -77,8 +77,9 @@ public class ChartsFragment extends Fragment {
     private SciChartBuilder sciChartBuilder;
 
     private XyDataSeries<Double, Float> edaLineData;
+    private XyDataSeries<Double, Float> cleanedEdaLineData;
     private XyDataSeries<Double, Float> hrLineData;
-    private XyDataSeries<Double, Float> cleanedGsrLineData;
+    private XyDataSeries<Double, Float> averagedHrLineData;
     private XyDataSeries<Double, Float> tempLineData;
 
     private AxisMarkerAnnotation hrAxisMarker;
@@ -109,8 +110,9 @@ public class ChartsFragment extends Fragment {
 
         edaLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
         hrLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
-        cleanedGsrLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
+        cleanedEdaLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
         tempLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
+        averagedHrLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
 
         hrAxisMarker = sciChartBuilder.newAxisMarkerAnnotation()
                 .withY1(0d).withBackgroundColor(AXIS_MARKER_COLOR).build();
@@ -194,12 +196,19 @@ public class ChartsFragment extends Fragment {
             hrLineData.append(E4SessionData.getInstance().getHrTimestamps(), E4SessionData.getInstance().getHr());
             tempLineData.append(E4SessionData.getInstance().getTempTimestamps(), E4SessionData.getInstance().getTemp());
 
-            cleanedGsrLineData.append(E4SessionData.getInstance().getGsrTimestamps(), Utils.removeAnomalies(E4SessionData.getInstance().getGsr()));
-            final IRenderableSeries lineSeries = sciChartBuilder.newLineSeries()
-                    .withDataSeries(cleanedGsrLineData)
+            cleanedEdaLineData.append(E4SessionData.getInstance().getGsrTimestamps(), Utils.medianFilter(E4SessionData.getInstance().getGsr(), 77));
+            final IRenderableSeries edaLineSeries = sciChartBuilder.newLineSeries()
+                    .withDataSeries(cleanedEdaLineData)
                     .withStrokeStyle(ColorUtil.Yellow, 1f, false)
                     .build();
-            edaChart.getRenderableSeries().add(lineSeries);
+            edaChart.getRenderableSeries().add(edaLineSeries);
+
+            averagedHrLineData.append(E4SessionData.getInstance().getHrTimestamps(), Utils.averageFilter(E4SessionData.getInstance().getHr(), 111));
+            final IRenderableSeries hrLineSeries = sciChartBuilder.newLineSeries()
+                    .withDataSeries(averagedHrLineData)
+                    .withStrokeStyle(ColorUtil.Yellow, 1f, false)
+                    .build();
+            hrChart.getRenderableSeries().add(hrLineSeries);
 
             for (double tag : E4SessionData.getInstance().getTags()) {
                 VerticalLineAnnotation verticalLine = sciChartBuilder.newVerticalLineAnnotation()

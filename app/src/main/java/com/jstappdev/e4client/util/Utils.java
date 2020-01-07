@@ -20,10 +20,10 @@ public class Utils {
     public static boolean isUploading = false;
 
     public static List<Float> removeAnomalies(final List<Float> values) {
-        return median(values, 23);
+        return medianFilter(values, 23);
     }
 
-    private static List<Float> smooth(List<Float> values) {
+    public static List<Float> smooth(List<Float> values) {
         List<Float> l = new ArrayList<>();
 
         if (values.isEmpty()) return l;
@@ -42,24 +42,95 @@ public class Utils {
         return l;
     }
 
-    private static List<Float> median(final List<Float> values, final int size) {
+    public static List<Double> condenseSkip(final List<Double> values, final int factor) {
+        List<Double> l = new ArrayList<>();
+
+        if (values.isEmpty()) return l;
+
+        for (int i = 0; i < values.size(); i++)
+            if (i % factor == 0) l.add(values.get(i));
+
+        return l;
+    }
+
+    public static List<Float> condenseAverage(final List<Float> values, final int factor) {
+
         List<Float> l = new ArrayList<>();
 
         if (values.isEmpty()) return l;
 
-        for (int i = 0; i < values.size(); i++) {
+        for (int i = factor / 2; i < values.size() + factor / 2; i++) {
+            float[] a = new float[factor];
+
+            for (int j = -factor / 2; j < factor / 2; j++) {
+                if (i + j > 0 && i + j < values.size())
+                    a[j + factor / 2] = values.get(i + j);
+                else if (i + j < 0)
+                    a[j + factor / 2] = values.get(0);
+                else if (i + j > values.size())
+                    a[j + factor / 2] = values.get(values.size() - 1);
+            }
+
+            float sum = 0;
+            for (float v : a) sum += v;
+
+            if ((i - factor / 2) % factor == 0)
+                l.add(sum / factor);
+        }
+
+        return l;
+    }
+
+    public static List<Float> medianFilter(final List<Float> values, int size) {
+
+        if (size % 2 == 0) size += 1;
+
+        List<Float> l = new ArrayList<>();
+
+        if (values.isEmpty()) return l;
+
+        for (int i = size / 2; i < values.size() + size / 2; i++) {
             float[] a = new float[size];
 
-            for (int j = 0; j < size; j++) {
-                if (i + j < values.size())
-                    a[j] = values.get(i + j);
-                else
-                    a[j] = values.get(i);
+            for (int j = -size / 2; j < size / 2; j++) {
+                if (i + j > 0 && i + j < values.size())
+                    a[j + size / 2] = values.get(i + j);
+                else if (i + j < 0)
+                    a[j + size / 2] = values.get(0);
+                else if (i + j > values.size())
+                    a[j + size / 2] = values.get(values.size() - 1);
             }
 
             Arrays.sort(a);
 
             l.add(a[size / 2]);
+        }
+
+        return l;
+    }
+
+    public static List<Float> averageFilter(final List<Float> values, int size) {
+
+        List<Float> l = new ArrayList<>();
+
+        if (values.isEmpty()) return l;
+
+        for (int i = size / 2; i < values.size() + size / 2; i++) {
+            float[] a = new float[size];
+
+            for (int j = -size / 2; j < size / 2; j++) {
+                if (i + j > 0 && i + j < values.size())
+                    a[j + size / 2] = values.get(i + j);
+                else if (i + j < 0)
+                    a[j + size / 2] = values.get(0);
+                else if (i + j > values.size())
+                    a[j + size / 2] = values.get(values.size() - 1);
+            }
+
+            float sum = 0;
+            for (float v : a) sum += v;
+
+            l.add(sum / size);
         }
 
         return l;

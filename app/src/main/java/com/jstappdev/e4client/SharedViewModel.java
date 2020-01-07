@@ -229,6 +229,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         double time = timestamp - firstIbiTimestamp;
         ibiWriter.println(String.format("%s,%s", time, ibi));
 
+        // fixme : should be calculated and written every second
         final float currentHr = 60.0f / ibi;
         hrWriter.println(currentHr);
 
@@ -271,7 +272,6 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     }
 
 
-    @SuppressLint("DefaultLocale")
     private synchronized void connected() {
 
         Utils.trimCache(MainActivity.context);
