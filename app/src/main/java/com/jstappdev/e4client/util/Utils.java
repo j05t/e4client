@@ -42,7 +42,9 @@ public class Utils {
         return l;
     }
 
-    public static List<Double> condenseSkip(final List<Double> values, final int factor) {
+    public static List<Double> condenseSkip(final List<Double> values, int factor) {
+        if (factor % 2 == 0) factor += 1;
+
         List<Double> l = new ArrayList<>();
 
         if (values.isEmpty()) return l;
@@ -53,7 +55,8 @@ public class Utils {
         return l;
     }
 
-    public static List<Float> condenseAverage(final List<Float> values, final int factor) {
+    public static List<Float> condenseAverage(final List<Float> values, int factor) {
+        if (factor % 2 == 0) factor += 1;
 
         List<Float> l = new ArrayList<>();
 
