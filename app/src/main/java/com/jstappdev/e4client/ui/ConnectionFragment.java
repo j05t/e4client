@@ -3,7 +3,6 @@ package com.jstappdev.e4client.ui;
 import android.annotation.SuppressLint;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,7 +23,6 @@ import com.jstappdev.e4client.data.E4SessionData;
 import com.jstappdev.e4client.util.Utils;
 
 import java.util.Locale;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 
 public class ConnectionFragment extends Fragment {
@@ -169,62 +167,61 @@ public class ConnectionFragment extends Fragment {
             }
         });
 
-        sharedViewModel.getLastAcc().observe(owner, new Observer<Integer>() {
-            public void onChanged(Integer lastAcc) {
-                try {
-                    accel_xLabel.setText(String.format(Locale.getDefault(), "%d", E4SessionData.getInstance().getAcc().get(lastAcc).get(0)));
-                    accel_yLabel.setText(String.format(Locale.getDefault(), "%d", E4SessionData.getInstance().getAcc().get(lastAcc).get(1)));
-                    accel_zLabel.setText(String.format(Locale.getDefault(), "%d", E4SessionData.getInstance().getAcc().get(lastAcc).get(2)));
-                } catch (NoSuchElementException e) {
-                    Log.e("e4", "no such element");
+        sharedViewModel.getCurrentAccX().observe(owner, new Observer<Integer>() {
+            public void onChanged(Integer accX) {
+                accel_xLabel.setText(accX.toString());
+            }
+        });
+        sharedViewModel.getCurrentAccY().observe(owner, new Observer<Integer>() {
+            public void onChanged(Integer accY) {
+                accel_yLabel.setText(accY.toString());
+            }
+        });
+        sharedViewModel.getCurrentAccZ().observe(owner, new Observer<Integer>() {
+            public void onChanged(Integer accZ) {
+                accel_zLabel.setText(accZ.toString());
+            }
+        });
+
+        sharedViewModel.getCurrentGsr().observe(owner, new Observer<Float>() {
+            @Override
+            public void onChanged(Float gsr) {
+                edaLabel.setText(String.format(Locale.getDefault(), "%.2f %s", gsr, microsiemens));
+            }
+        });
+
+        sharedViewModel.getCurrentIbi().observe(owner, new Observer<Float>() {
+            int count = 0;
+
+            @Override
+            public void onChanged(Float ibi) {
+                ibiLabel.setText(String.format(Locale.getDefault(), "%.2f s", ibi));
+
+                // HR/HRV is calculated from IBI
+                hrLabel.setText(String.format(Locale.getDefault(), "%.0f BPM", sharedViewModel.getCurrentHr().getValue()));
+
+                // fixme: calc in viewmodel
+                if (count++ % 100 == 0) {
+                    final float hrv = Utils.calcHrvSDRR(E4SessionData.getInstance().getIbi());
+                    hrvLabel.setText(String.format(Locale.getDefault(), "%.0f ms", hrv));
                 }
             }
         });
-        sharedViewModel.getLastGsr().observe(owner, new Observer<Integer>() {
+
+        sharedViewModel.getCurrentTemp().observe(owner, new Observer<Float>() {
             @Override
-            public void onChanged(Integer lastGsr) {
-                try {
-                    edaLabel.setText(String.format(Locale.getDefault(), "%.2f %s", E4SessionData.getInstance().getGsr().get(lastGsr), microsiemens));
-                } catch (NoSuchElementException e) {
-                    Log.e("e4", "no such element");
-                }
+            public void onChanged(Float temp) {
+                temperatureLabel.setText(String.format(Locale.getDefault(), "%.2f %s", temp, celsius));
             }
         });
-        sharedViewModel.getLastIbi().observe(owner, new Observer<Integer>() {
+
+        sharedViewModel.getCurrentBvp().observe(owner, new Observer<Float>() {
+            int count = 0;
+
             @Override
-            public void onChanged(Integer lastIbi) {
-                try {
-                    // HR/HRV is calculated from IBI
-                    ibiLabel.setText(String.format(Locale.getDefault(), "%.2f s", E4SessionData.getInstance().getIbi().get(lastIbi)));
-                    hrLabel.setText(String.format(Locale.getDefault(), "%.0f BPM", E4SessionData.getInstance().getHr().get(lastIbi)));
-                    if (lastIbi % 10 == 0) {
-                        final float hrv = Utils.calcHrvSDRR(E4SessionData.getInstance().getIbi());
-                        hrvLabel.setText(String.format(Locale.getDefault(), "%.0f ms", hrv));
-                    }
-                } catch (NoSuchElementException e) {
-                    Log.e("e4", "no such element");
-                }
-            }
-        });
-        sharedViewModel.getLastTemp().observe(owner, new Observer<Integer>() {
-            @Override
-            public void onChanged(Integer lastTemp) {
-                try {
-                    temperatureLabel.setText(String.format(Locale.getDefault(), "%.2f %s", E4SessionData.getInstance().getTemp().get(lastTemp), celsius));
-                } catch (NoSuchElementException e) {
-                    Log.e("e4", "no such element in " + E4SessionData.getInstance());
-                }
-            }
-        });
-        sharedViewModel.getLastBvp().observe(owner, new Observer<Integer>() {
-            @Override
-            public void onChanged(Integer lastBvp) {
-                try {
-                    if (lastBvp % 10 == 0)
-                        bvpLabel.setText(String.format(Locale.getDefault(), "%.0f", E4SessionData.getInstance().getBvp().get(lastBvp)));
-                } catch (NoSuchElementException e) {
-                    Log.e("e4", "no such element ");
-                }
+            public void onChanged(Float bvp) {
+                if (count++ % 10 == 0)
+                    bvpLabel.setText(String.format(Locale.getDefault(), "%.0f", bvp));
             }
         });
     }

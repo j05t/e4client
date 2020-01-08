@@ -1,6 +1,5 @@
 package com.jstappdev.e4client.ui;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.graphics.Typeface;
@@ -48,6 +47,7 @@ import com.scichart.extensions.builders.SciChartBuilder;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 import butterknife.BindView;
@@ -170,7 +170,6 @@ public class ChartsFragment extends Fragment {
         chartSurface.getRenderableSeries().add(lineSeries);
     }
 
-    @SuppressLint("DefaultLocale")
     private void setupCharts() {
         final LifecycleOwner owner = getViewLifecycleOwner();
 
@@ -247,7 +246,7 @@ public class ChartsFragment extends Fragment {
             final int hrvpNN50 = 100 * hrvNN50 / nnIntervals;
             final int hrvpNN20 = 100 * hrvNN20 / nnIntervals;
 
-            final String hrvText = String.format(
+            final String hrvText = String.format(Locale.getDefault(),
                     "NN20: %d %d%%\nNN50: %d %d%%\nRMSSD: %d ms\nSDRR: %d ms\nSDNN: %d ms\nSDSD: %d ms",
                     hrvNN20, hrvpNN20, hrvNN50, hrvpNN50, hrvRMSSD, hrvSDRR, hrvSDNN, hrvSDSD);
 
@@ -300,10 +299,10 @@ public class ChartsFragment extends Fragment {
                     Collections.addAll(edaChart.getAnnotations(), verticalLine);
                 }
             });
-
-            sharedViewModel.getLastIbi().observe(owner, new Observer<Integer>() {
+/*
+            sharedViewModel.getCurrentIbi().observe(owner, new Observer<Float>() {
                 @Override
-                public void onChanged(Integer lastIbi) {
+                public void onChanged(Float lastIbi) {
                     try {
                         final float currentHr = 60.0f / E4SessionData.getInstance().getIbi().get(lastIbi);
 
@@ -321,9 +320,9 @@ public class ChartsFragment extends Fragment {
                 }
             });
 
-            sharedViewModel.getLastGsr().observe(owner, new Observer<Integer>() {
+            sharedViewModel.getCurrentGsr().observe(owner, new Observer<Float>() {
                 @Override
-                public void onChanged(Integer lastGsr) {
+                public void onChanged(Float lastGsr) {
                     try {
                         edaLineData.append(E4SessionData.getInstance().getGsrTimestamps().get(lastGsr), E4SessionData.getInstance().getGsr().get(lastGsr));
                     } catch (Exception e) {
@@ -332,17 +331,19 @@ public class ChartsFragment extends Fragment {
                 }
             });
 
-            sharedViewModel.getLastTemp().observe(owner, new Observer<Integer>() {
+            sharedViewModel.getCurrentTemp().observe(owner, new Observer<Float>() {
                 @Override
-                public void onChanged(Integer lastTemp) {
+                public void onChanged(Float temp) {
                     try {
-                        tempLineData.append(E4SessionData.getInstance().getTempTimestamps().get(lastTemp), E4SessionData.getInstance().getTemp().get(lastTemp));
-                        tempAxisMarker.setY1(E4SessionData.getInstance().getTemp().get(lastTemp));
+                        tempLineData.append(E4SessionData.getInstance().getTempTimestamps().get(temp), temp);
+                        tempAxisMarker.setY1(temp);
                     } catch (Exception e) {
                         Log.e(MainActivity.TAG, "updateCharts() " + e.getMessage());
                     }
                 }
             });
+
+ */
 
         }
     }

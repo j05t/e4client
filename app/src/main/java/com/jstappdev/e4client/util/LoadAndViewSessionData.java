@@ -75,19 +75,23 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean
                 final File ibiFile = new File(basePath + "IBI.csv");
                 if (tagFile.exists())
                     try (BufferedReader reader = new BufferedReader(new FileReader(ibiFile))) {
-                        String line;
+                        String line = reader.readLine();
 
-                        final double initialTime = Double.parseDouble(reader.readLine().split(",")[0]);
-                        double timestamp = initialTime;
+                        if (line != null) {
 
-                        while ((line = reader.readLine()) != null) {
-                            final String[] split = line.split(",");
-                            final double plusTime = Double.parseDouble(split[0]);
-                            final float ibi = Float.parseFloat(split[1]);
-                            timestamp = initialTime + plusTime;
+                            final double initialTime = Double.parseDouble(line.split(",")[0]);
+                            double timestamp = initialTime;
 
-                            E4SessionData.getInstance().getIbi().add(ibi);
+                            while ((line = reader.readLine()) != null) {
+                                final String[] split = line.split(",");
+                                final double plusTime = Double.parseDouble(split[0]);
+                                final float ibi = Float.parseFloat(split[1]);
+                                timestamp = initialTime + plusTime;
+
+                                E4SessionData.getInstance().getIbi().add(ibi);
+                            }
                         }
+
                     } catch (IOException e) {
                         e.printStackTrace();
                         return false;

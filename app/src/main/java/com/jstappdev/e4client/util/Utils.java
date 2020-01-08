@@ -225,7 +225,7 @@ public class Utils {
         return new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename()).exists();
     }
 
-    public static void trimCache(Context context) {
+    public static synchronized void trimCache(Context context) {
         try {
             File dir = context.getCacheDir();
             if (dir != null && dir.isDirectory()) {
@@ -251,7 +251,7 @@ public class Utils {
         return dir.delete();
     }
 
-    static float magnitude(final int x, final int y, final int z) {
+    public static float magnitude(final int x, final int y, final int z) {
         return (float) Math.sqrt(x * x + y * y + z * z);
     }
 

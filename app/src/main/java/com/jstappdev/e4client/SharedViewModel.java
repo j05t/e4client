@@ -1,8 +1,5 @@
 package com.jstappdev.e4client;
 
-import android.annotation.SuppressLint;
-import android.util.Log;
-
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
@@ -31,15 +28,16 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     private MutableLiveData<String> deviceName;
     private MutableLiveData<Float> battery;
     private MutableLiveData<Double> tag;
-
-    // we just keep track of the index of the last sensor reading
-    private MutableLiveData<Integer> lastAcc;
-    private MutableLiveData<Integer> lastBvp;
-    private MutableLiveData<Integer> lastGsr;
-    private MutableLiveData<Integer> lastIbi;
-    private MutableLiveData<Integer> lastTemp;
-
+    private MutableLiveData<Integer> currentAccX;
+    private MutableLiveData<Integer> currentAccY;
+    private MutableLiveData<Integer> currentAccZ;
+    private MutableLiveData<Float> currentBvp;
+    private MutableLiveData<Float> currentHr;
+    private MutableLiveData<Float> currentGsr;
+    private MutableLiveData<Float> currentIbi;
+    private MutableLiveData<Float> currentTemp;
     private MutableLiveData<String> currentStatus;
+
     private List<String> uploadedSessionIDs;
     private ArrayList<E4Session> e4Sessions = new ArrayList<>();
     private String username;
@@ -54,7 +52,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     private File ibiFile;
     private File accFile;
 
-    private PrintWriter edaWriter;
+    private PrintWriter gsrWriter;
     private PrintWriter tempWriter;
     private PrintWriter bvpWriter;
     private PrintWriter hrWriter;
@@ -63,25 +61,33 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     private PrintWriter tagWriter;
 
     private double firstIbiTimestamp;
-    private long initialTime;
+    private long timeConnected;
+
+    private boolean tempWritten;
+    private boolean accWritten;
+    private boolean bvpWritten;
+    private boolean hrWritten;
+    private boolean ibiWritten;
+    private boolean gsrWritten;
 
     public SharedViewModel() {
+        uploadedSessionIDs = new ArrayList<>();
+
         onWrist = new MutableLiveData<>();
         sessionStatus = new MutableLiveData<>();
         isConnected = new MutableLiveData<>(false);
         deviceName = new MutableLiveData<>();
         battery = new MutableLiveData<>();
-
-        lastAcc = new MutableLiveData<>(0);
-        lastBvp = new MutableLiveData<>(0);
-        lastGsr = new MutableLiveData<>(0);
-        lastIbi = new MutableLiveData<>(0);
-        lastTemp = new MutableLiveData<>(0);
-        tag = new MutableLiveData<>();
-
         currentStatus = new MutableLiveData<>();
-
-        uploadedSessionIDs = new ArrayList<>();
+        currentAccX = new MutableLiveData<Integer>();
+        currentAccY = new MutableLiveData<Integer>();
+        currentAccZ = new MutableLiveData<Integer>();
+        currentBvp = new MutableLiveData<Float>();
+        currentHr = new MutableLiveData<Float>();
+        currentGsr = new MutableLiveData<Float>();
+        currentIbi = new MutableLiveData<Float>();
+        currentTemp = new MutableLiveData<Float>();
+        tag = new MutableLiveData<Double>();
     }
 
     public MutableLiveData<String> getCurrentStatus() {
@@ -109,38 +115,46 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     }
 
     void setIsConnected(boolean isConnected) {
+        if (isConnected) connected();
+        else saveSession();
+
         this.isConnected.postValue(isConnected);
-
-        if (isConnected) {
-            connected();
-        } else {
-            if (lastGsr.getValue() > 0)
-                saveSession();
-        }
     }
 
-    public MutableLiveData<Integer> getLastAcc() {
-        return lastAcc;
+    public MutableLiveData<Integer> getCurrentAccX() {
+        return currentAccX;
     }
 
-    public MutableLiveData<Integer> getLastBvp() {
-        return lastBvp;
+    public MutableLiveData<Integer> getCurrentAccY() {
+        return currentAccY;
+    }
+
+    public MutableLiveData<Integer> getCurrentAccZ() {
+        return currentAccZ;
+    }
+
+    public MutableLiveData<Float> getCurrentBvp() {
+        return currentBvp;
+    }
+
+    public MutableLiveData<Float> getCurrentHr() {
+        return currentHr;
     }
 
     public MutableLiveData<Float> getBattery() {
         return battery;
     }
 
-    public MutableLiveData<Integer> getLastGsr() {
-        return lastGsr;
+    public MutableLiveData<Float> getCurrentGsr() {
+        return currentGsr;
     }
 
-    public MutableLiveData<Integer> getLastIbi() {
-        return lastIbi;
+    public MutableLiveData<Float> getCurrentIbi() {
+        return currentIbi;
     }
 
-    public MutableLiveData<Integer> getLastTemp() {
-        return lastTemp;
+    public MutableLiveData<Float> getCurrentTemp() {
+        return currentTemp;
     }
 
     public MutableLiveData<Double> getTag() {
@@ -187,63 +201,73 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     @Override
     public void didReceiveAcceleration(int x, int y, int z, double timestamp) {
-        if (lastAcc.getValue() == 0) {
+        if(!accWritten) {
+            accWritten = true;
             accWriter.println(String.format("%s, %s, %s", timestamp, timestamp, timestamp));
             accWriter.println("32.000000, 32.000000, 32.000000");
         }
         accWriter.println(String.format("%s,%s,%s", x, y, z));
-        lastAcc.postValue(lastAcc.getValue() + 1);
+        currentAccX.postValue(x);
+        currentAccY.postValue(y);
+        currentAccZ.postValue(z);
     }
 
     @Override
     public void didReceiveBVP(float bvp, double timestamp) {
-        if (lastBvp.getValue() == 0) {
+        if(!bvpWritten) {
+            bvpWritten = true;
             bvpWriter.println(timestamp);
             bvpWriter.println("4.000000");
         }
         bvpWriter.println(bvp);
-        lastBvp.postValue(lastBvp.getValue() + 1);
+        currentBvp.postValue(bvp);
     }
 
     @Override
     public void didReceiveGSR(float gsr, double timestamp) {
-        if (lastGsr.getValue() == 0) {
-            edaWriter.println(timestamp);
-            edaWriter.println("4.000000");
+        if(!gsrWritten) {
+            gsrWritten = true;
+            gsrWriter.println(timestamp);
+            gsrWriter.println("4.000000");
         }
-        edaWriter.println(gsr);
-        lastGsr.postValue(lastGsr.getValue() + 1);
+        gsrWriter.println(gsr);
+        currentGsr.postValue(gsr);
     }
 
     // HR is calculated from IBI
     @Override
     public void didReceiveIBI(float ibi, double timestamp) {
-        if (lastIbi.getValue() == 0) {
+        if (!ibiWritten) {
+            ibiWritten = true;
+
+            firstIbiTimestamp = timestamp;
+            ibiWriter.println(timestamp + ", IBI");
+
             hrWriter.println(timestamp);
             hrWriter.println("1.000000");
-
-            ibiWriter.println(timestamp + ", IBI");
-            firstIbiTimestamp = timestamp;
         }
 
+        // fixme: timeConnected?
         double time = timestamp - firstIbiTimestamp;
         ibiWriter.println(String.format("%s,%s", time, ibi));
 
-        // fixme : should be calculated and written every second
-        final float currentHr = 60.0f / ibi;
-        hrWriter.println(currentHr);
+        // fixme : should be calculated and written once per second
+        final float hr = 60.0f / ibi;
+        hrWriter.println(hr);
 
-        lastIbi.postValue(lastIbi.getValue() + 1);
+        currentIbi.postValue(ibi);
+        currentHr.postValue(hr);
     }
 
     @Override
     public void didReceiveTemperature(float temp, double timestamp) {
-        if (lastTemp.getValue() == 0) {
+        if(!tempWritten) {
             tempWriter.println(timestamp);
             tempWriter.println("4.000000");
+            tempWritten = true;
         }
         tempWriter.println(temp);
-        lastTemp.postValue(lastTemp.getValue() + 1);
+        currentTemp.postValue(temp);
     }
 
     @Override
@@ -276,8 +300,6 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
         Utils.trimCache(MainActivity.context);
 
-        initialTime = Utils.getCurrentTimestamp();
-
         final String basePath = MainActivity.context.getCacheDir().getPath() + "/";
 
         edaFile = new File(basePath + "EDA.csv");
@@ -288,32 +310,42 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         ibiFile = new File(basePath + "IBI.csv");
         accFile = new File(basePath + "ACC.csv");
 
+        timeConnected = Utils.getCurrentTimestamp();
+
         try {
-            edaWriter = new PrintWriter(new FileWriter(edaFile));
-            tempWriter = new PrintWriter(new FileWriter(tempFile));
-            bvpWriter = new PrintWriter(new FileWriter(bvpFile));
-            hrWriter = new PrintWriter(new FileWriter(hrFile));
-            ibiWriter = new PrintWriter(new FileWriter(ibiFile));
-            accWriter = new PrintWriter(new FileWriter(accFile));
             tagWriter = new PrintWriter(new FileWriter(tagFile));
+            tempWriter = new PrintWriter(new FileWriter(tempFile));
+            ibiWriter = new PrintWriter(new FileWriter(ibiFile));
+            hrWriter = new PrintWriter(new FileWriter(hrFile));
+            gsrWriter = new PrintWriter(new FileWriter(edaFile));
+            bvpWriter = new PrintWriter(new FileWriter(bvpFile));
+            accWriter = new PrintWriter(new FileWriter(accFile));
         } catch (IOException e) {
-            currentStatus.postValue("Error creating file writers!");
+            currentStatus.postValue("Error creating file: " + e.getLocalizedMessage());
             e.printStackTrace();
         }
     }
 
     private synchronized void saveSession() {
-        final E4Session e4Session = new E4Session("id", initialTime / 1000, Utils.getCurrentTimestamp() / 1000 - initialTime / 1000, "E4", "label", "device", "0", "0");
+        final E4Session e4Session = new E4Session("id", timeConnected / 1000, Utils.getCurrentTimestamp() / 1000 - timeConnected / 1000, "E4", "label", "device", "0", "0");
         final File sessionFile = new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename());
 
-        Log.d(MainActivity.TAG, "Saving as " + e4Session.getZIPFilename());
+        gsrWriter.close();
+        tempWriter.close();
+        tagWriter.close();
+        bvpWriter.close();
+        accWriter.close();
+        hrWriter.close();
+        ibiWriter.close();
 
         try {
             new ZipFile(sessionFile).addFiles(Arrays.asList(edaFile, tempFile, bvpFile, accFile, hrFile, ibiFile, tagFile));
             currentStatus.postValue("Session saved to local storage: " + sessionFile.getAbsolutePath());
         } catch (ZipException e) {
-            currentStatus.postValue("Error creating file: " + sessionFile.getAbsolutePath());
+            currentStatus.postValue("Error creating ZIP file: " + sessionFile.getAbsolutePath());
             e.printStackTrace();
         }
     }
+
+
 }
