@@ -19,6 +19,8 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
 
 public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
@@ -69,6 +71,8 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     private boolean hrWritten;
     private boolean ibiWritten;
     private boolean gsrWritten;
+
+    private final static double timezoneOffset = TimeZone.getDefault().getRawOffset();
 
     public SharedViewModel() {
         uploadedSessionIDs = new ArrayList<>();
@@ -201,12 +205,14 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     @Override
     public void didReceiveAcceleration(int x, int y, int z, double timestamp) {
-        if(!accWritten) {
+        timestamp += timezoneOffset;
+
+        if (!accWritten) {
             accWritten = true;
-            accWriter.println(String.format("%s, %s, %s", timestamp, timestamp, timestamp));
+            accWriter.println(String.format(Locale.getDefault(), "%f, %f, %f", timestamp, timestamp, timestamp));
             accWriter.println("32.000000, 32.000000, 32.000000");
         }
-        accWriter.println(String.format("%s,%s,%s", x, y, z));
+        accWriter.println(String.format("%d,%d,%d", x, y, z));
         currentAccX.postValue(x);
         currentAccY.postValue(y);
         currentAccZ.postValue(z);
@@ -214,7 +220,9 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     @Override
     public void didReceiveBVP(float bvp, double timestamp) {
-        if(!bvpWritten) {
+        timestamp += timezoneOffset;
+
+        if (!bvpWritten) {
             bvpWritten = true;
             bvpWriter.println(timestamp);
             bvpWriter.println("4.000000");
@@ -225,7 +233,9 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     @Override
     public void didReceiveGSR(float gsr, double timestamp) {
-        if(!gsrWritten) {
+        timestamp += timezoneOffset;
+
+        if (!gsrWritten) {
             gsrWritten = true;
             gsrWriter.println(timestamp);
             gsrWriter.println("4.000000");
@@ -237,11 +247,13 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     // HR is calculated from IBI
     @Override
     public void didReceiveIBI(float ibi, double timestamp) {
+        timestamp += timezoneOffset;
+
         if (!ibiWritten) {
             ibiWritten = true;
 
             firstIbiTimestamp = timestamp;
-            ibiWriter.println(timestamp + ", IBI");
+            ibiWriter.println(String.format(Locale.getDefault(), "%f, IBI", timestamp));
 
             hrWriter.println(timestamp);
             hrWriter.println("1.000000");
@@ -249,7 +261,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
         // fixme: timeConnected?
         double time = timestamp - firstIbiTimestamp;
-        ibiWriter.println(String.format("%s,%s", time, ibi));
+        ibiWriter.println(String.format(Locale.getDefault(), "%f,%f", time, ibi));
 
         // fixme : should be calculated and written once per second
         final float hr = 60.0f / ibi;
@@ -261,7 +273,9 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     @Override
     public void didReceiveTemperature(float temp, double timestamp) {
-        if(!tempWritten) {
+        timestamp += timezoneOffset;
+
+        if (!tempWritten) {
             tempWriter.println(timestamp);
             tempWriter.println("4.000000");
             tempWritten = true;
