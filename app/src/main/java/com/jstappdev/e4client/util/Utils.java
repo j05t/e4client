@@ -1,7 +1,11 @@
 package com.jstappdev.e4client.util;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.text.InputType;
 import android.text.format.DateFormat;
+import android.widget.EditText;
 
 import com.jstappdev.e4client.MainActivity;
 import com.jstappdev.e4client.data.E4Session;
@@ -199,14 +203,14 @@ public class Utils {
         return c;
     }
 
-    public static String getDate(final long time) {
+    public static String getDateAsString(final long time) {
         final Calendar cal = Calendar.getInstance(Locale.getDefault());
         cal.setTimeZone(TimeZone.getTimeZone("UTC"));
         cal.setTimeInMillis(time * 1000);
         return DateFormat.format("dd. MMM. yyyy - HH:mm", cal).toString();
     }
 
-    public static String getDuration(final long time) {
+    public static String getDurationAsString(final long time) {
         final Calendar cal = Calendar.getInstance(Locale.getDefault());
         cal.setTimeZone(TimeZone.getTimeZone("UTC"));
         cal.setTimeInMillis(time * 1000);
@@ -254,6 +258,4 @@ public class Utils {
     public static float magnitude(final int x, final int y, final int z) {
         return (float) Math.sqrt(x * x + y * y + z * z);
     }
-
-
 }

@@ -14,9 +14,11 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.text.InputType;
 import android.util.Log;
 import android.view.Menu;
 import android.view.WindowManager;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -65,6 +67,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -92,6 +95,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     private SharedViewModel sharedViewModel;
     private NavController navController;
 
+    public final static double timezoneOffset = TimeZone.getDefault().getRawOffset();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -413,6 +417,9 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         if (deviceManager != null) {
             deviceManager.disconnect();
         }
+        if(sharedViewModel.getIsConnected().getValue()) {
+            sharedViewModel.saveSession(getApplicationContext());
+        }
     }
 
     public void createGoogleFitClient() {
@@ -556,4 +563,37 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
             googleFitCustomDatatypesCreated = true;
         }
     }
+
+
+
+    public static void showTagDescriptionDialog(final double time, final SharedViewModel sharedViewModel) {
+        MainActivity.context.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                final android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(MainActivity.context);
+                builder.setTitle("Describe Event:");
+
+                final EditText input = new EditText(MainActivity.context);
+                input.setInputType(InputType.TYPE_CLASS_TEXT);
+                builder.setView(input);
+
+                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        final String description = input.getText().toString();
+                        sharedViewModel.addTagDescription(time, description);
+                    }
+                });
+                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+
+                builder.show();
+            }
+        });
+    }
+
 }

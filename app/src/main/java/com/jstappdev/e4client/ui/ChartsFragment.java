@@ -41,6 +41,7 @@ import com.scichart.charting.visuals.renderableSeries.IRenderableSeries;
 import com.scichart.charting.visuals.synchronization.SciChartVerticalGroup;
 import com.scichart.data.model.DateRange;
 import com.scichart.data.model.DoubleRange;
+import com.scichart.data.model.FifoBufferFactory;
 import com.scichart.drawing.utility.ColorUtil;
 import com.scichart.extensions.builders.SciChartBuilder;
 
@@ -111,8 +112,8 @@ public class ChartsFragment extends Fragment {
 
         edaLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
         hrLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
-        cleanedEdaLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
         tempLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
+        cleanedEdaLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
         averagedHrLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
 
         hrAxisMarker = sciChartBuilder.newAxisMarkerAnnotation()
@@ -265,9 +266,15 @@ public class ChartsFragment extends Fragment {
             edaChart.animateZoomExtents(500);
 
         } else { // display live sensor data
+            edaLineData.setFifoCapacity(1024);
+            hrLineData.setFifoCapacity(1024);
+            tempLineData.setFifoCapacity(1024);
+
+            edaChart.getXAxes().getDefault().setAutoRange(AutoRange.Always);
+            edaChart.getXAxes().getDefault().setVisibility(View.INVISIBLE);
 
             // Create a watermark using a TextAnnotation
-            TextAnnotation textAnnotation = sciChartBuilder.newTextAnnotation()
+            final TextAnnotation textAnnotation = sciChartBuilder.newTextAnnotation()
                     .withX1(0.5)
                     .withY1(0.5)
                     .withFontStyle(Typeface.DEFAULT_BOLD, 42, 0x22FFFFFF)
@@ -285,12 +292,11 @@ public class ChartsFragment extends Fragment {
             Collections.addAll(hrChart.getAnnotations(), hrAxisMarker, hrvAxisMarker);
             Collections.addAll(tempChart.getAnnotations(), tempAxisMarker);
 
-
             sharedViewModel.getTag().observe(owner, new Observer<Double>() {
                 @Override
                 public void onChanged(Double tag) {
                     VerticalLineAnnotation verticalLine = sciChartBuilder.newVerticalLineAnnotation()
-                            .withPosition(tag, 0.5d)
+                            .withPosition((double) Utils.getCurrentTimestamp(), 0.5d)
                             .withStroke(2, ColorUtil.Orange)
                             .withVerticalGravity(Gravity.FILL_VERTICAL)
                             .withIsEditable(false)
@@ -299,61 +305,48 @@ public class ChartsFragment extends Fragment {
                     Collections.addAll(edaChart.getAnnotations(), verticalLine);
                 }
             });
-/*
+
             sharedViewModel.getCurrentIbi().observe(owner, new Observer<Float>() {
                 @Override
                 public void onChanged(Float lastIbi) {
-                    try {
-                        final float currentHr = 60.0f / E4SessionData.getInstance().getIbi().get(lastIbi);
+                    final float currentHr = 60.0f / lastIbi;
 
-                        // heart rate may theoretically reach 600, but we assume 300 max
-                        // https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3273956/
-                        if (averageHr != 0.0f && currentHr < 300f) {
-                            averageHr = 0.8f * averageHr + 0.2f * currentHr;
-                        }
-
-                        hrLineData.append(E4SessionData.getInstance().getHrTimestamps().get(lastIbi), currentHr);
-                        hrAxisMarker.setY1(averageHr);
-                    } catch (Exception e) {
-                        Log.e(MainActivity.TAG, "updateCharts() " + e.getMessage());
+                    // heart rate may theoretically reach 600, but we assume 300 max
+                    // https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3273956/
+                    if (averageHr != 0.0f && currentHr < 300f) {
+                        averageHr = 0.8f * averageHr + 0.2f * currentHr;
                     }
+
+                    hrLineData.append((double) Utils.getCurrentTimestamp(), currentHr);
+                    hrAxisMarker.setY1(averageHr);
                 }
             });
 
             sharedViewModel.getCurrentGsr().observe(owner, new Observer<Float>() {
                 @Override
                 public void onChanged(Float lastGsr) {
-                    try {
-                        edaLineData.append(E4SessionData.getInstance().getGsrTimestamps().get(lastGsr), E4SessionData.getInstance().getGsr().get(lastGsr));
-                    } catch (Exception e) {
-                        Log.e(MainActivity.TAG, "updateCharts() " + e.getMessage());
-                    }
+                    edaLineData.append((double) Utils.getCurrentTimestamp(), lastGsr);
                 }
             });
 
             sharedViewModel.getCurrentTemp().observe(owner, new Observer<Float>() {
                 @Override
                 public void onChanged(Float temp) {
-                    try {
-                        tempLineData.append(E4SessionData.getInstance().getTempTimestamps().get(temp), temp);
-                        tempAxisMarker.setY1(temp);
-                    } catch (Exception e) {
-                        Log.e(MainActivity.TAG, "updateCharts() " + e.getMessage());
-                    }
+                    tempLineData.append((double) Utils.getCurrentTimestamp(), temp);
+                    tempAxisMarker.setY1(temp);
                 }
             });
 
- */
+            edaChart.animateZoomExtents(500);
 
         }
     }
-
 
     public static class DateLabelProviderEx extends DateLabelProvider {
         @Override
         public String formatLabel(Comparable dataValue) {
             // return a formatting string for tick labels
-            return Utils.getDuration(Math.round((Double) dataValue));
+            return Utils.getDurationAsString(Math.round((Double) dataValue));
         }
     }
 

@@ -20,9 +20,13 @@ public class CSVFile {
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
 
+            String line = reader.readLine();
+
+            if(null == line) return;
+
             // initial time of the session expressed as unix timestamp in UTC
             // and sample rate expressed in Hz.
-            initialTime = Double.parseDouble(reader.readLine());
+            initialTime = Double.parseDouble(line);
             samplingRate = 1d / Double.parseDouble(reader.readLine());
 
             String csvLine;

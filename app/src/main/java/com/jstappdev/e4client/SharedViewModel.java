@@ -1,5 +1,9 @@
 package com.jstappdev.e4client;
 
+import android.annotation.SuppressLint;
+import android.content.Context;
+import android.util.Log;
+
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
@@ -20,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.TimeZone;
 
 public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
@@ -53,6 +56,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     private File tagFile;
     private File ibiFile;
     private File accFile;
+    private File tagDescriptionFile;
 
     private PrintWriter gsrWriter;
     private PrintWriter tempWriter;
@@ -61,6 +65,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     private PrintWriter ibiWriter;
     private PrintWriter accWriter;
     private PrintWriter tagWriter;
+    private PrintWriter tagDescriptionWriter;
 
     private double firstIbiTimestamp;
     private long timeConnected;
@@ -68,15 +73,11 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     private boolean tempWritten;
     private boolean accWritten;
     private boolean bvpWritten;
-    private boolean hrWritten;
     private boolean ibiWritten;
     private boolean gsrWritten;
 
-    private final static double timezoneOffset = TimeZone.getDefault().getRawOffset();
-
     public SharedViewModel() {
         uploadedSessionIDs = new ArrayList<>();
-
         onWrist = new MutableLiveData<>();
         sessionStatus = new MutableLiveData<>();
         isConnected = new MutableLiveData<>(false);
@@ -120,7 +121,6 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     void setIsConnected(boolean isConnected) {
         if (isConnected) connected();
-        else saveSession();
 
         this.isConnected.postValue(isConnected);
     }
@@ -203,9 +203,10 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         this.battery.postValue(battery);
     }
 
+    @SuppressLint("DefaultLocale")
     @Override
     public void didReceiveAcceleration(int x, int y, int z, double timestamp) {
-        timestamp += timezoneOffset;
+        timestamp += MainActivity.timezoneOffset;
 
         if (!accWritten) {
             accWritten = true;
@@ -220,7 +221,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     @Override
     public void didReceiveBVP(float bvp, double timestamp) {
-        timestamp += timezoneOffset;
+        timestamp += MainActivity.timezoneOffset;;
 
         if (!bvpWritten) {
             bvpWritten = true;
@@ -233,7 +234,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     @Override
     public void didReceiveGSR(float gsr, double timestamp) {
-        timestamp += timezoneOffset;
+        timestamp += MainActivity.timezoneOffset;;
 
         if (!gsrWritten) {
             gsrWritten = true;
@@ -247,7 +248,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     // HR is calculated from IBI
     @Override
     public void didReceiveIBI(float ibi, double timestamp) {
-        timestamp += timezoneOffset;
+        timestamp += MainActivity.timezoneOffset;;
 
         if (!ibiWritten) {
             ibiWritten = true;
@@ -269,11 +270,14 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
         currentIbi.postValue(ibi);
         currentHr.postValue(hr);
+
+        Log.d(MainActivity.TAG, "got IBI: " + ibi);
+
     }
 
     @Override
     public void didReceiveTemperature(float temp, double timestamp) {
-        timestamp += timezoneOffset;
+        timestamp += MainActivity.timezoneOffset;;
 
         if (!tempWritten) {
             tempWriter.println(timestamp);
@@ -287,6 +291,13 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     @Override
     public void didReceiveTag(double timestamp) {
         tagWriter.println(timestamp);
+
+        MainActivity.showTagDescriptionDialog(timestamp, this);
+    }
+
+    @SuppressLint("DefaultLocale")
+    public void addTagDescription(double time, String description) {
+        tagDescriptionWriter.println(String.format("%f,%s", time,description));
     }
 
     public String getUserId() {
@@ -323,11 +334,13 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         tagFile = new File(basePath + "tags.csv");
         ibiFile = new File(basePath + "IBI.csv");
         accFile = new File(basePath + "ACC.csv");
+        tagDescriptionFile = new File(basePath + "tags_description.csv");
 
         timeConnected = Utils.getCurrentTimestamp();
 
         try {
             tagWriter = new PrintWriter(new FileWriter(tagFile));
+            tagDescriptionWriter = new PrintWriter(new FileWriter(tagDescriptionFile));
             tempWriter = new PrintWriter(new FileWriter(tempFile));
             ibiWriter = new PrintWriter(new FileWriter(ibiFile));
             hrWriter = new PrintWriter(new FileWriter(hrFile));
@@ -340,9 +353,9 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         }
     }
 
-    private synchronized void saveSession() {
+    synchronized void saveSession(Context context) {
         final E4Session e4Session = new E4Session("id", timeConnected / 1000, Utils.getCurrentTimestamp() / 1000 - timeConnected / 1000, "E4", "label", "device", "0", "0");
-        final File sessionFile = new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename());
+        final File sessionFile = new File(context.getFilesDir(), e4Session.getZIPFilename());
 
         gsrWriter.close();
         tempWriter.close();
@@ -353,13 +366,12 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         ibiWriter.close();
 
         try {
-            new ZipFile(sessionFile).addFiles(Arrays.asList(edaFile, tempFile, bvpFile, accFile, hrFile, ibiFile, tagFile));
+            new ZipFile(sessionFile).addFiles(Arrays.asList(edaFile, tempFile, bvpFile, accFile, hrFile, ibiFile, tagFile, tagDescriptionFile));
             currentStatus.postValue("Session saved to local storage: " + sessionFile.getAbsolutePath());
         } catch (ZipException e) {
             currentStatus.postValue("Error creating ZIP file: " + sessionFile.getAbsolutePath());
             e.printStackTrace();
         }
     }
-
 
 }

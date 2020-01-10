@@ -37,11 +37,11 @@ public class E4Session implements Comparable<E4Session> {
     }
 
     public String getStartDate() {
-        return Utils.getDate(this.startTime);
+        return Utils.getDateAsString(this.startTime);
     }
 
     public String getDurationAsString() {
-        return Utils.getDuration(this.duration);
+        return Utils.getDurationAsString(this.duration);
     }
 
     public String getId() {

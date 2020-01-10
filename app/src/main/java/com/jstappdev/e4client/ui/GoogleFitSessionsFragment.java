@@ -49,8 +49,8 @@ public class GoogleFitSessionsFragment extends Fragment {
         for (DataPoint dp : dataSet.getDataPoints()) {
             Log.i(MainActivity.TAG, "Data point:");
             Log.i(MainActivity.TAG, "\tType: " + dp.getDataType().getName());
-            Log.i(MainActivity.TAG, "\tStart: " + Utils.getDate(dp.getStartTime(TimeUnit.MILLISECONDS)));
-            Log.i(MainActivity.TAG, "\tEnd: " + Utils.getDate(dp.getEndTime(TimeUnit.MILLISECONDS)));
+            Log.i(MainActivity.TAG, "\tStart: " + Utils.getDateAsString(dp.getStartTime(TimeUnit.MILLISECONDS)));
+            Log.i(MainActivity.TAG, "\tEnd: " + Utils.getDateAsString(dp.getEndTime(TimeUnit.MILLISECONDS)));
             for (Field field : dp.getDataType().getFields()) {
                 Log.i(MainActivity.TAG, "\tField: " + field.getName() + " Value: " + dp.getValue(field));
             }
