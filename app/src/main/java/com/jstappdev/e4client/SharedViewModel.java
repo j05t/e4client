@@ -119,8 +119,8 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         return isConnected;
     }
 
-    void setIsConnected(boolean isConnected) {
-        if (isConnected) connected();
+    synchronized void setIsConnected(boolean isConnected) {
+        if (isConnected & !this.isConnected.getValue()) connected();
 
         this.isConnected.postValue(isConnected);
     }
@@ -206,10 +206,9 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     @SuppressLint("DefaultLocale")
     @Override
     public void didReceiveAcceleration(int x, int y, int z, double timestamp) {
-        timestamp += MainActivity.timezoneOffset;
-
         if (!accWritten) {
             accWritten = true;
+            timestamp += MainActivity.timezoneOffset;
             accWriter.println(String.format(Locale.getDefault(), "%f, %f, %f", timestamp, timestamp, timestamp));
             accWriter.println("32.000000, 32.000000, 32.000000");
         }
@@ -221,11 +220,9 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     @Override
     public void didReceiveBVP(float bvp, double timestamp) {
-        timestamp += MainActivity.timezoneOffset;;
-
         if (!bvpWritten) {
             bvpWritten = true;
-            bvpWriter.println(timestamp);
+            bvpWriter.println(timestamp + MainActivity.timezoneOffset);
             bvpWriter.println("4.000000");
         }
         bvpWriter.println(bvp);
@@ -234,11 +231,9 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     @Override
     public void didReceiveGSR(float gsr, double timestamp) {
-        timestamp += MainActivity.timezoneOffset;;
-
         if (!gsrWritten) {
             gsrWritten = true;
-            gsrWriter.println(timestamp);
+            gsrWriter.println(timestamp + MainActivity.timezoneOffset);
             gsrWriter.println("4.000000");
         }
         gsrWriter.println(gsr);
@@ -248,7 +243,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     // HR is calculated from IBI
     @Override
     public void didReceiveIBI(float ibi, double timestamp) {
-        timestamp += MainActivity.timezoneOffset;;
+        timestamp += MainActivity.timezoneOffset;
 
         if (!ibiWritten) {
             ibiWritten = true;
@@ -258,31 +253,27 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
             hrWriter.println(timestamp);
             hrWriter.println("1.000000");
+
+            return;
         }
 
         // fixme: timeConnected?
-        double time = timestamp - firstIbiTimestamp;
-        ibiWriter.println(String.format(Locale.getDefault(), "%f,%f", time, ibi));
-
-        // fixme : should be calculated and written once per second
+        final double time = timestamp - firstIbiTimestamp;
         final float hr = 60.0f / ibi;
+
+        ibiWriter.println(String.format(Locale.getDefault(), "%f,%f", time, ibi));
         hrWriter.println(hr);
 
         currentIbi.postValue(ibi);
         currentHr.postValue(hr);
-
-        Log.d(MainActivity.TAG, "got IBI: " + ibi);
-
     }
 
     @Override
     public void didReceiveTemperature(float temp, double timestamp) {
-        timestamp += MainActivity.timezoneOffset;;
-
         if (!tempWritten) {
-            tempWriter.println(timestamp);
-            tempWriter.println("4.000000");
             tempWritten = true;
+            tempWriter.println(timestamp + MainActivity.timezoneOffset);
+            tempWriter.println("4.000000");
         }
         tempWriter.println(temp);
         currentTemp.postValue(temp);
@@ -290,14 +281,13 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     @Override
     public void didReceiveTag(double timestamp) {
-        tagWriter.println(timestamp);
-
-        MainActivity.showTagDescriptionDialog(timestamp, this);
+        tagWriter.println(timestamp + MainActivity.timezoneOffset);
+        MainActivity.showTagDescriptionDialog(timestamp + MainActivity.timezoneOffset, this);
     }
 
     @SuppressLint("DefaultLocale")
-    public void addTagDescription(double time, String description) {
-        tagDescriptionWriter.println(String.format("%f,%s", time,description));
+    void addTagDescription(double time, String description) {
+        tagDescriptionWriter.println(String.format("%f,%s", time, description));
     }
 
     public String getUserId() {
@@ -322,6 +312,8 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
 
     private synchronized void connected() {
+
+        Log.d(MainActivity.TAG, "connection successful, creating file writers");
 
         Utils.trimCache(MainActivity.context);
 
@@ -364,6 +356,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         accWriter.close();
         hrWriter.close();
         ibiWriter.close();
+        tagDescriptionWriter.close();
 
         try {
             new ZipFile(sessionFile).addFiles(Arrays.asList(edaFile, tempFile, bvpFile, accFile, hrFile, ibiFile, tagFile, tagDescriptionFile));

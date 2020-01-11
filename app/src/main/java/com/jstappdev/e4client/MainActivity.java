@@ -55,7 +55,6 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Tasks;
 import com.google.android.material.navigation.NavigationView;
-import com.jstappdev.e4client.util.Utils;
 import com.squareup.okhttp.OkHttpClient;
 
 import java.lang.ref.WeakReference;
@@ -63,6 +62,7 @@ import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -97,6 +97,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
     public final static double timezoneOffset = TimeZone.getDefault().getRawOffset();
 
+    // todo: detect files in cache dir and save session
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -278,16 +279,28 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     }
 
     @Override
+    protected void onStop() {
+        super.onStop();
+        if (isFinishing()) {
+            Log.d(TAG, "detected App finishing, cleaning up..");
+            disconnect();
+        }
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (deviceManager != null) {
-            deviceManager.cleanUp();
-        }
 
-        try {
-            Utils.trimCache(this);
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (deviceManager != null)
+            deviceManager.cleanUp();
+    }
+
+    public void disconnect() {
+        if (deviceManager != null) {
+            deviceManager.disconnect();
+        }
+        if (sharedViewModel.getIsConnected().getValue()) {
+            sharedViewModel.saveSession(getApplicationContext());
         }
     }
 
@@ -413,15 +426,6 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
     }
 
-    public void disconnect() {
-        if (deviceManager != null) {
-            deviceManager.disconnect();
-        }
-        if(sharedViewModel.getIsConnected().getValue()) {
-            sharedViewModel.saveSession(getApplicationContext());
-        }
-    }
-
     public void createGoogleFitClient() {
         requestPermissions(new String[]{Manifest.permission.ACTIVITY_RECOGNITION, Manifest.permission.ACCESS_FINE_LOCATION}, GOOGLE_FIT_PERMISSIONS_REQUEST_CODE);
 
@@ -477,9 +481,9 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
                         for (final Session session : sessions) {
                             if (!sharedViewModel.getUploadedSessionIDs().contains(session.getIdentifier())) {
                                 sharedViewModel.getUploadedSessionIDs().add(session.getIdentifier());
-                                Log.d(MainActivity.TAG, "already uploaded to Google Fit: Session " + session.getIdentifier());
                             }
                         }
+                        Log.d(MainActivity.TAG, "Sessions already uploaded to Google Fit: " + Arrays.toString(sharedViewModel.getUploadedSessionIDs().toArray()));
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
@@ -510,7 +514,6 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
             dataTypes = new ArrayList<>();
 
-            // todo: tags
             // the only predefined data type we can use is com.google.heart_rate.bpm
             for (final String s : customDataTypes) {
                 try {
@@ -563,7 +566,6 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
             googleFitCustomDatatypesCreated = true;
         }
     }
-
 
 
     public static void showTagDescriptionDialog(final double time, final SharedViewModel sharedViewModel) {

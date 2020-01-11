@@ -41,7 +41,6 @@ import com.scichart.charting.visuals.renderableSeries.IRenderableSeries;
 import com.scichart.charting.visuals.synchronization.SciChartVerticalGroup;
 import com.scichart.data.model.DateRange;
 import com.scichart.data.model.DoubleRange;
-import com.scichart.data.model.FifoBufferFactory;
 import com.scichart.drawing.utility.ColorUtil;
 import com.scichart.extensions.builders.SciChartBuilder;
 
@@ -266,59 +265,52 @@ public class ChartsFragment extends Fragment {
             edaChart.animateZoomExtents(500);
 
         } else { // display live sensor data
-            edaLineData.setFifoCapacity(1024);
-            hrLineData.setFifoCapacity(1024);
-            tempLineData.setFifoCapacity(1024);
+            edaLineData.setFifoCapacity(512);
+            hrLineData.setFifoCapacity(2048);
+            tempLineData.setFifoCapacity(512);
 
             edaChart.getXAxes().getDefault().setAutoRange(AutoRange.Always);
             edaChart.getXAxes().getDefault().setVisibility(View.INVISIBLE);
 
+            // we are showing blood volume pulse while streaming instead of heart rate
+            hrChart.getYAxes().getDefault().setAxisTitle("BVP");
+
             // Create a watermark using a TextAnnotation
-            final TextAnnotation textAnnotation = sciChartBuilder.newTextAnnotation()
+            final TextAnnotation annotation = sciChartBuilder.newTextAnnotation()
                     .withX1(0.5)
                     .withY1(0.5)
                     .withFontStyle(Typeface.DEFAULT_BOLD, 42, 0x22FFFFFF)
                     .withCoordinateMode(AnnotationCoordinateMode.Relative)
                     .withHorizontalAnchorPoint(HorizontalAnchorPoint.Center)
                     .withVerticalAnchorPoint(VerticalAnchorPoint.Center)
-                    .withText("Streaming")
+                    .withText("streaming")
                     .withTextGravity(Gravity.CENTER)
                     .build();
-            // Add the annotation to the AnnotationsCollection of a surface
-            Collections.addAll(edaChart.getAnnotations(), textAnnotation);
-
-
             // axis markers showing current values for heart rate and temperature
-            Collections.addAll(hrChart.getAnnotations(), hrAxisMarker, hrvAxisMarker);
+            Collections.addAll(edaChart.getAnnotations(), annotation);
+
             Collections.addAll(tempChart.getAnnotations(), tempAxisMarker);
+
 
             sharedViewModel.getTag().observe(owner, new Observer<Double>() {
                 @Override
                 public void onChanged(Double tag) {
-                    VerticalLineAnnotation verticalLine = sciChartBuilder.newVerticalLineAnnotation()
+                    Collections.addAll(edaChart.getAnnotations(), sciChartBuilder.newVerticalLineAnnotation()
                             .withPosition((double) Utils.getCurrentTimestamp(), 0.5d)
                             .withStroke(2, ColorUtil.Orange)
                             .withVerticalGravity(Gravity.FILL_VERTICAL)
                             .withIsEditable(false)
-                            .build();
-
-                    Collections.addAll(edaChart.getAnnotations(), verticalLine);
+                            .build());
                 }
             });
 
-            sharedViewModel.getCurrentIbi().observe(owner, new Observer<Float>() {
+            sharedViewModel.getCurrentBvp().observe(owner, new Observer<Float>() {
+                int count = 0;
+
                 @Override
-                public void onChanged(Float lastIbi) {
-                    final float currentHr = 60.0f / lastIbi;
-
-                    // heart rate may theoretically reach 600, but we assume 300 max
-                    // https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3273956/
-                    if (averageHr != 0.0f && currentHr < 300f) {
-                        averageHr = 0.8f * averageHr + 0.2f * currentHr;
-                    }
-
-                    hrLineData.append((double) Utils.getCurrentTimestamp(), currentHr);
-                    hrAxisMarker.setY1(averageHr);
+                public void onChanged(Float lastBvp) {
+                    if (count++ % 2 == 0)
+                        hrLineData.append((double) Utils.getCurrentTimestamp(), lastBvp);
                 }
             });
 
