@@ -80,13 +80,12 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     public static final String PREF_UNAME = "uname";
     public static final String PREF_PASSWORD = "pass";
     public static final String PREFS_DATATYPES_CREATED = "types_created";
-
+    public final static double timezoneOffset = TimeZone.getDefault().getRawOffset();
     private static final int REQUEST_ENABLE_BT = 1;
     private static final int REQUEST_PERMISSION_ACCESS_COARSE_LOCATION = 1;
     private static final String EMPATICA_API_KEY = BuildConfig.EMPATICA_API_KEY;
     private static final String SCICHART_LICENSE = BuildConfig.SCICHART_LICENSE;
     private static final String[] customDataTypes = new String[]{"eda", "temp", "bvp", "ibi", "acc", "hrv"};
-
     public static MainActivity context;
     public static ArrayList<DataType> dataTypes;
     public static OkHttpClient okHttpClient;
@@ -97,7 +96,35 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     private SharedViewModel sharedViewModel;
     private NavController navController;
 
-    public final static double timezoneOffset = TimeZone.getDefault().getRawOffset();
+    public static void showTagDescriptionDialog(final double time, final SharedViewModel sharedViewModel) {
+        MainActivity.context.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                final android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(MainActivity.context);
+                builder.setTitle("Describe Event:");
+
+                final EditText input = new EditText(MainActivity.context);
+                input.setInputType(InputType.TYPE_CLASS_TEXT);
+                builder.setView(input);
+
+                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        final String description = input.getText().toString();
+                        sharedViewModel.addTagDescription(time, description);
+                    }
+                });
+                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+
+                builder.show();
+            }
+        });
+    }
 
     // todo: detect files in cache dir and save session
     @Override
@@ -397,7 +424,6 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         }
     }
 
-
     void connectionEstablished() {
         sharedViewModel.setIsConnected(true);
     }
@@ -410,7 +436,6 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
             sharedViewModel.saveSession();
         }
     }
-
 
     @Override
     public void didEstablishConnection() {
@@ -568,36 +593,6 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
             // todo: save in sharedpreferences
             googleFitCustomDatatypesCreated = true;
         }
-    }
-
-    public static void showTagDescriptionDialog(final double time, final SharedViewModel sharedViewModel) {
-        MainActivity.context.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                final android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(MainActivity.context);
-                builder.setTitle("Describe Event:");
-
-                final EditText input = new EditText(MainActivity.context);
-                input.setInputType(InputType.TYPE_CLASS_TEXT);
-                builder.setView(input);
-
-                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        final String description = input.getText().toString();
-                        sharedViewModel.addTagDescription(time, description);
-                    }
-                });
-                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                    }
-                });
-
-                builder.show();
-            }
-        });
     }
 
 }

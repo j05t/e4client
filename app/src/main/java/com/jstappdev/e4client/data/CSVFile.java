@@ -22,7 +22,7 @@ public class CSVFile {
 
             String line = reader.readLine();
 
-            if(null == line) return;
+            if (null == line) return;
 
             // initial time of the session expressed as unix timestamp in UTC
             // and sample rate expressed in Hz.

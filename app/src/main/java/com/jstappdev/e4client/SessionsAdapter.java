@@ -83,7 +83,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
             final E4Session e4Session = sharedViewModel.getE4Sessions().get(position);
 
             new AlertDialog.Builder(v.getContext())
-                    .setTitle("Delete Session " + e4Session.getId()).setIcon(android.R.drawable.ic_dialog_alert)
+                    .setTitle("Edit Session " + e4Session.getId()).setIcon(android.R.drawable.ic_dialog_alert)
                     .setMessage(String.format("Start: %s\nDuration: %s", e4Session.getStartDate(), e4Session.getDurationAsString()))
                     .setCancelable(true)
                     .setPositiveButton("Delete", new DialogInterface.OnClickListener() {

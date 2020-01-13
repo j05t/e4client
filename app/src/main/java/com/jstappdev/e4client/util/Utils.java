@@ -1,13 +1,7 @@
 package com.jstappdev.e4client.util;
 
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.os.Environment;
-import android.text.InputType;
 import android.text.format.DateFormat;
-import android.util.Log;
-import android.widget.EditText;
 
 import com.jstappdev.e4client.MainActivity;
 import com.jstappdev.e4client.data.E4Session;

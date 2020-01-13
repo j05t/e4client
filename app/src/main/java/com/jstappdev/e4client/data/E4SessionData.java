@@ -22,23 +22,12 @@ public class E4SessionData {
     private ArrayList<Double> tags;
 
     private ArrayList<Double> accTimestamps;
-
-    public ArrayList<Double> getAccMagTimestamps() {
-        return accMagTimestamps;
-    }
-
-    public void setAccMagTimestamps(ArrayList<Double> accMagTimestamps) {
-        this.accMagTimestamps = accMagTimestamps;
-    }
-
     private ArrayList<Double> accMagTimestamps;
     private ArrayList<Double> bvpTimestamps;
     private ArrayList<Double> gsrTimestamps;
     private ArrayList<Double> ibiTimestamps;
     private ArrayList<Double> tempTimestamps;
     private ArrayList<Double> hrTimestamps;
-
-
     private E4SessionData() {
         acc = new ArrayList<>();
         bvp = new ArrayList<>();
@@ -67,6 +56,14 @@ public class E4SessionData {
 
     public static void clear() {
         INSTANCE = new E4SessionData();
+    }
+
+    public ArrayList<Double> getAccMagTimestamps() {
+        return accMagTimestamps;
+    }
+
+    public void setAccMagTimestamps(ArrayList<Double> accMagTimestamps) {
+        this.accMagTimestamps = accMagTimestamps;
     }
 
     public String getDescription() {
