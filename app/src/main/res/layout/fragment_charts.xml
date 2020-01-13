@@ -12,25 +12,24 @@
         android:layout_height="0dp"
         android:layout_weight="1" />
 
-    <LinearLayout
+    <com.scichart.charting.visuals.SciChartSurface
+        android:id="@+id/hrChart"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:orientation="vertical">
+        android:minHeight="100dp" />
 
-        <com.scichart.charting.visuals.SciChartSurface
-            android:id="@+id/hrChart"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:minHeight="100dp" />
+    <com.scichart.charting.visuals.SciChartSurface
+        android:id="@+id/tempChart"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:minHeight="100dp" />
 
-        <com.scichart.charting.visuals.SciChartSurface
-            android:id="@+id/tempChart"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:minHeight="100dp" />
-
-    </LinearLayout>
+    <com.scichart.charting.visuals.SciChartSurface
+        android:id="@+id/accChart"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:minHeight="100dp" />
 </LinearLayout>

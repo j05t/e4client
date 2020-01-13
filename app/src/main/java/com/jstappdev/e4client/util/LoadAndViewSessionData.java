@@ -53,9 +53,40 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean
 
                 basePath += File.separator;
 
-                /*
+
                 final File accFile = new File(basePath + "ACC.csv");
-                 */
+                if (accFile.exists())
+                    try (BufferedReader reader = new BufferedReader(new FileReader(accFile))) {
+                        String line = reader.readLine();
+
+                        final double initialTime = Double.parseDouble(line.split(",")[0]);
+                        final double samplingRate = 1d / Double.parseDouble(reader.readLine().split(",")[0]);
+
+                        int lineNumber = 0;
+                        float sum = 0;
+
+                        while ((line = reader.readLine()) != null) {
+
+                            lineNumber++;
+
+                            String[] split = line.split(",");
+                            final int x = Integer.parseInt(split[0]);
+                            final int y = Integer.parseInt(split[1]);
+                            final int z = Integer.parseInt(split[2]);
+                            final float mag = Utils.magnitude(x, y, z);
+
+                            // we only load the average for every 55 data points
+                            sum += mag;
+                            if (lineNumber % 55 == 0) {
+                                E4SessionData.getInstance().getAccMagTimestamps().add(initialTime + (samplingRate * lineNumber));
+                                E4SessionData.getInstance().getAccMag().add(sum / 55);
+                                sum = 0;
+                            }
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        return false;
+                    }
 
                 final File tagFile = new File(basePath + "tags.csv");
                 if (tagFile.exists())

@@ -18,9 +18,20 @@ public class E4SessionData {
     private ArrayList<Float> ibi;
     private ArrayList<Float> temp;
     private ArrayList<Float> hr;
+    private ArrayList<Float> accMag;
     private ArrayList<Double> tags;
 
     private ArrayList<Double> accTimestamps;
+
+    public ArrayList<Double> getAccMagTimestamps() {
+        return accMagTimestamps;
+    }
+
+    public void setAccMagTimestamps(ArrayList<Double> accMagTimestamps) {
+        this.accMagTimestamps = accMagTimestamps;
+    }
+
+    private ArrayList<Double> accMagTimestamps;
     private ArrayList<Double> bvpTimestamps;
     private ArrayList<Double> gsrTimestamps;
     private ArrayList<Double> ibiTimestamps;
@@ -35,9 +46,11 @@ public class E4SessionData {
         ibi = new ArrayList<>();
         temp = new ArrayList<>();
         hr = new ArrayList<>();
+        accMag = new ArrayList<>();
         tags = new ArrayList<>();
 
         accTimestamps = new ArrayList<>();
+        accMagTimestamps = new ArrayList<>();
         bvpTimestamps = new ArrayList<>();
         gsrTimestamps = new ArrayList<>();
         ibiTimestamps = new ArrayList<>();
@@ -208,4 +221,7 @@ public class E4SessionData {
     }
 
 
+    public List<Float> getAccMag() {
+        return accMag;
+    }
 }

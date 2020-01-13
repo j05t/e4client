@@ -1,17 +1,11 @@
 package com.jstappdev.e4client.ui;
 
-import android.content.Context;
-import android.content.pm.ActivityInfo;
 import android.graphics.Typeface;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
-import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -20,7 +14,6 @@ import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
 
-import com.jstappdev.e4client.MainActivity;
 import com.jstappdev.e4client.R;
 import com.jstappdev.e4client.SharedViewModel;
 import com.jstappdev.e4client.data.E4SessionData;
@@ -58,6 +51,7 @@ public class ChartsFragment extends Fragment {
     private static final String hrAxisTitle = "HR";
     private static final String edaAxisTitle = "EDA";
     private static final String tempAxisTitle = "Temp";
+    private static final String accAxisTitle = "Acc";
 
     private static final int AXIS_MARKER_COLOR = 0xFFFFA500;
     private static final int HRV_MARKER_COLOR = 0x00FFA500;
@@ -65,14 +59,14 @@ public class ChartsFragment extends Fragment {
     private final SciChartVerticalGroup verticalGroup = new SciChartVerticalGroup();
     private final DateRange sharedXRange = new DateRange();
 
-    // @BindView(R.id.bvpChart)
-    //SciChartSurface bvpChart;
     @BindView(R.id.edaChart)
     SciChartSurface edaChart;
     @BindView(R.id.hrChart)
     SciChartSurface hrChart;
     @BindView(R.id.tempChart)
     SciChartSurface tempChart;
+    @BindView(R.id.accChart)
+    SciChartSurface accChart;
 
     private SharedViewModel sharedViewModel;
     private SciChartBuilder sciChartBuilder;
@@ -82,6 +76,7 @@ public class ChartsFragment extends Fragment {
     private XyDataSeries<Double, Float> hrLineData;
     private XyDataSeries<Double, Float> averagedHrLineData;
     private XyDataSeries<Double, Float> tempLineData;
+    private XyDataSeries<Double, Float> accLineData;
 
     private AxisMarkerAnnotation hrAxisMarker;
     private AxisMarkerAnnotation hrvAxisMarker;
@@ -92,6 +87,7 @@ public class ChartsFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
 
+        /*
         requireActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
 
         Display display = ((WindowManager) MainActivity.context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
@@ -99,7 +95,7 @@ public class ChartsFragment extends Fragment {
         isVertical = rotation == Surface.ROTATION_0 || rotation == Surface.ROTATION_180;
 
         Log.d(MainActivity.TAG, "orientation: " + requireActivity().getRequestedOrientation());
-
+*/
         sharedViewModel = ViewModelProviders.of(Objects.requireNonNull(requireActivity())).get(SharedViewModel.class);
 
         final View root = inflater.inflate(R.layout.fragment_charts, container, false);
@@ -112,6 +108,7 @@ public class ChartsFragment extends Fragment {
         edaLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
         hrLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
         tempLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
+        accLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
         cleanedEdaLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
         averagedHrLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
 
@@ -137,13 +134,17 @@ public class ChartsFragment extends Fragment {
         SciChartBuilder.dispose();
     }
 
-    private void setupChart(SciChartSurface chartSurface, final String yAxisTitle, XyDataSeries<Double, Float> lineData, boolean isFirstPane) {
+    private void setupChart(final SciChartSurface chartSurface, final String yAxisTitle, final XyDataSeries<Double, Float> lineData, boolean showXAxis) {
+
+        //noinspection ConstantConditions
+        if (sharedViewModel.getIsConnected().getValue())
+            showXAxis = false;
 
         final IAxis xAxis = sciChartBuilder.newDateAxis()
                 .withVisibleRange(sharedXRange)
                 .withDrawMinorGridLines(false)
                 .withGrowBy(0, 0.1)
-                .withVisibility(isFirstPane ? View.VISIBLE : View.GONE)
+                .withVisibility(showXAxis ? View.VISIBLE : View.GONE)
                 .build();
         xAxis.setLabelProvider(new DateLabelProviderEx());
 
@@ -168,33 +169,40 @@ public class ChartsFragment extends Fragment {
                 .build();
 
         chartSurface.getRenderableSeries().add(lineSeries);
+
+        //noinspection ConstantConditions
+        if (!sharedViewModel.getIsConnected().getValue())
+            Collections.addAll(chartSurface.getChartModifiers(), sciChartBuilder.newModifierGroup()
+                    .withXAxisDragModifier().build()
+                    .withZoomPanModifier().withReceiveHandledEvents(true).withXyDirection(Direction2D.XDirection).build()
+                    .withZoomExtentsModifier().build()
+                    .build());
     }
 
     private void setupCharts() {
         final LifecycleOwner owner = getViewLifecycleOwner();
 
-        setupChart(edaChart, edaAxisTitle, edaLineData, true);
+        setupChart(edaChart, edaAxisTitle, edaLineData, false);
         setupChart(hrChart, hrAxisTitle, hrLineData, false);
         setupChart(tempChart, tempAxisTitle, tempLineData, false);
+        setupChart(accChart, accAxisTitle, accLineData, true);
 
         verticalGroup.addSurfaceToGroup(edaChart);
         verticalGroup.addSurfaceToGroup(hrChart);
         verticalGroup.addSurfaceToGroup(tempChart);
+        verticalGroup.addSurfaceToGroup(accChart);
 
         //noinspection ConstantConditions
         if (!sharedViewModel.getIsConnected().getValue()) {
 
             sharedXRange.setMin(new Date(E4SessionData.getInstance().getInitialTime()));
 
-            Collections.addAll(edaChart.getChartModifiers(), sciChartBuilder.newModifierGroup()
-                    .withXAxisDragModifier().build()
-                    .withZoomPanModifier().withReceiveHandledEvents(true).withXyDirection(Direction2D.XDirection).build()
-                    .withZoomExtentsModifier().build()
-                    .build());
-
             edaLineData.append(E4SessionData.getInstance().getGsrTimestamps(), E4SessionData.getInstance().getGsr());
             hrLineData.append(E4SessionData.getInstance().getHrTimestamps(), E4SessionData.getInstance().getHr());
             tempLineData.append(Utils.condenseSkip(E4SessionData.getInstance().getTempTimestamps(), 55), Utils.condenseAverage(E4SessionData.getInstance().getTemp(), 55));
+
+            // averages already calculated in AsyncTask
+            accLineData.append(E4SessionData.getInstance().getAccMagTimestamps(), E4SessionData.getInstance().getAccMag());
 
             cleanedEdaLineData.append(E4SessionData.getInstance().getGsrTimestamps(), Utils.averageFilter(Utils.medianFilter(E4SessionData.getInstance().getGsr(), 23), 55));
             final IRenderableSeries edaLineSeries = sciChartBuilder.newLineSeries()
@@ -253,7 +261,7 @@ public class ChartsFragment extends Fragment {
             Collections.addAll(hrChart.getAnnotations(),
                     sciChartBuilder.newTextAnnotation()
                             .withX1(0.005)
-                            .withY1(isVertical ? 0.48 : 0.8)
+                            .withY1(isVertical ? 0.13 : 0.47)
                             .withCoordinateMode(AnnotationCoordinateMode.Relative)
                             .withHorizontalAnchorPoint(HorizontalAnchorPoint.Left)
                             .withVerticalAnchorPoint(VerticalAnchorPoint.Bottom)
@@ -265,12 +273,13 @@ public class ChartsFragment extends Fragment {
             edaChart.animateZoomExtents(500);
 
         } else { // display live sensor data
-            edaLineData.setFifoCapacity(512);
-            hrLineData.setFifoCapacity(2048);
-            tempLineData.setFifoCapacity(512);
+            edaLineData.setFifoCapacity(256);
+            tempLineData.setFifoCapacity(256);
+            hrLineData.setFifoCapacity(1024);
+            accLineData.setFifoCapacity(1024);
 
             edaChart.getXAxes().getDefault().setAutoRange(AutoRange.Always);
-            edaChart.getXAxes().getDefault().setVisibility(View.INVISIBLE);
+            edaChart.getXAxes().getDefault().setVisibility(View.GONE);
 
             // we are showing blood volume pulse while streaming instead of heart rate
             hrChart.getYAxes().getDefault().setAxisTitle("BVP");
@@ -296,7 +305,7 @@ public class ChartsFragment extends Fragment {
                 @Override
                 public void onChanged(Double tag) {
                     Collections.addAll(edaChart.getAnnotations(), sciChartBuilder.newVerticalLineAnnotation()
-                            .withPosition((double) Utils.getCurrentTimestamp(), 0.5d)
+                            .withPosition(tag, 0.5d)
                             .withStroke(2, ColorUtil.Orange)
                             .withVerticalGravity(Gravity.FILL_VERTICAL)
                             .withIsEditable(false)
@@ -326,6 +335,13 @@ public class ChartsFragment extends Fragment {
                 public void onChanged(Float temp) {
                     tempLineData.append((double) Utils.getCurrentTimestamp(), temp);
                     tempAxisMarker.setY1(temp);
+                }
+            });
+
+            sharedViewModel.getCurrentAccMag().observe(owner, new Observer<Float>() {
+                @Override
+                public void onChanged(Float mag) {
+                    accLineData.append((double) Utils.getCurrentTimestamp(), mag);
                 }
             });
 

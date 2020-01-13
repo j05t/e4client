@@ -81,7 +81,6 @@ public class ConnectionFragment extends Fragment {
         bvpLabel = view.findViewById(R.id.bvp);
         edaLabel = view.findViewById(R.id.eda);
         ibiLabel = view.findViewById(R.id.ibi);
-        hrvLabel = view.findViewById(R.id.hrv);
         hrLabel = view.findViewById(R.id.hr);
         temperatureLabel = view.findViewById(R.id.temperature);
         batteryLabel = view.findViewById(R.id.battery);
@@ -196,15 +195,8 @@ public class ConnectionFragment extends Fragment {
             @Override
             public void onChanged(Float ibi) {
                 ibiLabel.setText(String.format(Locale.getDefault(), "%.2f s", ibi));
-
-                // HR/HRV is calculated from IBI
+                // heart rate is calculated from IBI
                 hrLabel.setText(String.format(Locale.getDefault(), "%.0f BPM", sharedViewModel.getCurrentHr().getValue()));
-
-                // fixme: calc in viewmodel
-                if (count++ % 100 == 0) {
-                    final float hrv = Utils.calcHrvSDRR(E4SessionData.getInstance().getIbi());
-                    hrvLabel.setText(String.format(Locale.getDefault(), "%.0f ms", hrv));
-                }
             }
         });
 

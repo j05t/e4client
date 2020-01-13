@@ -1,7 +1,6 @@
 package com.jstappdev.e4client;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.util.Log;
 
 import androidx.lifecycle.LiveData;
@@ -41,6 +40,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     private MutableLiveData<Float> currentGsr;
     private MutableLiveData<Float> currentIbi;
     private MutableLiveData<Float> currentTemp;
+    private MutableLiveData<Float> currentAccMag;
     private MutableLiveData<String> currentStatus;
 
     private List<String> uploadedSessionIDs;
@@ -92,6 +92,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         currentGsr = new MutableLiveData<Float>();
         currentIbi = new MutableLiveData<Float>();
         currentTemp = new MutableLiveData<Float>();
+        currentAccMag = new MutableLiveData<Float>();
         tag = new MutableLiveData<Double>();
     }
 
@@ -165,6 +166,10 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         return tag;
     }
 
+    public LiveData<Float> getCurrentAccMag() {
+        return currentAccMag;
+    }
+
     public LiveData<Boolean> getOnWrist() {
         return onWrist;
     }
@@ -213,9 +218,11 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
             accWriter.println("32.000000, 32.000000, 32.000000");
         }
         accWriter.println(String.format("%d,%d,%d", x, y, z));
+
         currentAccX.postValue(x);
         currentAccY.postValue(y);
         currentAccZ.postValue(z);
+        currentAccMag.postValue(Utils.magnitude(x, y, z));
     }
 
     @Override
@@ -313,11 +320,11 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     private synchronized void connected() {
 
-        Log.d(MainActivity.TAG, "connection successful, creating file writers");
+        final String basePath = MainActivity.context.getFilesDir() + "/";
 
-        Utils.trimCache(MainActivity.context);
+        Log.d(MainActivity.TAG, "connection successful, creating file writers in " + basePath);
 
-        final String basePath = MainActivity.context.getCacheDir().getPath() + "/";
+        timeConnected = Utils.getCurrentTimestamp();
 
         edaFile = new File(basePath + "EDA.csv");
         tempFile = new File(basePath + "TEMP.csv");
@@ -327,8 +334,6 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         ibiFile = new File(basePath + "IBI.csv");
         accFile = new File(basePath + "ACC.csv");
         tagDescriptionFile = new File(basePath + "tags_description.csv");
-
-        timeConnected = Utils.getCurrentTimestamp();
 
         try {
             tagWriter = new PrintWriter(new FileWriter(tagFile));
@@ -345,9 +350,9 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         }
     }
 
-    synchronized void saveSession(Context context) {
+    synchronized void saveSession() {
         final E4Session e4Session = new E4Session("id", timeConnected / 1000, Utils.getCurrentTimestamp() / 1000 - timeConnected / 1000, "E4", "label", "device", "0", "0");
-        final File sessionFile = new File(context.getFilesDir(), e4Session.getZIPFilename());
+        final File sessionFile = new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename());
 
         gsrWriter.close();
         tempWriter.close();
@@ -362,9 +367,10 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
             new ZipFile(sessionFile).addFiles(Arrays.asList(edaFile, tempFile, bvpFile, accFile, hrFile, ibiFile, tagFile, tagDescriptionFile));
             currentStatus.postValue("Session saved to local storage: " + sessionFile.getAbsolutePath());
         } catch (ZipException e) {
-            currentStatus.postValue("Error creating ZIP file: " + sessionFile.getAbsolutePath());
+            currentStatus.postValue("Error creating ZIP file: " + e.getMessage());
             e.printStackTrace();
         }
     }
+
 
 }

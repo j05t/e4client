@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -17,16 +16,15 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/button_download_all" />
 
-
     <Button
         android:id="@+id/button_sync_empatica"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
         android:drawableLeft="@drawable/ic_cloud_sync"
-        android:text="Sync with Empatica"
+        android:text="@string/sync_with_empatica"
         android:textSize="10sp"
         app:layout_constraintEnd_toStartOf="@+id/button_download_all"
         app:layout_constraintStart_toStartOf="parent"
@@ -37,10 +35,10 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
         android:drawableLeft="@drawable/ic_cloud_download"
-        android:text="Download All"
+        android:text="@string/download_all"
         android:textSize="10sp"
         app:layout_constraintEnd_toStartOf="@+id/button_sync_google"
         app:layout_constraintStart_toEndOf="@+id/button_sync_empatica"
@@ -51,14 +49,13 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
         android:drawableLeft="@drawable/ic_cloud_upload"
-        android:text="Upload to Google Fit"
+        android:text="@string/upload_to_google_fit"
         android:textSize="10sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/button_download_all"
         app:layout_constraintTop_toTopOf="parent" />
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>

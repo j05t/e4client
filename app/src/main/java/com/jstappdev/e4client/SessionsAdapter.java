@@ -29,7 +29,9 @@ import java.util.ArrayList;
 
 public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.Adapter<SessionsAdapter.MyViewHolder> {
 
+    private SessionsAdapter instance;
     private SharedViewModel sharedViewModel;
+
     private final View.OnClickListener onClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
@@ -72,22 +74,24 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                     }).create().show();
         }
     };
-    private SessionsAdapter instance;
     private final View.OnLongClickListener onLongClickListener = new View.OnLongClickListener() {
         @Override
         public boolean onLongClick(View v) {
             final int position = (int) v.getTag();
 
-            if (position >= sharedViewModel.getE4Sessions().size()) return false;
 
             final E4Session e4Session = sharedViewModel.getE4Sessions().get(position);
 
             new AlertDialog.Builder(v.getContext())
-                    .setTitle("Delete Session " + e4Session.getId()).setIcon(android.R.drawable.ic_delete)
+                    .setTitle("Delete Session " + e4Session.getId()).setIcon(android.R.drawable.ic_dialog_alert)
                     .setMessage(String.format("Start: %s\nDuration: %s", e4Session.getStartDate(), e4Session.getDurationAsString()))
                     .setCancelable(true)
                     .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
+
+                            sharedViewModel.getE4Sessions().remove(position);
+                            instance.notifyDataSetChanged();
+                            instance.notifyItemRemoved(position);
 
                             if (e4Session.isDownloaded() || e4Session.isUploaded())
                                 new DeleteSession(instance, sharedViewModel, position).execute(e4Session);
@@ -236,9 +240,6 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                         publishProgress("Failed to delete local data.");
                     }
                 }
-
-                viewModel.getE4Sessions().remove(position);
-                adapter.notifyItemRemoved(position);
 
                 if (MainActivity.okHttpClient.newCall(request).execute().isSuccessful()) {
                     publishProgress("Deleted remote data.");

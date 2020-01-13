@@ -3,8 +3,10 @@ package com.jstappdev.e4client.util;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.os.Environment;
 import android.text.InputType;
 import android.text.format.DateFormat;
+import android.util.Log;
 import android.widget.EditText;
 
 import com.jstappdev.e4client.MainActivity;
@@ -219,6 +221,7 @@ public class Utils {
 
     public static long getCurrentTimestamp() {
         final Calendar cal = Calendar.getInstance();
+        cal.setTimeZone(TimeZone.getTimeZone("UTC"));
         final Date now = new Date();
         cal.setTime(now);
 
@@ -229,7 +232,7 @@ public class Utils {
         return new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename()).exists();
     }
 
-    public static synchronized void trimCache(Context context) {
+    static synchronized void trimCache(Context context) {
         try {
             File dir = context.getCacheDir();
             if (dir != null && dir.isDirectory()) {

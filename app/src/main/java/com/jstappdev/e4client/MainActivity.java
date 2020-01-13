@@ -80,11 +80,13 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     public static final String PREF_UNAME = "uname";
     public static final String PREF_PASSWORD = "pass";
     public static final String PREFS_DATATYPES_CREATED = "types_created";
+
     private static final int REQUEST_ENABLE_BT = 1;
     private static final int REQUEST_PERMISSION_ACCESS_COARSE_LOCATION = 1;
     private static final String EMPATICA_API_KEY = BuildConfig.EMPATICA_API_KEY;
     private static final String SCICHART_LICENSE = BuildConfig.SCICHART_LICENSE;
     private static final String[] customDataTypes = new String[]{"eda", "temp", "bvp", "ibi", "acc", "hrv"};
+
     public static MainActivity context;
     public static ArrayList<DataType> dataTypes;
     public static OkHttpClient okHttpClient;
@@ -300,7 +302,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
             deviceManager.disconnect();
         }
         if (sharedViewModel.getIsConnected().getValue()) {
-            sharedViewModel.saveSession(getApplicationContext());
+            sharedViewModel.saveSession();
         }
     }
 
@@ -405,6 +407,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         //noinspection ConstantConditions
         if (sharedViewModel.getIsConnected().getValue()) {
             sharedViewModel.setIsConnected(false);
+            sharedViewModel.saveSession();
         }
     }
 
@@ -566,7 +569,6 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
             googleFitCustomDatatypesCreated = true;
         }
     }
-
 
     public static void showTagDescriptionDialog(final double time, final SharedViewModel sharedViewModel) {
         MainActivity.context.runOnUiThread(new Runnable() {
