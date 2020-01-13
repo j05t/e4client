@@ -28,6 +28,7 @@ public class E4SessionData {
     private ArrayList<Double> ibiTimestamps;
     private ArrayList<Double> tempTimestamps;
     private ArrayList<Double> hrTimestamps;
+
     private E4SessionData() {
         acc = new ArrayList<>();
         bvp = new ArrayList<>();

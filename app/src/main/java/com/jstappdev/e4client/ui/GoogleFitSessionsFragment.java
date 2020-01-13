@@ -98,24 +98,24 @@ public class GoogleFitSessionsFragment extends Fragment {
         }
 
         if (!GoogleSignIn.hasPermissions(
-                GoogleSignIn.getLastSignedInAccount(MainActivity.context),
+                GoogleSignIn.getLastSignedInAccount(requireContext()),
                 fitnessOptions)
         ) {
             Log.e(MainActivity.TAG, "no permission");
             GoogleSignIn.requestPermissions(
-                    MainActivity.context, // your activity
+                    ((MainActivity) requireContext()), // your activity
                     MainActivity.GOOGLE_FIT_PERMISSIONS_REQUEST_CODE,
-                    GoogleSignIn.getLastSignedInAccount(MainActivity.context),
+                    GoogleSignIn.getLastSignedInAccount(requireContext()),
                     fitnessOptions);
         } else {
             Log.e(MainActivity.TAG, "has permission");
         }
 
         Log.d(MainActivity.TAG, "signed in as " +
-                GoogleSignIn.getLastSignedInAccount(MainActivity.context).getDisplayName());
+                GoogleSignIn.getLastSignedInAccount(requireContext()).getDisplayName());
 
-        Fitness.getConfigClient(MainActivity.context,
-                GoogleSignIn.getLastSignedInAccount(MainActivity.context))
+        Fitness.getConfigClient(((MainActivity) requireContext()),
+                GoogleSignIn.getLastSignedInAccount(requireContext()))
                 .readDataType("com.jstappdev.e4client.eda").addOnCompleteListener(new OnCompleteListener<DataType>() {
             @Override
             public void onComplete(@NonNull Task<DataType> task) {
@@ -126,7 +126,7 @@ public class GoogleFitSessionsFragment extends Fragment {
         DataSource dataSource = new DataSource.Builder()
                 .setDataType(MainActivity.dataTypes.get(0))
                 .setType(DataSource.TYPE_RAW)
-                .setAppPackageName(MainActivity.context.getPackageName())
+                .setAppPackageName(requireContext().getPackageName())
                 .build();
 
         DataReadRequest readRequest = new DataReadRequest.Builder()
@@ -136,8 +136,8 @@ public class GoogleFitSessionsFragment extends Fragment {
 
         Log.d(MainActivity.TAG, "read request: " + readRequest.toString());
 
-        Task<DataReadResponse> result = Fitness.getHistoryClient(MainActivity.context,
-                Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(MainActivity.context)))
+        Task<DataReadResponse> result = Fitness.getHistoryClient(((MainActivity) requireContext()),
+                Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(requireContext())))
                 .readData(readRequest);
 
 
@@ -171,7 +171,7 @@ public class GoogleFitSessionsFragment extends Fragment {
         // Invoke the Sessions API to fetch the session with the query and wait for the result
         // of the read request. Note: Fitness.SessionsApi.readSession() requires the
         // ACCESS_FINE_LOCATION permission.
-        Fitness.getSessionsClient(MainActivity.context, Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(MainActivity.context)))
+        Fitness.getSessionsClient(((MainActivity)requireContext()), Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(((MainActivity)requireContext()))))
                 .readSession(readRequest)
                 .addOnSuccessListener(new OnSuccessListener<SessionReadResponse>() {
                     @SuppressLint("DefaultLocale")

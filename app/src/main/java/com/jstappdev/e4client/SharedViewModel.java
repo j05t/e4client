@@ -116,53 +116,54 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         this.password = password;
     }
 
-    public MutableLiveData<Boolean> getIsConnected() {
+    public LiveData<Boolean> getIsConnected() {
         return isConnected;
     }
 
     synchronized void setIsConnected(boolean isConnected) {
+        //noinspection ConstantConditions
         if (isConnected & !this.isConnected.getValue()) connected();
 
         this.isConnected.postValue(isConnected);
     }
 
-    public MutableLiveData<Integer> getCurrentAccX() {
+    public LiveData<Integer> getCurrentAccX() {
         return currentAccX;
     }
 
-    public MutableLiveData<Integer> getCurrentAccY() {
+    public LiveData<Integer> getCurrentAccY() {
         return currentAccY;
     }
 
-    public MutableLiveData<Integer> getCurrentAccZ() {
+    public LiveData<Integer> getCurrentAccZ() {
         return currentAccZ;
     }
 
-    public MutableLiveData<Float> getCurrentBvp() {
+    public LiveData<Float> getCurrentBvp() {
         return currentBvp;
     }
 
-    public MutableLiveData<Float> getCurrentHr() {
+    public LiveData<Float> getCurrentHr() {
         return currentHr;
     }
 
-    public MutableLiveData<Float> getBattery() {
+    public LiveData<Float> getBattery() {
         return battery;
     }
 
-    public MutableLiveData<Float> getCurrentGsr() {
+    public LiveData<Float> getCurrentGsr() {
         return currentGsr;
     }
 
-    public MutableLiveData<Float> getCurrentIbi() {
+    public LiveData<Float> getCurrentIbi() {
         return currentIbi;
     }
 
-    public MutableLiveData<Float> getCurrentTemp() {
+    public LiveData<Float> getCurrentTemp() {
         return currentTemp;
     }
 
-    public MutableLiveData<Double> getTag() {
+    public LiveData<Double> getTag() {
         return tag;
     }
 
@@ -307,10 +308,6 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     public ArrayList<E4Session> getE4Sessions() {
         return e4Sessions;
-    }
-
-    public void setE4Sessions(ArrayList<E4Session> e4Sessions) {
-        this.e4Sessions = e4Sessions;
     }
 
     public List<String> getUploadedSessionIDs() {

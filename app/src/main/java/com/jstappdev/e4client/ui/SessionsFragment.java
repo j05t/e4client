@@ -88,11 +88,11 @@ public class SessionsFragment extends Fragment {
 
                 if (MainActivity.fitnessOptions == null) {
                     sharedViewModel.getCurrentStatus().setValue("Failed to initialize Google Fit Options. Check Google API settings.");
-                } else if (!GoogleSignIn.hasPermissions(GoogleSignIn.getLastSignedInAccount(MainActivity.context), MainActivity.fitnessOptions)) {
+                } else if (!GoogleSignIn.hasPermissions(GoogleSignIn.getLastSignedInAccount(requireContext()), MainActivity.fitnessOptions)) {
                     GoogleSignIn.requestPermissions(
-                            MainActivity.context,
+                            ((MainActivity) requireContext()),
                             MainActivity.GOOGLE_FIT_PERMISSIONS_REQUEST_CODE,
-                            GoogleSignIn.getLastSignedInAccount(MainActivity.context),
+                            GoogleSignIn.getLastSignedInAccount(requireContext()),
                             MainActivity.fitnessOptions);
                 } else {
                     // todo: upload only selected sessions

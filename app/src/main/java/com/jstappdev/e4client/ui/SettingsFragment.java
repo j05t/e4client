@@ -112,6 +112,6 @@ public class SettingsFragment extends Fragment {
 
         editor.apply();
 
-        Toast.makeText(MainActivity.context, "Settings saved!", Toast.LENGTH_SHORT).show();
+        Toast.makeText(requireContext(), "Settings saved!", Toast.LENGTH_SHORT).show();
     }
 }

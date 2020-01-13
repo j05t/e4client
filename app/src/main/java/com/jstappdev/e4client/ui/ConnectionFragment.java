@@ -95,14 +95,14 @@ public class ConnectionFragment extends Fragment {
         view.findViewById(R.id.disconnectButton).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                MainActivity.context.disconnect();
+                ((MainActivity) requireContext()).disconnect();
                 dataArea.setVisibility(View.GONE);
             }
         });
 
         //noinspection ConstantConditions
         if (!sharedViewModel.getIsConnected().getValue())
-            MainActivity.context.initEmpaticaDeviceManager();
+            ((MainActivity) requireContext()).initEmpaticaDeviceManager();
     }
 
     @Override

@@ -328,6 +328,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         if (deviceManager != null) {
             deviceManager.disconnect();
         }
+        //noinspection ConstantConditions
         if (sharedViewModel.getIsConnected().getValue()) {
             sharedViewModel.saveSession();
         }
