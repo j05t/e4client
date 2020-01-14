@@ -331,6 +331,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         }
         //noinspection ConstantConditions
         if (sharedViewModel.getIsConnected().getValue()) {
+            sharedViewModel.setIsConnected(false);
             sharedViewModel.saveSession();
         }
     }
