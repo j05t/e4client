@@ -86,7 +86,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     private static final String EMPATICA_API_KEY = BuildConfig.EMPATICA_API_KEY;
     private static final String SCICHART_LICENSE = BuildConfig.SCICHART_LICENSE;
     private static final String[] customDataTypes = new String[]{"eda", "temp", "bvp", "ibi", "acc", "hrv"};
-    public static MainActivity context;
+
     public static ArrayList<DataType> dataTypes;
     public static OkHttpClient okHttpClient;
     public static FitnessOptions fitnessOptions;
@@ -96,51 +96,15 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     private SharedViewModel sharedViewModel;
     private NavController navController;
 
-    public static void showTagDescriptionDialog(final double time, final SharedViewModel sharedViewModel) {
-        MainActivity.context.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                final android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(MainActivity.context);
-                builder.setTitle("Describe Event:");
 
-                final EditText input = new EditText(MainActivity.context);
-                input.setInputType(InputType.TYPE_CLASS_TEXT);
-                builder.setView(input);
-
-                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        final String description = input.getText().toString();
-                        sharedViewModel.addTagDescription(time, description);
-                    }
-                });
-                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                    }
-                });
-
-                builder.show();
-            }
-        });
-    }
-
-    // todo: detect files in cache dir and save session
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        context = this;
-
         sharedViewModel = ViewModelProviders.of(this).get(SharedViewModel.class);
-
-        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        }
+        sharedViewModel.setFilesDir(getFilesDir());
 
         setContentView(R.layout.activity_main);
-
 
         final DrawerLayout drawer = findViewById(R.id.drawer_layout);
         final NavigationView navigationView = findViewById(R.id.nav_view);
@@ -178,7 +142,44 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         sharedViewModel.getCurrentStatus().observe(this, new Observer<String>() {
             @Override
             public void onChanged(String s) {
-                Toast.makeText(MainActivity.context, s, Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), s, Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        sharedViewModel.getTag().observe(this, new Observer<Double>() {
+            @Override
+            public void onChanged(Double time) {
+                showTagDescriptionDialog(time);
+            }
+        });
+    }
+
+    private void showTagDescriptionDialog(final double time) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                final android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(getApplicationContext());
+                builder.setTitle("Describe Event:");
+
+                final EditText input = new EditText(getApplicationContext());
+                input.setInputType(InputType.TYPE_CLASS_TEXT);
+                builder.setView(input);
+
+                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        final String description = input.getText().toString();
+                        sharedViewModel.addTagDescription(time + timezoneOffset, description);
+                    }
+                });
+                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+
+                builder.show();
             }
         });
     }
@@ -498,7 +499,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         // Invoke the Sessions API to fetch the session with the query and wait for the result
         // of the read request. Note: Fitness.SessionsApi.readSession() requires the
         // ACCESS_FINE_LOCATION permission.
-        Fitness.getSessionsClient(MainActivity.context, Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(MainActivity.context)))
+        Fitness.getSessionsClient(getApplicationContext(), Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(getApplicationContext())))
                 .readSession(readRequest)
                 .addOnSuccessListener(new OnSuccessListener<SessionReadResponse>() {
                     @SuppressLint("DefaultLocale")

@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.AsyncTask;
+import android.os.UserHandle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -58,7 +59,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                     .setCancelable(true)
                     .setPositiveButton("Share", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
-                            if (Utils.isSessionDownloaded(e4Session)) {
+                            if (sharedViewModel.isSessionDownloaded(e4Session)) {
                                 final File file = new File(contextRef.get().getFilesDir(), e4Session.getZIPFilename());
 
                                 contextRef.get().startActivity(new Intent()
@@ -73,7 +74,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                     })
                     .setNeutralButton("View Data", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
-                            new LoadAndViewSessionData(MainActivity.context).execute(e4Session);
+                            new LoadAndViewSessionData(contextRef.get()).execute(e4Session);
                             dialog.dismiss();
                         }
                     })
@@ -125,7 +126,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                     downloadMe.add(e4Session);
 
                     //noinspection unchecked
-                    new DownloadSessions(instance).execute(downloadMe);
+                    new DownloadSessions(instance, contextRef.get()).execute(downloadMe);
 
                     instance.notifyItemChanged(position);
 
@@ -164,7 +165,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         holder.label.setText(e4Session.getLabel());
         holder.device.setText(e4Session.getDevice());
 
-        if (Utils.isSessionDownloaded(e4Session)) {
+        if (sharedViewModel.isSessionDownloaded(e4Session)) {
             holder.isDownloaded.setCheckMarkDrawable(android.R.drawable.checkbox_on_background);
             holder.isDownloaded.setChecked(true);
             e4Session.setIsDownloaded(true);
@@ -234,8 +235,8 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
             final Request request = new Request.Builder().url(url).delete().build();
 
             try {
-                if (Utils.isSessionDownloaded(e4Session)) {
-                    if (new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename()).delete()) {
+                if (viewModel.isSessionDownloaded(e4Session)) {
+                    if (new File(viewModel.getFilesDir(), e4Session.getZIPFilename()).delete()) {
                         publishProgress("Deleted local data.");
                     } else {
                         publishProgress("Failed to delete local data.");

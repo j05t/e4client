@@ -76,7 +76,7 @@ public class SessionsFragment extends Fragment {
 
                 if (sharedViewModel.getE4Sessions().size() > 0) {
                     //noinspection unchecked
-                    new DownloadSessions(mAdapter).execute(sharedViewModel.getE4Sessions());
+                    new DownloadSessions(mAdapter, requireContext()).execute(sharedViewModel.getE4Sessions());
                 }
             }
         });

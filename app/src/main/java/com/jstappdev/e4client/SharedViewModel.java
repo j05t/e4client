@@ -51,6 +51,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     private String username;
     private String password;
     private String userId;
+    private File filesDir;
 
     private File edaFile;
     private File tempFile;
@@ -296,7 +297,6 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     @Override
     public void didReceiveTag(double timestamp) {
         tagWriter.println(timestamp + MainActivity.timezoneOffset);
-        MainActivity.showTagDescriptionDialog(timestamp + MainActivity.timezoneOffset, this);
     }
 
     @SuppressLint("DefaultLocale")
@@ -323,7 +323,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     private synchronized void connected() {
 
-        final String basePath = MainActivity.context.getFilesDir() + "/";
+        final String basePath = filesDir + "/";
 
         Log.d(MainActivity.TAG, "connection successful, creating file writers in " + basePath);
 
@@ -355,7 +355,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     synchronized void saveSession() {
         final E4Session e4Session = new E4Session("id", timeConnected / 1000, Utils.getCurrentTimestamp() / 1000 - timeConnected / 1000, "E4", "label", "device", "0", "0");
-        final File sessionFile = new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename());
+        final File sessionFile = new File(filesDir, e4Session.getZIPFilename());
 
         gsrWriter.close();
         tempWriter.close();
@@ -390,5 +390,17 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     public MutableLiveData<Integer> getLoadingProgress() {
         return loadingProgress;
+    }
+
+    public void setFilesDir(File filesDir) {
+        this.filesDir = filesDir;
+    }
+
+    public File getFilesDir() {
+        return filesDir;
+    }
+
+    public boolean isSessionDownloaded(final E4Session e4Session) {
+        return new File(getFilesDir(), e4Session.getZIPFilename()).exists();
     }
 }

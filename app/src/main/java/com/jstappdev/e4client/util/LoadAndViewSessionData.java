@@ -38,7 +38,7 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, Void, Boolean> 
     protected Boolean doInBackground(final E4Session... e4Sessions) {
         final E4Session e4Session = e4Sessions[0];
 
-        if (Utils.isSessionDownloaded(e4Session)) {
+        if (viewModel.isSessionDownloaded(e4Session)) {
 
             viewModel.setIsLoading(true);
 

@@ -55,7 +55,6 @@ public class ChartsFragment extends Fragment {
 
     private static final int AXIS_MARKER_COLOR = 0xFFFFA500;
     private static final int HRV_MARKER_COLOR = 0x00FFA500;
-    private static float averageHr = -1.0f;
     private final SciChartVerticalGroup verticalGroup = new SciChartVerticalGroup();
     private final DateRange sharedXRange = new DateRange();
 
@@ -78,24 +77,11 @@ public class ChartsFragment extends Fragment {
     private XyDataSeries<Double, Float> tempLineData;
     private XyDataSeries<Double, Float> accLineData;
 
-    private AxisMarkerAnnotation hrAxisMarker;
-    private AxisMarkerAnnotation hrvAxisMarker;
     private AxisMarkerAnnotation tempAxisMarker;
-
-    private boolean isVertical;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
 
-        /*
-        requireActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
-
-        Display display = ((WindowManager) MainActivity.context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
-        int rotation = display.getRotation();
-        isVertical = rotation == Surface.ROTATION_0 || rotation == Surface.ROTATION_180;
-
-        Log.d(MainActivity.TAG, "orientation: " + requireActivity().getRequestedOrientation());
-*/
         sharedViewModel = ViewModelProviders.of(Objects.requireNonNull(requireActivity())).get(SharedViewModel.class);
 
         final View root = inflater.inflate(R.layout.fragment_charts, container, false);
@@ -111,13 +97,7 @@ public class ChartsFragment extends Fragment {
         accLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
         cleanedEdaLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
         averagedHrLineData = sciChartBuilder.newXyDataSeries(Double.class, Float.class).build();
-
-        hrAxisMarker = sciChartBuilder.newAxisMarkerAnnotation()
-                .withY1(0d).withBackgroundColor(AXIS_MARKER_COLOR).build();
-        hrvAxisMarker = sciChartBuilder.newAxisMarkerAnnotation()
-                .withY1(0d).withBackgroundColor(HRV_MARKER_COLOR).build();
-        tempAxisMarker = sciChartBuilder.newAxisMarkerAnnotation()
-                .withY1(0d).withBackgroundColor(AXIS_MARKER_COLOR).build();
+        tempAxisMarker = sciChartBuilder.newAxisMarkerAnnotation().withY1(0d).withBackgroundColor(AXIS_MARKER_COLOR).build();
 
         return root;
     }
@@ -170,7 +150,6 @@ public class ChartsFragment extends Fragment {
 
         chartSurface.getRenderableSeries().add(lineSeries);
 
-        //noinspection ConstantConditions
         if (!sharedViewModel.getIsConnected().getValue())
             Collections.addAll(chartSurface.getChartModifiers(), sciChartBuilder.newModifierGroup()
                     .withXAxisDragModifier().build()
@@ -232,7 +211,7 @@ public class ChartsFragment extends Fragment {
             Collections.addAll(edaChart.getAnnotations(),
                     sciChartBuilder.newTextAnnotation()
                             .withX1(0.005)
-                            .withY1(isVertical ? 0.13 : 0.24)
+                            .withY1(0.24)
                             .withCoordinateMode(AnnotationCoordinateMode.Relative)
                             .withHorizontalAnchorPoint(HorizontalAnchorPoint.Left)
                             .withVerticalAnchorPoint(VerticalAnchorPoint.Bottom)
@@ -243,33 +222,35 @@ public class ChartsFragment extends Fragment {
 
 
             final List<Float> ibis = E4SessionData.getInstance().getIbi();
-            final int hrvSDRR = Math.round(Utils.calcHrvSDRR(ibis));
-            final int hrvSDNN = Math.round(Utils.calcHrvSDNN(ibis));
-            final int hrvRMSSD = Math.round(Utils.calcHrvRMSSD(ibis));
-            final int hrvSDSD = Math.round(Utils.calcHrvSDSD(ibis));
-            final int hrvNN50 = Utils.calcHrvNN50(ibis);
-            final int hrvNN20 = Utils.calcHrvNN20(ibis);
+            if (ibis.size() > 0) {
+                final int hrvSDRR = Math.round(Utils.calcHrvSDRR(ibis));
+                final int hrvSDNN = Math.round(Utils.calcHrvSDNN(ibis));
+                final int hrvRMSSD = Math.round(Utils.calcHrvRMSSD(ibis));
+                final int hrvSDSD = Math.round(Utils.calcHrvSDSD(ibis));
+                final int hrvNN50 = Utils.calcHrvNN50(ibis);
+                final int hrvNN20 = Utils.calcHrvNN20(ibis);
 
-            final int nnIntervals = ibis.size() == 0 ? 1 : ibis.size();
-            final int hrvpNN50 = 100 * hrvNN50 / nnIntervals;
-            final int hrvpNN20 = 100 * hrvNN20 / nnIntervals;
+                final int nnIntervals = ibis.size() == 0 ? 1 : ibis.size();
+                final int hrvpNN50 = 100 * hrvNN50 / nnIntervals;
+                final int hrvpNN20 = 100 * hrvNN20 / nnIntervals;
 
-            final String hrvText = String.format(Locale.getDefault(),
-                    "NN20: %d %d%%\nNN50: %d %d%%\nRMSSD: %d ms\nSDRR: %d ms\nSDNN: %d ms\nSDSD: %d ms",
-                    hrvNN20, hrvpNN20, hrvNN50, hrvpNN50, hrvRMSSD, hrvSDRR, hrvSDNN, hrvSDSD);
+                final String hrvText = String.format(Locale.getDefault(),
+                        "NN20: %d %d%%\nNN50: %d %d%%\nRMSSD: %d ms\nSDRR: %d ms\nSDNN: %d ms\nSDSD: %d ms",
+                        hrvNN20, hrvpNN20, hrvNN50, hrvpNN50, hrvRMSSD, hrvSDRR, hrvSDNN, hrvSDSD);
 
-            Collections.addAll(hrChart.getAnnotations(),
-                    sciChartBuilder.newTextAnnotation()
-                            .withX1(0.005)
-                            .withY1(isVertical ? 0.13 : 0.47)
-                            .withCoordinateMode(AnnotationCoordinateMode.Relative)
-                            .withHorizontalAnchorPoint(HorizontalAnchorPoint.Left)
-                            .withVerticalAnchorPoint(VerticalAnchorPoint.Bottom)
-                            .withText(hrvText)
-                            .withFontStyle(10, ColorUtil.White)
-                            .withBackgroundDrawableId(R.drawable.annotation_bg_1)
-                            .build());
-
+                Collections.addAll(hrChart.getAnnotations(),
+                        sciChartBuilder.newTextAnnotation()
+                                .withX1(0.005)
+                                .withY1(0.47)
+                                .withCoordinateMode(AnnotationCoordinateMode.Relative)
+                                .withHorizontalAnchorPoint(HorizontalAnchorPoint.Left)
+                                .withVerticalAnchorPoint(VerticalAnchorPoint.Bottom)
+                                .withText(hrvText)
+                                .withFontStyle(10, ColorUtil.White)
+                                .withBackgroundDrawableId(R.drawable.annotation_bg_1)
+                                .build());
+            }
+            
             edaChart.animateZoomExtents(500);
 
         } else { // display live sensor data

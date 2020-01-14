@@ -222,10 +222,6 @@ public class Utils {
         return cal.getTimeInMillis() + TimeZone.getDefault().getRawOffset();
     }
 
-    public static boolean isSessionDownloaded(final E4Session e4Session) {
-        return new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename()).exists();
-    }
-
     static synchronized void trimCache(final Context context) {
         try {
             File dir = context.getCacheDir();

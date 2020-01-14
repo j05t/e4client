@@ -18,16 +18,20 @@ import com.squareup.okhttp.Response;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 
 public class DownloadSessions extends AsyncTask<ArrayList<E4Session>, String, String> {
 
-    final private SharedViewModel sharedViewModel = ViewModelProviders.of(MainActivity.context).get(SharedViewModel.class);
+    private final WeakReference<MainActivity> contextRef;
+    final private SharedViewModel sharedViewModel;
     private SessionsAdapter adapter;
 
-    public DownloadSessions(SessionsAdapter sessionsAdapter) {
+    public DownloadSessions(SessionsAdapter sessionsAdapter, Context context) {
         this.adapter = sessionsAdapter;
+        contextRef = new WeakReference<MainActivity>((MainActivity) context);
+        sharedViewModel = ViewModelProviders.of((MainActivity) context).get(SharedViewModel.class);
     }
 
     @SuppressLint("DefaultLocale")
@@ -45,7 +49,7 @@ public class DownloadSessions extends AsyncTask<ArrayList<E4Session>, String, St
             final String sessionId = e4Session.getId();
             final String filename = e4Session.getZIPFilename();
 
-            if (Utils.isSessionDownloaded(e4Session)) {
+            if (sharedViewModel.isSessionDownloaded(e4Session)) {
                 Log.d(MainActivity.TAG, "session exists: " + e4Session);
                 //publishProgress("File " + filename + " already downloaded.");
                 continue;
@@ -69,7 +73,7 @@ public class DownloadSessions extends AsyncTask<ArrayList<E4Session>, String, St
                 public void onResponse(Response response) throws IOException {
                     if (response.isSuccessful()) {
                         final InputStream inputStream = response.body().byteStream();
-                        final FileOutputStream out = MainActivity.context.openFileOutput(filename, Context.MODE_PRIVATE);
+                        final FileOutputStream out = contextRef.get().openFileOutput(filename, Context.MODE_PRIVATE);
 
                         byte[] buf = new byte[1024];
                         int len;

@@ -51,7 +51,7 @@ public class UploadE4SessionsToGoogleFit extends AsyncTask<List<E4Session>, Stri
 
         for (final E4Session e4Session : listOfSessions) {
 
-            if (!Utils.isSessionDownloaded(e4Session)) {
+            if (!viewModel.isSessionDownloaded(e4Session)) {
                 publishProgress("Session data not downloaded.");
                 return null;
             }
@@ -74,7 +74,7 @@ public class UploadE4SessionsToGoogleFit extends AsyncTask<List<E4Session>, Stri
                         .setSession(fitSession)
                         .build();
                 // invoke the Sessions API to insert the session and await the result,
-                Fitness.getSessionsClient(contextRef.get(), Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(MainActivity.context)))
+                Fitness.getSessionsClient(contextRef.get(), Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(contextRef.get())))
                         .insertSession(insertRequest).addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
@@ -103,7 +103,7 @@ public class UploadE4SessionsToGoogleFit extends AsyncTask<List<E4Session>, Stri
 
         Log.d(MainActivity.TAG, "extracting to directory " + basePath);
         try {
-            final String packageName = MainActivity.context.getPackageName();
+            final String packageName = contextRef.get().getPackageName();
 
             final File sessionFile = new File(contextRef.get().getFilesDir(), e4Session.getZIPFilename());
 
@@ -331,7 +331,7 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
             // todo: this should be uploaded in session insert request if possible
             DataType hrvDataType = null;
             for (DataType dt : MainActivity.dataTypes) {
-                if (dt.getName().equals(MainActivity.context.getPackageName() + ".hrv"))
+                if (dt.getName().equals(contextRef.get().getPackageName() + ".hrv"))
                     hrvDataType = dt;
             }
             if (hrvDataType != null) {
