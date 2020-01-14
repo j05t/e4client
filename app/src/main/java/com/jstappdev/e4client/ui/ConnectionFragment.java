@@ -36,7 +36,6 @@ public class ConnectionFragment extends Fragment {
     private TextView edaLabel;
     private TextView ibiLabel;
     private TextView hrLabel;
-    private TextView hrvLabel;
     private TextView temperatureLabel;
     private TextView batteryLabel;
     private TextView statusLabel;

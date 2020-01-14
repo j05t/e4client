@@ -25,8 +25,8 @@ import java.util.Collections;
 public class DownloadSessions extends AsyncTask<ArrayList<E4Session>, String, String> {
 
     private final WeakReference<MainActivity> contextRef;
-    final private SharedViewModel sharedViewModel;
-    private SessionsAdapter adapter;
+    private final SharedViewModel sharedViewModel;
+    private final SessionsAdapter adapter;
 
     public DownloadSessions(SessionsAdapter sessionsAdapter, Context context) {
         this.adapter = sessionsAdapter;
@@ -38,7 +38,6 @@ public class DownloadSessions extends AsyncTask<ArrayList<E4Session>, String, St
     @SafeVarargs
     @Override
     protected final String doInBackground(ArrayList<E4Session>... listsOfSessions) {
-        Log.d(MainActivity.TAG, "DownloadSessions.doInBackground()");
 
         final String url = "https://www.empatica.com/connect/download.php?id=";
         final int totalSessions = listsOfSessions[0].size();
@@ -50,12 +49,8 @@ public class DownloadSessions extends AsyncTask<ArrayList<E4Session>, String, St
             final String filename = e4Session.getZIPFilename();
 
             if (sharedViewModel.isSessionDownloaded(e4Session)) {
-                Log.d(MainActivity.TAG, "session exists: " + e4Session);
-                //publishProgress("File " + filename + " already downloaded.");
                 continue;
             }
-
-            Log.d(MainActivity.TAG, "Downloading session " + e4Session);
 
             final Request request = new Request.Builder().url(url + sessionId).build();
 
@@ -65,8 +60,7 @@ public class DownloadSessions extends AsyncTask<ArrayList<E4Session>, String, St
                 @Override
                 public void onFailure(Request request, IOException e) {
                     publishProgress("Download failed for " + filename);
-
-                    Log.d(MainActivity.TAG, "Failed Download for " + filename + " " + e.getMessage());
+                    Log.d(MainActivity.TAG, "Download failed for " + filename + " " + e.getMessage());
                 }
 
                 @Override
@@ -81,7 +75,6 @@ public class DownloadSessions extends AsyncTask<ArrayList<E4Session>, String, St
                             out.write(buf, 0, len);
                         }
 
-                        publishProgress("Downloaded " + filename);
                     } else {
                         Log.d(MainActivity.TAG, "unsuccessful download, redirect: " + response.isRedirect());
                         Log.d(MainActivity.TAG, response.toString());

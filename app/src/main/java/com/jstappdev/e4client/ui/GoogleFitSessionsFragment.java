@@ -1,7 +1,6 @@
 package com.jstappdev.e4client.ui;
 
 import android.annotation.SuppressLint;
-import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -37,6 +36,7 @@ import java.util.Date;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+// todo: Google Fit integration
 public class GoogleFitSessionsFragment extends Fragment {
 
     private SharedViewModel sharedViewModel;
@@ -62,11 +62,9 @@ public class GoogleFitSessionsFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
 
-        requireActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-
         sharedViewModel = ViewModelProviders.of(requireActivity()).get(SharedViewModel.class);
 
-        View root = inflater.inflate(R.layout.fragment_google_fit_sessions, container, false);
+        final View root = inflater.inflate(R.layout.fragment_google_fit_sessions, container, false);
 
         textView = root.findViewById(R.id.text_send);
 

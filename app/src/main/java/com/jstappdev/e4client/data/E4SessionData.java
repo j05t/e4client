@@ -9,7 +9,6 @@ public class E4SessionData {
     private static E4SessionData INSTANCE;
 
     private long initialTime;
-
     private String description;
 
     private ArrayList<List<Integer>> acc;
@@ -217,8 +216,7 @@ public class E4SessionData {
     public void addTag(double tag) {
         this.tags.add(tag);
     }
-
-
+    
     public List<Float> getAccMag() {
         return accMag;
     }

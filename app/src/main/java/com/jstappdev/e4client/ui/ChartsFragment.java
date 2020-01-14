@@ -54,7 +54,6 @@ public class ChartsFragment extends Fragment {
     private static final String accAxisTitle = "Acc";
 
     private static final int AXIS_MARKER_COLOR = 0xFFFFA500;
-    private static final int HRV_MARKER_COLOR = 0x00FFA500;
     private final SciChartVerticalGroup verticalGroup = new SciChartVerticalGroup();
     private final DateRange sharedXRange = new DateRange();
 

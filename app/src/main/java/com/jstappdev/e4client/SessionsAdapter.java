@@ -12,7 +12,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckedTextView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.FileProvider;
@@ -34,6 +33,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
     private final SharedViewModel sharedViewModel;
     private final WeakReference<MainActivity> contextRef;
     private final SessionsAdapter instance;
+
     private final View.OnClickListener onClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
@@ -58,14 +58,19 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                                         .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION).putExtra(Intent.EXTRA_STREAM, FileProvider.getUriForFile(contextRef.get(), contextRef.get().getApplicationContext().getPackageName() + ".provider", file))
                                         .setType("application/zip"));
                             } else {
-                                Toast.makeText(v.getContext(), String.format("Session %s not downloaded.", e4Session.getId()), Toast.LENGTH_SHORT).show();
+                                sharedViewModel.getCurrentStatus().postValue(String.format("Session %s not downloaded.", e4Session.getId()));
                             }
                             dialog.dismiss();
                         }
                     })
                     .setNeutralButton("View Data", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
-                            new LoadAndViewSessionData(contextRef.get()).execute(e4Session);
+                            //noinspection ConstantConditions
+                            if (!sharedViewModel.getIsConnected().getValue())
+                                new LoadAndViewSessionData(contextRef.get()).execute(e4Session);
+
+                            sharedViewModel.getCurrentStatus().postValue("Not available while streaming.");
+
                             dialog.dismiss();
                         }
                     })
@@ -76,6 +81,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                     }).create().show();
         }
     };
+
     private final View.OnLongClickListener onLongClickListener = new View.OnLongClickListener() {
         @Override
         public boolean onLongClick(View v) {
@@ -128,6 +134,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
             return false;
         }
     };
+
     public SessionsAdapter(Context context) {
         contextRef = new WeakReference<MainActivity>((MainActivity) context);
         sharedViewModel = ViewModelProviders.of((MainActivity) context).get(SharedViewModel.class);

@@ -25,7 +25,7 @@ import java.util.TimeZone;
 
 public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
-    public final static double timezoneOffset = TimeZone.getDefault().getRawOffset() / 1000d;
+    private final static double timezoneOffset = TimeZone.getDefault().getRawOffset() / 1000d;
 
     private MutableLiveData<Boolean> onWrist;
     private MutableLiveData<String> sessionStatus;
@@ -217,7 +217,6 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         this.battery.postValue(battery);
     }
 
-    @SuppressLint("DefaultLocale")
     @Override
     public void didReceiveAcceleration(int x, int y, int z, double timestamp) {
         if (!accWritten) {
@@ -256,7 +255,6 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         currentGsr.postValue(gsr);
     }
 
-    // HR is calculated from IBI
     @Override
     public void didReceiveIBI(float ibi, double timestamp) {
         timestamp += timezoneOffset;
@@ -278,6 +276,8 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         final float hr = 60.0f / ibi;
 
         ibiWriter.println(String.format("%f,%f", time, ibi));
+
+        // fixme: log average HR calculated from BVP every second
         hrWriter.println(hr);
 
         currentIbi.postValue(ibi);
@@ -397,11 +397,11 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         this.loadingProgress.postValue(progress);
     }
 
-    public File getFilesDir() {
+    File getFilesDir() {
         return filesDir;
     }
 
-    public void setFilesDir(File filesDir) {
+    void setFilesDir(File filesDir) {
         this.filesDir = filesDir;
     }
 

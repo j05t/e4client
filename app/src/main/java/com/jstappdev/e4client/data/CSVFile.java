@@ -15,7 +15,6 @@ public class CSVFile {
     private double samplingRate;
 
     // same file format for EDA, HR, BVP, TEMP
-
     public CSVFile(InputStream inputStream) {
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
@@ -57,9 +56,5 @@ public class CSVFile {
 
     public double getInitialTime() {
         return initialTime;
-    }
-
-    public double getSamplingRate() {
-        return samplingRate;
     }
 }
