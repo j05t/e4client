@@ -379,6 +379,12 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
             currentStatus.postValue("Error creating ZIP file: " + e.getMessage());
             e.printStackTrace();
         }
+
+        gsrWritten = false;
+        tempWritten = false;
+        bvpWritten = false;
+        accWritten = false;
+        ibiWritten = false;
     }
 
     public LiveData getIsLoading() {
