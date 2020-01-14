@@ -9,15 +9,16 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.Settings;
 import android.text.InputType;
 import android.util.Log;
 import android.view.Menu;
-import android.view.WindowManager;
+import android.view.MotionEvent;
+import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -55,6 +56,7 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Tasks;
 import com.google.android.material.navigation.NavigationView;
+import com.jstappdev.e4client.util.Utils;
 import com.squareup.okhttp.OkHttpClient;
 
 import java.lang.ref.WeakReference;
@@ -67,7 +69,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
-import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -80,7 +81,6 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     public static final String PREF_UNAME = "uname";
     public static final String PREF_PASSWORD = "pass";
     public static final String PREFS_DATATYPES_CREATED = "types_created";
-    public final static double timezoneOffset = TimeZone.getDefault().getRawOffset();
     private static final int REQUEST_ENABLE_BT = 1;
     private static final int REQUEST_PERMISSION_ACCESS_COARSE_LOCATION = 1;
     private static final String EMPATICA_API_KEY = BuildConfig.EMPATICA_API_KEY;
@@ -147,19 +147,11 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         });
 
         sharedViewModel.getTag().observe(this, new Observer<Double>() {
+            @SuppressLint("ClickableViewAccessibility")
             @Override
             public void onChanged(Double time) {
-                showTagDescriptionDialog(time);
-            }
-        });
-    }
-
-    private void showTagDescriptionDialog(final double time) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                final android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(getApplicationContext());
-                builder.setTitle("Describe Event:");
+                final android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(MainActivity.this);
+                builder.setTitle("Describe Event at " + Utils.getDateAsString(Math.round(time)));
 
                 final EditText input = new EditText(getApplicationContext());
                 input.setInputType(InputType.TYPE_CLASS_TEXT);
@@ -169,7 +161,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         final String description = input.getText().toString();
-                        sharedViewModel.addTagDescription(time + timezoneOffset, description);
+                        sharedViewModel.addTagDescription(time, description);
                     }
                 });
                 builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -179,10 +171,40 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
                     }
                 });
 
-                builder.show();
+                final android.app.AlertDialog alert = builder.create();
+                alert.show();
+
+                // close dialog if user has not started to edit after one minute
+                final Handler handler = new Handler();
+                final Runnable runnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        if (alert.isShowing()) {
+                            alert.dismiss();
+                        }
+                    }
+                };
+
+                alert.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                    @Override
+                    public void onDismiss(DialogInterface dialog) {
+                        handler.removeCallbacks(runnable);
+                    }
+                });
+
+                input.setOnTouchListener(new View.OnTouchListener() {
+                    @Override
+                    public boolean onTouch(View v, MotionEvent event) {
+                        handler.removeCallbacks(runnable);
+                        return false;
+                    }
+                });
+
+                handler.postDelayed(runnable, 60 * 1000);
             }
         });
     }
+
 
     public void openCharts() {
         navController.navigate(R.id.nav_charts);

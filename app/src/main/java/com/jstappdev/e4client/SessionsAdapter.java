@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.AsyncTask;
-import android.os.UserHandle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -23,7 +22,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.jstappdev.e4client.data.E4Session;
 import com.jstappdev.e4client.util.DownloadSessions;
 import com.jstappdev.e4client.util.LoadAndViewSessionData;
-import com.jstappdev.e4client.util.Utils;
 import com.squareup.okhttp.Request;
 
 import java.io.File;
@@ -36,13 +34,6 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
     private final SharedViewModel sharedViewModel;
     private final WeakReference<MainActivity> contextRef;
     private final SessionsAdapter instance;
-
-    public SessionsAdapter(Context context) {
-        contextRef = new WeakReference<MainActivity>((MainActivity) context);
-        sharedViewModel = ViewModelProviders.of((MainActivity) context).get(SharedViewModel.class);
-        instance = this;
-    }
-
     private final View.OnClickListener onClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
@@ -137,7 +128,11 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
             return false;
         }
     };
-
+    public SessionsAdapter(Context context) {
+        contextRef = new WeakReference<MainActivity>((MainActivity) context);
+        sharedViewModel = ViewModelProviders.of((MainActivity) context).get(SharedViewModel.class);
+        instance = this;
+    }
 
     @NonNull
     @Override

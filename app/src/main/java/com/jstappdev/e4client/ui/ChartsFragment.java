@@ -250,7 +250,7 @@ public class ChartsFragment extends Fragment {
                                 .withBackgroundDrawableId(R.drawable.annotation_bg_1)
                                 .build());
             }
-            
+
             edaChart.animateZoomExtents(500);
 
         } else { // display live sensor data

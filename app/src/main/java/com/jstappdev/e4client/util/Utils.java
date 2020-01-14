@@ -3,9 +3,6 @@ package com.jstappdev.e4client.util;
 import android.content.Context;
 import android.text.format.DateFormat;
 
-import com.jstappdev.e4client.MainActivity;
-import com.jstappdev.e4client.data.E4Session;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;

@@ -1,7 +1,6 @@
 package com.jstappdev.e4client;
 
 import android.annotation.SuppressLint;
-import android.util.Log;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -22,9 +21,11 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
+import java.util.TimeZone;
 
 public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
+
+    public final static double timezoneOffset = TimeZone.getDefault().getRawOffset() / 1000d;
 
     private MutableLiveData<Boolean> onWrist;
     private MutableLiveData<String> sessionStatus;
@@ -221,8 +222,8 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     public void didReceiveAcceleration(int x, int y, int z, double timestamp) {
         if (!accWritten) {
             accWritten = true;
-            timestamp += MainActivity.timezoneOffset;
-            accWriter.println(String.format(Locale.getDefault(), "%f, %f, %f", timestamp, timestamp, timestamp));
+            timestamp += timezoneOffset;
+            accWriter.println(String.format("%.6f, %.6f, %.6f", timestamp, timestamp, timestamp));
             accWriter.println("32.000000, 32.000000, 32.000000");
         }
         accWriter.println(String.format("%d,%d,%d", x, y, z));
@@ -237,7 +238,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     public void didReceiveBVP(float bvp, double timestamp) {
         if (!bvpWritten) {
             bvpWritten = true;
-            bvpWriter.println(timestamp + MainActivity.timezoneOffset);
+            bvpWriter.println(String.format("%.6f", timestamp + timezoneOffset));
             bvpWriter.println("4.000000");
         }
         bvpWriter.println(bvp);
@@ -248,7 +249,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     public void didReceiveGSR(float gsr, double timestamp) {
         if (!gsrWritten) {
             gsrWritten = true;
-            gsrWriter.println(timestamp + MainActivity.timezoneOffset);
+            gsrWriter.println(String.format("%.6f", timestamp + timezoneOffset));
             gsrWriter.println("4.000000");
         }
         gsrWriter.println(gsr);
@@ -258,15 +259,15 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     // HR is calculated from IBI
     @Override
     public void didReceiveIBI(float ibi, double timestamp) {
-        timestamp += MainActivity.timezoneOffset;
+        timestamp += timezoneOffset;
 
         if (!ibiWritten) {
             ibiWritten = true;
 
             firstIbiTimestamp = timestamp;
-            ibiWriter.println(String.format(Locale.getDefault(), "%f, IBI", timestamp));
+            ibiWriter.println(String.format("%.6f, IBI", timestamp));
 
-            hrWriter.println(timestamp);
+            hrWriter.println(String.format("%.6f", timestamp));
             hrWriter.println("1.000000");
 
             return;
@@ -276,7 +277,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         final double time = timestamp - firstIbiTimestamp;
         final float hr = 60.0f / ibi;
 
-        ibiWriter.println(String.format(Locale.getDefault(), "%f,%f", time, ibi));
+        ibiWriter.println(String.format("%f,%f", time, ibi));
         hrWriter.println(hr);
 
         currentIbi.postValue(ibi);
@@ -287,7 +288,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     public void didReceiveTemperature(float temp, double timestamp) {
         if (!tempWritten) {
             tempWritten = true;
-            tempWriter.println(timestamp + MainActivity.timezoneOffset);
+            tempWriter.println(String.format("%.6f", timestamp + timezoneOffset));
             tempWriter.println("4.000000");
         }
         tempWriter.println(temp);
@@ -296,12 +297,18 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     @Override
     public void didReceiveTag(double timestamp) {
-        tagWriter.println(timestamp + MainActivity.timezoneOffset);
+        timestamp += timezoneOffset;
+
+        tagWriter.println(String.format("%.2f", timestamp));
+        tag.postValue(timestamp);
     }
 
     @SuppressLint("DefaultLocale")
     void addTagDescription(double time, String description) {
-        tagDescriptionWriter.println(String.format("%f,%s", time, description));
+        // tag may be added after connection is already closed
+        //noinspection ConstantConditions
+        if (isConnected.getValue())
+            tagDescriptionWriter.println(String.format("%.2f,%s", time, description));
     }
 
     public String getUserId() {
@@ -324,8 +331,6 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     private synchronized void connected() {
 
         final String basePath = filesDir + "/";
-
-        Log.d(MainActivity.TAG, "connection successful, creating file writers in " + basePath);
 
         timeConnected = Utils.getCurrentTimestamp();
 
@@ -354,7 +359,8 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     }
 
     synchronized void saveSession() {
-        final E4Session e4Session = new E4Session("id", timeConnected / 1000, Utils.getCurrentTimestamp() / 1000 - timeConnected / 1000, "E4", "label", "device", "0", "0");
+        // session description must not include underscores
+        final E4Session e4Session = new E4Session("e4client", timeConnected / 1000, Utils.getCurrentTimestamp() / 1000 - timeConnected / 1000, "000", "local", "E4", "0", "0");
         final File sessionFile = new File(filesDir, e4Session.getZIPFilename());
 
         gsrWriter.close();
@@ -375,29 +381,28 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         }
     }
 
-
-    public void setIsLoading(final boolean isLoading) {
-        this.isLoading.postValue(isLoading);
-    }
-
     public LiveData getIsLoading() {
         return isLoading;
     }
 
-    public void setLoadingProgress(final int progress) {
-        this.loadingProgress.postValue(progress);
+    public void setIsLoading(final boolean isLoading) {
+        this.isLoading.postValue(isLoading);
     }
 
     public MutableLiveData<Integer> getLoadingProgress() {
         return loadingProgress;
     }
 
-    public void setFilesDir(File filesDir) {
-        this.filesDir = filesDir;
+    public void setLoadingProgress(final int progress) {
+        this.loadingProgress.postValue(progress);
     }
 
     public File getFilesDir() {
         return filesDir;
+    }
+
+    public void setFilesDir(File filesDir) {
+        this.filesDir = filesDir;
     }
 
     public boolean isSessionDownloaded(final E4Session e4Session) {
