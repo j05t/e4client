@@ -1,14 +1,15 @@
 package com.jstappdev.e4client.ui;
 
 import android.annotation.SuppressLint;
-import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -37,12 +38,9 @@ public class SessionsFragment extends Fragment {
     private SharedViewModel sharedViewModel;
     private SessionsAdapter mAdapter;
 
-
     @SuppressLint("SourceLockedOrientationActivity")
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-
-        requireActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
         sharedViewModel = ViewModelProviders.of(Objects.requireNonNull(getActivity())).get(SharedViewModel.class);
 
@@ -61,7 +59,7 @@ public class SessionsFragment extends Fragment {
         itemDecorator.setDrawable(Objects.requireNonNull(getDrawable(requireContext(), R.drawable.divider)));
         recyclerView.addItemDecoration(itemDecorator);
 
-        mAdapter = new SessionsAdapter(sharedViewModel);
+        mAdapter = new SessionsAdapter(requireContext());
         recyclerView.setAdapter(mAdapter);
 
 
@@ -69,7 +67,7 @@ public class SessionsFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 sharedViewModel.getCurrentStatus().setValue("Syncing with Empatica cloud account..");
-                new LoginAndGetAllSessions(mAdapter).execute();
+                new LoginAndGetAllSessions(mAdapter, sharedViewModel).execute();
             }
         });
         root.findViewById(R.id.button_download_all).setOnClickListener(new View.OnClickListener() {
@@ -97,8 +95,30 @@ public class SessionsFragment extends Fragment {
                 } else {
                     // todo: upload only selected sessions
                     //noinspection unchecked
-                    new UploadE4SessionsToGoogleFit().execute(sharedViewModel.getE4Sessions());
+                    new UploadE4SessionsToGoogleFit(requireContext()).execute(sharedViewModel.getE4Sessions());
                 }
+            }
+        });
+
+        final ProgressBar progressBar = root.findViewById(R.id.progressBar);
+
+        //noinspection unchecked
+        sharedViewModel.getIsLoading().observe(getViewLifecycleOwner(), new Observer<Boolean>() {
+            @Override
+            public void onChanged(Boolean isLoading) {
+                if (isLoading) {
+                    progressBar.setVisibility(View.VISIBLE);
+                } else {
+                    sharedViewModel.setLoadingProgress(0);
+                    progressBar.setVisibility(View.GONE);
+                }
+            }
+        });
+
+        sharedViewModel.getLoadingProgress().observe(getViewLifecycleOwner(), new Observer<Integer>() {
+            @Override
+            public void onChanged(Integer progress) {
+                progressBar.setProgress(progress);
             }
         });
 
@@ -148,13 +168,7 @@ public class SessionsFragment extends Fragment {
 
         if (sharedViewModel.getUsername().isEmpty() || sharedViewModel.getPassword().isEmpty()) {
             sharedViewModel.getCurrentStatus().setValue("Please edit your Empatica account settings.");
-        } /*
-        else if (sharedViewModel.getUserId() == null) {
-            sharedViewModel.getCurrentStatus().setValue("Syncing with Empatica cloud account..");
-            new LoginAndGetAllSessions(mAdapter).execute();
         }
-        */
-
     }
 
 

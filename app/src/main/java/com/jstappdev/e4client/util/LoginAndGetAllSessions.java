@@ -3,8 +3,6 @@ package com.jstappdev.e4client.util;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import androidx.lifecycle.ViewModelProviders;
-
 import com.jstappdev.e4client.MainActivity;
 import com.jstappdev.e4client.SessionsAdapter;
 import com.jstappdev.e4client.SharedViewModel;
@@ -22,11 +20,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class LoginAndGetAllSessions extends AsyncTask<Void, Void, String> {
-    private final SharedViewModel sharedViewModel = ViewModelProviders.of(MainActivity.context).get(SharedViewModel.class);
-    private SessionsAdapter adapter;
+    private final SharedViewModel sharedViewModel;
+    private final SessionsAdapter adapter;
 
-    public LoginAndGetAllSessions(SessionsAdapter mAdapter) {
+    public LoginAndGetAllSessions(SessionsAdapter mAdapter, SharedViewModel sharedViewModel) {
         this.adapter = mAdapter;
+        this.sharedViewModel = sharedViewModel;
     }
 
     @Override

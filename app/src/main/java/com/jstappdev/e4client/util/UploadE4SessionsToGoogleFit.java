@@ -1,5 +1,6 @@
 package com.jstappdev.e4client.util;
 
+import android.content.Context;
 import android.os.AsyncTask;
 import android.os.SystemClock;
 import android.util.Log;
@@ -27,6 +28,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -34,7 +36,13 @@ import java.util.concurrent.TimeUnit;
 
 public class UploadE4SessionsToGoogleFit extends AsyncTask<List<E4Session>, String, Void> {
 
-    private final SharedViewModel viewModel = ViewModelProviders.of(MainActivity.context).get(SharedViewModel.class);
+    private final SharedViewModel viewModel;
+    private final WeakReference<MainActivity> contextRef;
+
+    public UploadE4SessionsToGoogleFit(Context context) {
+        contextRef = new WeakReference<MainActivity>((MainActivity) context);
+        viewModel = ViewModelProviders.of((MainActivity) context).get(SharedViewModel.class);
+    }
 
     @SafeVarargs
     @Override
@@ -66,7 +74,7 @@ public class UploadE4SessionsToGoogleFit extends AsyncTask<List<E4Session>, Stri
                         .setSession(fitSession)
                         .build();
                 // invoke the Sessions API to insert the session and await the result,
-                Fitness.getSessionsClient(MainActivity.context, Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(MainActivity.context)))
+                Fitness.getSessionsClient(contextRef.get(), Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(MainActivity.context)))
                         .insertSession(insertRequest).addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
@@ -91,15 +99,15 @@ public class UploadE4SessionsToGoogleFit extends AsyncTask<List<E4Session>, Stri
 
         Log.d(MainActivity.TAG, "reading " + e4Session.getZIPFilename());
 
-        String basePath = MainActivity.context.getCacheDir().getPath();
+        String basePath = contextRef.get().getCacheDir().getPath();
 
         Log.d(MainActivity.TAG, "extracting to directory " + basePath);
         try {
             final String packageName = MainActivity.context.getPackageName();
 
-            final File sessionFile = new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename());
+            final File sessionFile = new File(contextRef.get().getFilesDir(), e4Session.getZIPFilename());
 
-            Utils.trimCache(MainActivity.context);
+            Utils.trimCache(contextRef.get());
 
             new ZipFile(sessionFile.getAbsolutePath()).extractAll(basePath);
 
@@ -329,7 +337,7 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
             if (hrvDataType != null) {
                 final DataSource hrvDataSource =
                         new DataSource.Builder()
-                                .setAppPackageName(MainActivity.context.getPackageName())
+                                .setAppPackageName(contextRef.get().getPackageName())
                                 .setDataType(hrvDataType)
                                 .setStreamName("heart_rate_variability")
                                 .setType(DataSource.TYPE_RAW)
@@ -375,8 +383,8 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
 
         Utils.isUploading = true;
 
-        Fitness.getHistoryClient(MainActivity.context,
-                Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(MainActivity.context)))
+        Fitness.getHistoryClient(contextRef.get(),
+                Objects.requireNonNull(GoogleSignIn.getLastSignedInAccount(contextRef.get())))
                 .insertData(dataSet).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {

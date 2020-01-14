@@ -226,7 +226,7 @@ public class Utils {
         return new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename()).exists();
     }
 
-    static synchronized void trimCache(Context context) {
+    static synchronized void trimCache(final Context context) {
         try {
             File dir = context.getCacheDir();
             if (dir != null && dir.isDirectory()) {

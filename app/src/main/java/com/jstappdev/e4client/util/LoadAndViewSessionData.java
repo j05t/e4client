@@ -1,5 +1,6 @@
 package com.jstappdev.e4client.util;
 
+import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
 
@@ -20,11 +21,18 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 
 // we cannot afford to load BVP and ACC data into memory for sessions longer than about 8 hours
-public class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean> {
+public class LoadAndViewSessionData extends AsyncTask<E4Session, Void, Boolean> {
 
-    private final SharedViewModel viewModel = ViewModelProviders.of(MainActivity.context).get(SharedViewModel.class);
+    private final SharedViewModel viewModel;
+    private final WeakReference<MainActivity> contextRef;
+
+    public LoadAndViewSessionData(Context context) {
+        contextRef = new WeakReference<MainActivity>((MainActivity) context);
+        viewModel = ViewModelProviders.of((MainActivity) context).get(SharedViewModel.class);
+    }
 
     @Override
     protected Boolean doInBackground(final E4Session... e4Sessions) {
@@ -32,26 +40,26 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean
 
         if (Utils.isSessionDownloaded(e4Session)) {
 
-            publishProgress(String.format("Loading session %s", e4Session.getId()));
+            viewModel.setIsLoading(true);
+
+            viewModel.setLoadingProgress(5);
 
             E4SessionData.clear();
 
             E4SessionData.getInstance().setDescription(String.format("%s\nSession ID: %s\nDuration: %s", e4Session.getStartDate(), e4Session.getId(), e4Session.getDurationAsString()));
 
             try {
-                final File sessionFile = new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename());
+                final File sessionFile = new File(contextRef.get().getFilesDir(), e4Session.getZIPFilename());
 
-                Log.d(MainActivity.TAG, "reading " + e4Session.getZIPFilename());
+                String basePath = contextRef.get().getCacheDir().getPath();
 
-                String basePath = MainActivity.context.getCacheDir().getPath();
-
-                Log.d(MainActivity.TAG, "extracting to directory " + basePath);
-
-                Utils.trimCache(MainActivity.context);
+                Utils.trimCache(contextRef.get());
 
                 new ZipFile(sessionFile.getAbsolutePath()).extractAll(basePath);
 
                 basePath += File.separator;
+
+                viewModel.setLoadingProgress(10);
 
 
                 final File accFile = new File(basePath + "ACC.csv");
@@ -75,7 +83,7 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean
                             final int z = Integer.parseInt(split[2]);
                             final float mag = Utils.magnitude(x, y, z);
 
-                            // we only load the average for every 55 data points
+                            // we just load the average acceleration for every 55 data points
                             sum += mag;
                             if (lineNumber % 55 == 0) {
                                 E4SessionData.getInstance().getAccMagTimestamps().add(initialTime + (samplingRate * lineNumber));
@@ -87,6 +95,8 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean
                         e.printStackTrace();
                         return false;
                     }
+
+                viewModel.setLoadingProgress(30);
 
                 final File tagFile = new File(basePath + "tags.csv");
                 if (tagFile.exists())
@@ -102,6 +112,8 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean
                         e.printStackTrace();
                         return false;
                     }
+
+                viewModel.setLoadingProgress(35);
 
                 final File ibiFile = new File(basePath + "IBI.csv");
                 if (tagFile.exists())
@@ -128,6 +140,8 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean
                         return false;
                     }
 
+                viewModel.setLoadingProgress(55);
+
                 // same file format for EDA, HR, BVP, TEMP
                 final File edaFile = new File(basePath + "EDA.csv");
                 final File tempFile = new File(basePath + "TEMP.csv");
@@ -141,29 +155,32 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean
                 E4SessionData.getInstance().setGsrTimestamps(data.getX());
                 E4SessionData.getInstance().setGsr(data.getY());
                 edaFile.delete();
+                viewModel.setLoadingProgress(80);
 
                 data = new CSVFile(new FileInputStream(tempFile));
                 E4SessionData.getInstance().setTempTimestamps(data.getX());
                 E4SessionData.getInstance().setTemp(data.getY());
                 tempFile.delete();
+                viewModel.setLoadingProgress(90);
 
                 data = new CSVFile(new FileInputStream(hrFile));
                 E4SessionData.getInstance().setHrTimestamps(data.getX());
                 E4SessionData.getInstance().setHr(data.getY());
                 hrFile.delete();
+                viewModel.setLoadingProgress(100);
 
                 E4SessionData.getInstance().setInitialTime(e4Session.getStartTime());
 
             } catch (FileNotFoundException e) {
-                publishProgress("File not found: " + e.getMessage());
+                viewModel.getCurrentStatus().postValue("File not found: " + e.getMessage());
                 return false;
             } catch (ZipException e) {
-                publishProgress("Corrupted ZIP file.");
+                viewModel.getCurrentStatus().postValue("Corrupted ZIP file.");
                 e.printStackTrace();
                 return false;
             }
         } else {
-            publishProgress("Session data not downloaded!");
+            viewModel.getCurrentStatus().postValue("Session data not downloaded.");
             return false;
         }
 
@@ -171,15 +188,10 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, String, Boolean
     }
 
     @Override
-    protected void onProgressUpdate(String... values) {
-        super.onProgressUpdate(values);
-
-        if (values.length > 0) viewModel.getCurrentStatus().setValue(values[0]);
-    }
-
-    @Override
     protected void onPostExecute(Boolean success) {
+        viewModel.setIsLoading(false);
+
         if (success)
-            MainActivity.context.openCharts();
+            contextRef.get().openCharts();
     }
 }

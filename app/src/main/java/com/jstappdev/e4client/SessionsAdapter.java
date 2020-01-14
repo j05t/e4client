@@ -2,6 +2,7 @@ package com.jstappdev.e4client;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.AsyncTask;
@@ -15,6 +16,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.FileProvider;
+import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.jstappdev.e4client.data.E4Session;
@@ -25,12 +27,20 @@ import com.squareup.okhttp.Request;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
 public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.Adapter<SessionsAdapter.MyViewHolder> {
 
-    private SessionsAdapter instance;
-    private SharedViewModel sharedViewModel;
+    private final SharedViewModel sharedViewModel;
+    private final WeakReference<MainActivity> contextRef;
+    private final SessionsAdapter instance;
+
+    public SessionsAdapter(Context context) {
+        contextRef = new WeakReference<MainActivity>((MainActivity) context);
+        sharedViewModel = ViewModelProviders.of((MainActivity) context).get(SharedViewModel.class);
+        instance = this;
+    }
 
     private final View.OnClickListener onClickListener = new View.OnClickListener() {
         @Override
@@ -49,11 +59,11 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                     .setPositiveButton("Share", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
                             if (Utils.isSessionDownloaded(e4Session)) {
-                                final File file = new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename());
+                                final File file = new File(contextRef.get().getFilesDir(), e4Session.getZIPFilename());
 
-                                MainActivity.context.startActivity(new Intent()
+                                contextRef.get().startActivity(new Intent()
                                         .setAction(Intent.ACTION_SEND)
-                                        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION).putExtra(Intent.EXTRA_STREAM, FileProvider.getUriForFile(MainActivity.context, MainActivity.context.getApplicationContext().getPackageName() + ".provider", file))
+                                        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION).putExtra(Intent.EXTRA_STREAM, FileProvider.getUriForFile(contextRef.get(), contextRef.get().getApplicationContext().getPackageName() + ".provider", file))
                                         .setType("application/zip"));
                             } else {
                                 Toast.makeText(v.getContext(), String.format("Session %s not downloaded.", e4Session.getId()), Toast.LENGTH_SHORT).show();
@@ -63,7 +73,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                     })
                     .setNeutralButton("View Data", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
-                            new LoadAndViewSessionData().execute(e4Session);
+                            new LoadAndViewSessionData(MainActivity.context).execute(e4Session);
                             dialog.dismiss();
                         }
                     })
@@ -94,7 +104,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                             instance.notifyItemRemoved(position);
 
                             if (e4Session.isDownloaded() || e4Session.isUploaded())
-                                new DeleteSession(instance, sharedViewModel, position).execute(e4Session);
+                                new DeleteSession(sharedViewModel).execute(e4Session);
                         }
                     })
                     .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -103,7 +113,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                         }
                     }).setNeutralButton("(Re)download", new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int id) {
-                    final File file = new File(MainActivity.context.getFilesDir(), e4Session.getZIPFilename());
+                    final File file = new File(contextRef.get().getFilesDir(), e4Session.getZIPFilename());
 
                     Log.d(MainActivity.TAG, "deleting session " + e4Session);
 
@@ -127,11 +137,6 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         }
     };
 
-
-    public SessionsAdapter(SharedViewModel sharedViewModel) {
-        this.sharedViewModel = sharedViewModel;
-        this.instance = this;
-    }
 
     @NonNull
     @Override
@@ -215,13 +220,9 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
 
     private static class DeleteSession extends AsyncTask<E4Session, String, Boolean> {
 
-        private SessionsAdapter adapter;
         private SharedViewModel viewModel;
-        private int position;
 
-        DeleteSession(final SessionsAdapter sessionsAdapter, SharedViewModel sharedViewModel, int position) {
-            this.adapter = sessionsAdapter;
-            this.position = position;
+        DeleteSession(SharedViewModel sharedViewModel) {
             this.viewModel = sharedViewModel;
         }
 

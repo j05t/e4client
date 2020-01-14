@@ -43,6 +43,9 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     private MutableLiveData<Float> currentAccMag;
     private MutableLiveData<String> currentStatus;
 
+    private MutableLiveData<Boolean> isLoading;
+    private MutableLiveData<Integer> loadingProgress;
+
     private List<String> uploadedSessionIDs;
     private ArrayList<E4Session> e4Sessions = new ArrayList<>();
     private String username;
@@ -94,6 +97,9 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         currentTemp = new MutableLiveData<Float>();
         currentAccMag = new MutableLiveData<Float>();
         tag = new MutableLiveData<Double>();
+
+        isLoading = new MutableLiveData<Boolean>(false);
+        loadingProgress = new MutableLiveData<Integer>(0);
     }
 
     public MutableLiveData<String> getCurrentStatus() {
@@ -370,4 +376,19 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     }
 
 
+    public void setIsLoading(final boolean isLoading) {
+        this.isLoading.postValue(isLoading);
+    }
+
+    public LiveData getIsLoading() {
+        return isLoading;
+    }
+
+    public void setLoadingProgress(final int progress) {
+        this.loadingProgress.postValue(progress);
+    }
+
+    public MutableLiveData<Integer> getLoadingProgress() {
+        return loadingProgress;
+    }
 }
