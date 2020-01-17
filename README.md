@@ -19,6 +19,8 @@ Edit apikeys.properties
 ## TODO:
 Calculate average heart rate from blood volume pulse. Log average heart rate every 1000ms.
 
+https://support.empatica.com/hc/en-us/articles/360030058011-E4-data-IBI-expected-signal
+
 https://stackoverflow.com/questions/22583391/peak-signal-detection-in-realtime-timeseries-data
 
 https://stackoverflow.com/questions/31753062/calculate-heart-rate-from-ecg-stream-java-nymi-band
