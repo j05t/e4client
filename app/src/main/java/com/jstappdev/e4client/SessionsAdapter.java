@@ -66,11 +66,11 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                     .setNeutralButton("View Data", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
                             //noinspection ConstantConditions
-                            if (!sharedViewModel.getIsConnected().getValue())
+                            if (!sharedViewModel.getIsConnected().getValue()) {
                                 new LoadAndViewSessionData(contextRef.get()).execute(e4Session);
-
-                            sharedViewModel.getCurrentStatus().postValue("Not available while streaming.");
-
+                            } else {
+                                sharedViewModel.getCurrentStatus().postValue("Not available while streaming.");
+                            }
                             dialog.dismiss();
                         }
                     })
@@ -136,7 +136,7 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
     };
 
     public SessionsAdapter(Context context) {
-        contextRef = new WeakReference<MainActivity>((MainActivity) context);
+        contextRef = new WeakReference<>((MainActivity) context);
         sharedViewModel = ViewModelProviders.of((MainActivity) context).get(SharedViewModel.class);
         instance = this;
     }

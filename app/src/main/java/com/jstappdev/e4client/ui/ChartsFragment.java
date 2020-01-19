@@ -29,6 +29,7 @@ import com.scichart.charting.visuals.annotations.TextAnnotation;
 import com.scichart.charting.visuals.annotations.VerticalAnchorPoint;
 import com.scichart.charting.visuals.annotations.VerticalLineAnnotation;
 import com.scichart.charting.visuals.axes.AutoRange;
+import com.scichart.charting.visuals.axes.AxisAlignment;
 import com.scichart.charting.visuals.axes.IAxis;
 import com.scichart.charting.visuals.renderableSeries.IRenderableSeries;
 import com.scichart.charting.visuals.synchronization.SciChartVerticalGroup;
@@ -124,6 +125,7 @@ public class ChartsFragment extends Fragment {
                 .withDrawMinorGridLines(false)
                 .withGrowBy(0, 0.1)
                 .withVisibility(showXAxis ? View.VISIBLE : View.GONE)
+                .withAxisAlignment(AxisAlignment.Top)
                 .build();
         xAxis.setLabelProvider(new DateLabelProviderEx());
 
@@ -162,8 +164,8 @@ public class ChartsFragment extends Fragment {
 
         setupChart(edaChart, edaAxisTitle, edaLineData, false);
         setupChart(hrChart, hrAxisTitle, hrLineData, false);
-        setupChart(tempChart, tempAxisTitle, tempLineData, false);
-        setupChart(accChart, accAxisTitle, accLineData, true);
+        setupChart(tempChart, tempAxisTitle, tempLineData, true);
+        setupChart(accChart, accAxisTitle, accLineData, false);
 
         verticalGroup.addSurfaceToGroup(edaChart);
         verticalGroup.addSurfaceToGroup(hrChart);

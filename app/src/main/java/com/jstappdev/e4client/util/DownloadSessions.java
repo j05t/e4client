@@ -28,9 +28,9 @@ public class DownloadSessions extends AsyncTask<ArrayList<E4Session>, String, St
     private final SharedViewModel sharedViewModel;
     private final SessionsAdapter adapter;
 
-    public DownloadSessions(SessionsAdapter sessionsAdapter, Context context) {
+    public DownloadSessions(final SessionsAdapter sessionsAdapter, final Context context) {
         this.adapter = sessionsAdapter;
-        contextRef = new WeakReference<MainActivity>((MainActivity) context);
+        contextRef = new WeakReference<>((MainActivity) context);
         sharedViewModel = ViewModelProviders.of((MainActivity) context).get(SharedViewModel.class);
     }
 
