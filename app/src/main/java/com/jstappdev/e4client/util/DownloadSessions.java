@@ -45,13 +45,12 @@ public class DownloadSessions extends AsyncTask<ArrayList<E4Session>, String, St
 
         for (final E4Session e4Session : listsOfSessions[0]) {
 
-            final String sessionId = e4Session.getId();
-            final String filename = e4Session.getZIPFilename();
-
             if (sharedViewModel.isSessionDownloaded(e4Session)) {
                 continue;
             }
 
+            final String sessionId = e4Session.getId();
+            final String filename = e4Session.getZIPFilename();
             final Request request = new Request.Builder().url(url + sessionId).build();
 
             publishProgress(String.format("Downloading session %d/%d..", downloadedSessions++, totalSessions));
@@ -59,8 +58,10 @@ public class DownloadSessions extends AsyncTask<ArrayList<E4Session>, String, St
             MainActivity.okHttpClient.newCall(request).enqueue(new Callback() {
                 @Override
                 public void onFailure(Request request, IOException e) {
-                    publishProgress("Download failed for " + filename);
-                    Log.d(MainActivity.TAG, "Download failed for " + filename + " " + e.getMessage());
+                    String message = String.format("Download failed for session %s: %s", e4Session.getId(), e.getMessage());
+
+                    publishProgress(message);
+                    Log.d(MainActivity.TAG, message);
                 }
 
                 @Override
@@ -88,15 +89,15 @@ public class DownloadSessions extends AsyncTask<ArrayList<E4Session>, String, St
                 }
             });
         }
-        return "Downloads enqueued";
+        return String.format("Downloading %d sessions.", totalSessions);
     }
 
     @Override
     protected void onProgressUpdate(String... values) {
         super.onProgressUpdate(values);
 
-        if (values.length > 0)
-            sharedViewModel.getCurrentStatus().setValue(values[0]);
+        if (values.length > 0 && values[0].length() > 0)
+            sharedViewModel.getCurrentStatus().postValue(values[0]);
 
         adapter.notifyDataSetChanged();
     }
@@ -109,7 +110,7 @@ public class DownloadSessions extends AsyncTask<ArrayList<E4Session>, String, St
 
         adapter.notifyDataSetChanged();
 
-        sharedViewModel.getCurrentStatus().setValue(s);
+        sharedViewModel.getCurrentStatus().postValue(s);
     }
 
 }

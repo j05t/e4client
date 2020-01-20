@@ -80,6 +80,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     private boolean bvpWritten;
     private boolean ibiWritten;
     private boolean gsrWritten;
+    private String apiKey;
 
     public SharedViewModel() {
         uploadedSessionIDs = new ArrayList<>();
@@ -413,5 +414,13 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     public boolean isSessionDownloaded(final E4Session e4Session) {
         return new File(getFilesDir(), e4Session.getZIPFilename()).exists();
+    }
+
+    public void setApiKey(String key) {
+        this.apiKey = key;
+    }
+
+    public String getApiKey() {
+        return this.apiKey;
     }
 }

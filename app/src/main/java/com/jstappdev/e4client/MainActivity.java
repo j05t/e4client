@@ -80,10 +80,11 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     public static final String PREFS_NAME = "prefs";
     public static final String PREF_UNAME = "uname";
     public static final String PREF_PASSWORD = "pass";
+    public static final String PREF_APIKEY = "apikey";
+
     public static final String PREFS_DATATYPES_CREATED = "types_created";
     private static final int REQUEST_ENABLE_BT = 1;
     private static final int REQUEST_PERMISSION_ACCESS_COARSE_LOCATION = 1;
-    private static final String EMPATICA_API_KEY = BuildConfig.EMPATICA_API_KEY;
     private static final String SCICHART_LICENSE = BuildConfig.SCICHART_LICENSE;
     private static final String[] customDataTypes = new String[]{"eda", "temp", "bvp", "ibi", "acc", "hrv"};
 
@@ -131,7 +132,8 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
             okHttpClient.setFollowRedirects(true);
             okHttpClient.setFollowSslRedirects(true);
             okHttpClient.setRetryOnConnectionFailure(true);
-            okHttpClient.setConnectTimeout(120, TimeUnit.SECONDS);
+            // default timeout is 10 seconds
+            //okHttpClient.setConnectTimeout(120, TimeUnit.SECONDS);
             okHttpClient.setReadTimeout(120, TimeUnit.SECONDS);
             okHttpClient.setWriteTimeout(120, TimeUnit.SECONDS);
             okHttpClient.setCookieHandler(mCookieManager);
@@ -206,8 +208,8 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     }
 
 
-    public void openCharts() {
-        navController.navigate(R.id.nav_charts);
+    public void openFragment(int fragmentId) {
+        navController.navigate(fragmentId);
     }
 
     private void loadPreferences() {
@@ -217,6 +219,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
         sharedViewModel.setUsername(settings.getString(PREF_UNAME, ""));
         sharedViewModel.setPassword(settings.getString(PREF_PASSWORD, ""));
+        sharedViewModel.setApiKey(settings.getString(PREF_APIKEY, ""));
 
         if (sharedViewModel.getUsername().length() == 0) {
             navController.navigate(R.id.nav_settings);
@@ -298,17 +301,21 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
             requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_PERMISSION_ACCESS_COARSE_LOCATION);
         } else {
 
-            if (EMPATICA_API_KEY.contentEquals("INSERT API KEY HERE")) {
+            if (sharedViewModel.getApiKey().isEmpty()) {
                 new AlertDialog.Builder(this)
                         .setTitle("Error")
-                        .setMessage("No API key set. Please insert your API KEY in apikeys.properties and rebuild the project.")
-                        .setNegativeButton("Close", new DialogInterface.OnClickListener() {
+                        .setMessage("No API key set. Please insert your API key to be able to connect to your E4.")
+                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
-                                // without API key exit is the only way
-                                finish();
+                                navController.navigate(R.id.nav_home);
                             }
                         })
-                        .show();
+                        .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                navController.navigate(R.id.nav_settings);
+                            }
+                        }).show();
+
                 return;
             }
 
@@ -316,7 +323,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
             deviceManager = new EmpaDeviceManager(getApplicationContext(), sharedViewModel, this);
 
             // Initialize the Device Manager using your API key. You need to have Internet access at this point.
-            deviceManager.authenticateWithAPIKey(EMPATICA_API_KEY);
+            deviceManager.authenticateWithAPIKey(sharedViewModel.getApiKey());
         }
     }
 
@@ -373,7 +380,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
             } catch (ConnectionNotAllowedException e) {
                 // This should happen only if you try to connect when allowed == false.
-                Toast.makeText(MainActivity.this, "Sorry, you can't connect to this device", Toast.LENGTH_SHORT).show();
+                sharedViewModel.getCurrentStatus().postValue("Sorry, you can't connect to this device");
             }
         }
     }
@@ -546,6 +553,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
                     }
                 });
     }
+
 
     private static class CreateCustomDataTypes extends AsyncTask<Void, String, Void> {
         WeakReference<MainActivity> activity;

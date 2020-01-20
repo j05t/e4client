@@ -28,6 +28,7 @@ public class SettingsFragment extends Fragment {
 
     private EditText edt_username;
     private EditText edt_password;
+    private EditText edt_apikey;
 
     @SuppressLint("SourceLockedOrientationActivity")
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -39,6 +40,7 @@ public class SettingsFragment extends Fragment {
 
         edt_username = root.findViewById(R.id.e4username);
         edt_password = root.findViewById(R.id.e4password);
+        edt_apikey = root.findViewById(R.id.apikey);
 
         root.findViewById(R.id.saveButton).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -81,6 +83,23 @@ public class SettingsFragment extends Fragment {
                 sharedViewModel.setPassword(pass);
             }
         });
+        edt_apikey.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                final String key = edt_apikey.getText().toString();
+                sharedViewModel.setApiKey(key);
+            }
+        });
 
         loadPreferences();
 
@@ -95,9 +114,11 @@ public class SettingsFragment extends Fragment {
 
         sharedViewModel.setUsername(settings.getString(MainActivity.PREF_UNAME, ""));
         sharedViewModel.setPassword(settings.getString(MainActivity.PREF_PASSWORD, ""));
+        sharedViewModel.setApiKey(settings.getString(MainActivity.PREF_APIKEY, ""));
 
         edt_username.setText(sharedViewModel.getUsername());
         edt_password.setText(sharedViewModel.getPassword());
+        edt_apikey.setText(sharedViewModel.getApiKey());
     }
 
     private void savePreferences() {
@@ -107,9 +128,10 @@ public class SettingsFragment extends Fragment {
 
         editor.putString(MainActivity.PREF_UNAME, sharedViewModel.getUsername());
         editor.putString(MainActivity.PREF_PASSWORD, sharedViewModel.getPassword());
+        editor.putString(MainActivity.PREF_APIKEY, sharedViewModel.getApiKey());
 
         editor.apply();
 
-        Toast.makeText(requireContext(), "Settings saved!", Toast.LENGTH_SHORT).show();
+        sharedViewModel.getCurrentStatus().postValue("Settings saved!");
     }
 }

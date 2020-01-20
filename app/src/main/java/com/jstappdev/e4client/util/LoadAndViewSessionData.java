@@ -7,6 +7,7 @@ import android.util.Log;
 import androidx.lifecycle.ViewModelProviders;
 
 import com.jstappdev.e4client.MainActivity;
+import com.jstappdev.e4client.R;
 import com.jstappdev.e4client.SharedViewModel;
 import com.jstappdev.e4client.data.CSVFile;
 import com.jstappdev.e4client.data.E4Session;
@@ -192,6 +193,6 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, Void, Boolean> 
         viewModel.setIsLoading(false);
 
         if (success)
-            contextRef.get().openCharts();
+            contextRef.get().openFragment(R.id.nav_charts);
     }
 }

@@ -1,7 +1,6 @@
 package com.jstappdev.e4client.ui;
 
 import android.annotation.SuppressLint;
-import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -54,8 +53,6 @@ public class ConnectionFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
 
-        requireActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-
         sharedViewModel = ViewModelProviders.of(Objects.requireNonNull(getActivity())).get(SharedViewModel.class);
 
         final View root = inflater.inflate(R.layout.fragment_connection, container, false);
@@ -100,8 +97,10 @@ public class ConnectionFragment extends Fragment {
         });
 
         //noinspection ConstantConditions
-        if (!sharedViewModel.getIsConnected().getValue())
+        if (!sharedViewModel.getIsConnected().getValue()) {
+            sharedViewModel.getCurrentStatus().postValue("Connecting using API key.");
             ((MainActivity) requireContext()).initEmpaticaDeviceManager();
+        }
     }
 
     @Override
