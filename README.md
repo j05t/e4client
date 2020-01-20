@@ -13,7 +13,6 @@ Google Fit: https://console.cloud.google.com/apis/credentials
 * https://developers.google.com/android/guides/client-auth
 
 Edit apikeys.properties
-* insert Empatica API key: https://www.empatica.com/connect/developer.php
 * insert SciChart License: https://www.scichart.com/
 
 ## TODO:
