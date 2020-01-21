@@ -365,7 +365,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     synchronized void saveSession() {
         // session description must not include underscores
-        final E4Session e4Session = new E4Session("e4client", timeConnected / 1000, Utils.getCurrentTimestamp() / 1000 - timeConnected / 1000, "000", "local", "E4", "0", "0");
+        final E4Session e4Session = new E4Session("e4c" + timeConnected / 1000000, timeConnected / 1000, Utils.getCurrentTimestamp() / 1000 - timeConnected / 1000, "000", "local", "E4", "0", "0");
         final File sessionFile = new File(filesDir, e4Session.getZIPFilename());
 
         gsrWriter.close();

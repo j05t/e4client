@@ -263,7 +263,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
             final long connected = settings.getLong(PREF_FIRST_CONNECTED, 0);
             final long disconnected = settings.getLong(PREF_LAST_CONNECTED, 0);
 
-            final E4Session e4Session = new E4Session("e4client", connected / 1000, disconnected / 1000 - connected / 1000, "000", "local", "E4", "0", "0");
+            final E4Session e4Session = new E4Session("e4c" + connected / 1000000, connected / 1000, disconnected / 1000 - connected / 1000, "000", "local", "E4", "0", "0");
             final File sessionFile = new File(getFilesDir(), e4Session.getZIPFilename());
 
             try {
