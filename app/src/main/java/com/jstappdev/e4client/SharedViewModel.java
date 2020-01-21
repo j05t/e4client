@@ -73,6 +73,11 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     private PrintWriter tagDescriptionWriter;
 
     private double firstIbiTimestamp;
+
+    long getTimeConnected() {
+        return timeConnected;
+    }
+
     private long timeConnected;
 
     private boolean tempWritten;
@@ -331,10 +336,9 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     private synchronized void connected() {
 
-        final String basePath = filesDir + "/";
-
         timeConnected = Utils.getCurrentTimestamp();
 
+        final String basePath = filesDir + "/";
         edaFile = new File(basePath + "EDA.csv");
         tempFile = new File(basePath + "TEMP.csv");
         bvpFile = new File(basePath + "BVP.csv");
@@ -376,6 +380,15 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         try {
             new ZipFile(sessionFile).addFiles(Arrays.asList(edaFile, tempFile, bvpFile, accFile, hrFile, ibiFile, tagFile, tagDescriptionFile));
             currentStatus.postValue("Session saved to local storage: " + sessionFile.getAbsolutePath());
+
+            edaFile.delete();
+            tempFile.delete();
+            bvpFile.delete();
+            accFile.delete();
+            ibiFile.delete();
+            hrFile.delete();
+            tagFile.delete();
+            tagDescriptionFile.delete();
         } catch (ZipException e) {
             currentStatus.postValue("Error creating ZIP file: " + e.getMessage());
             e.printStackTrace();
@@ -422,5 +435,10 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     public String getApiKey() {
         return this.apiKey;
+    }
+
+    public void setLastConnected(long timestamp) {
+        if (timestamp == 0) return;
+
     }
 }

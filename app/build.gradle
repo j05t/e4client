@@ -14,7 +14,6 @@ android {
         versionCode 1
         versionName "0.1"
 
-        buildConfigField("String", "EMPATICA_API_KEY", apikeyProperties['EMPATICA_API_KEY'])
         buildConfigField("String", "SCICHART_LICENSE", apikeyProperties['SCICHART_LICENSE'])
     }
     buildTypes {

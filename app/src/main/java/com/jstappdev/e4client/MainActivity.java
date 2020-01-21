@@ -56,9 +56,14 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Tasks;
 import com.google.android.material.navigation.NavigationView;
+import com.jstappdev.e4client.data.E4Session;
 import com.jstappdev.e4client.util.Utils;
 import com.squareup.okhttp.OkHttpClient;
 
+import net.lingala.zip4j.ZipFile;
+import net.lingala.zip4j.exception.ZipException;
+
+import java.io.File;
 import java.lang.ref.WeakReference;
 import java.net.CookieHandler;
 import java.net.CookieManager;
@@ -77,14 +82,18 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
     public static final String SESSION_NAME = "e4session";
     public static final int GOOGLE_FIT_PERMISSIONS_REQUEST_CODE = 42;
+
     public static final String PREFS_NAME = "prefs";
     public static final String PREF_UNAME = "uname";
     public static final String PREF_PASSWORD = "pass";
     public static final String PREF_APIKEY = "apikey";
+    public static final String PREF_FIRST_CONNECTED = "firstconnected";
+    public static final String PREF_LAST_CONNECTED = "lastconnected";
+    public static final String PREF_DATATYPES_CREATED = "types_created";
 
-    public static final String PREFS_DATATYPES_CREATED = "types_created";
     private static final int REQUEST_ENABLE_BT = 1;
     private static final int REQUEST_PERMISSION_ACCESS_COARSE_LOCATION = 1;
+
     private static final String SCICHART_LICENSE = BuildConfig.SCICHART_LICENSE;
     private static final String[] customDataTypes = new String[]{"eda", "temp", "bvp", "ibi", "acc", "hrv"};
 
@@ -208,14 +217,14 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     }
 
 
-    public void openFragment(int fragmentId) {
+    public void openFragment(final int fragmentId) {
         navController.navigate(fragmentId);
     }
 
     private void loadPreferences() {
         final SharedPreferences settings = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
 
-        googleFitCustomDatatypesCreated = settings.getBoolean(PREFS_DATATYPES_CREATED, false);
+        googleFitCustomDatatypesCreated = settings.getBoolean(PREF_DATATYPES_CREATED, false);
 
         sharedViewModel.setUsername(settings.getString(PREF_UNAME, ""));
         sharedViewModel.setPassword(settings.getString(PREF_PASSWORD, ""));
@@ -223,6 +232,56 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
 
         if (sharedViewModel.getUsername().length() == 0) {
             navController.navigate(R.id.nav_settings);
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        //noinspection ConstantConditions
+        if (!sharedViewModel.getIsConnected().getValue())
+            detectAndSavePreviousSession();
+    }
+
+    // recover previous session when app has been unexpectedly closed
+    // todo: refactor
+    private void detectAndSavePreviousSession() {
+        final String basePath = getFilesDir() + "/";
+        File edaFile = new File(basePath + "EDA.csv");
+
+        if (edaFile.exists()) {
+            File tempFile = new File(basePath + "TEMP.csv");
+            File bvpFile = new File(basePath + "BVP.csv");
+            File hrFile = new File(basePath + "HR.csv");
+            File tagFile = new File(basePath + "tags.csv");
+            File ibiFile = new File(basePath + "IBI.csv");
+            File accFile = new File(basePath + "ACC.csv");
+            File tagDescriptionFile = new File(basePath + "tags_description.csv");
+
+            final SharedPreferences settings = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+            final long connected = settings.getLong(PREF_FIRST_CONNECTED, 0);
+            final long disconnected = settings.getLong(PREF_LAST_CONNECTED, 0);
+
+            final E4Session e4Session = new E4Session("e4client", connected / 1000, disconnected / 1000 - connected / 1000, "000", "local", "E4", "0", "0");
+            final File sessionFile = new File(getFilesDir(), e4Session.getZIPFilename());
+
+            try {
+                new ZipFile(sessionFile).addFiles(Arrays.asList(edaFile, tempFile, bvpFile, accFile, hrFile, ibiFile, tagFile, tagDescriptionFile));
+                sharedViewModel.getCurrentStatus().postValue("Previous session detected, saved to local storage: " + sessionFile.getAbsolutePath());
+
+                edaFile.delete();
+                tempFile.delete();
+                bvpFile.delete();
+                accFile.delete();
+                ibiFile.delete();
+                hrFile.delete();
+                tagFile.delete();
+                tagDescriptionFile.delete();
+            } catch (ZipException e) {
+                sharedViewModel.getCurrentStatus().postValue("Error creating ZIP file: " + e.getMessage());
+                e.printStackTrace();
+            }
         }
     }
 
@@ -235,8 +294,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
                     .setMessage("Invalid SciChart license. Insert valid license in apikeys.properties and rebuild the project.")
                     .setNegativeButton("Close", new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {
-                            // without API key exit is the only way
-                            finish();
+                            dialog.dismiss();
                         }
                     })
                     .show();
@@ -282,6 +340,12 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
                                     intent.setData(uri);
                                     startActivity(intent);
                                 }
+                            }
+                        })
+                        .setNeutralButton("Later", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                                openFragment(R.id.nav_home);
                             }
                         })
                         .setNegativeButton("Exit application", new DialogInterface.OnClickListener() {
@@ -330,6 +394,16 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
     @Override
     protected void onPause() {
         super.onPause();
+
+        //noinspection ConstantConditions
+        if (sharedViewModel.getIsConnected().getValue()) {
+            final SharedPreferences settings = getSharedPreferences(MainActivity.PREFS_NAME, Context.MODE_PRIVATE);
+            final SharedPreferences.Editor editor = settings.edit();
+            editor.putLong(MainActivity.PREF_FIRST_CONNECTED, sharedViewModel.getTimeConnected());
+            editor.putLong(MainActivity.PREF_LAST_CONNECTED, Utils.getCurrentTimestamp());
+            editor.apply();
+        }
+
         if (deviceManager != null) try {
             deviceManager.stopScanning();
         } catch (Exception e) {
