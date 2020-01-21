@@ -79,6 +79,7 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, Void, Boolean> 
                             lineNumber++;
 
                             String[] split = line.split(",");
+
                             final int x = Integer.parseInt(split[0]);
                             final int y = Integer.parseInt(split[1]);
                             final int z = Integer.parseInt(split[2]);

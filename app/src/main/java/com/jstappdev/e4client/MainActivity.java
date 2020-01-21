@@ -122,7 +122,7 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
         // menu should be considered as top level destinations.
         mAppBarConfiguration = new AppBarConfiguration.Builder(R.id.nav_home,
                 R.id.nav_connection, R.id.nav_charts, R.id.nav_session,
-                R.id.nav_settings, R.id.nav_share_csv, R.id.nav_sync)
+                R.id.nav_settings, R.id.nav_sync)
                 .setDrawerLayout(drawer)
                 .build();
         navController = Navigation.findNavController(this, R.id.nav_host_fragment);
@@ -402,6 +402,8 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
             editor.putLong(MainActivity.PREF_FIRST_CONNECTED, sharedViewModel.getTimeConnected());
             editor.putLong(MainActivity.PREF_LAST_CONNECTED, Utils.getCurrentTimestamp());
             editor.apply();
+
+            sharedViewModel.flushFiles();
         }
 
         if (deviceManager != null) try {

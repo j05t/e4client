@@ -36,12 +36,6 @@
         tools:layout="@layout/fragment_settings" />
 
     <fragment
-        android:id="@+id/nav_share_csv"
-        android:name="com.jstappdev.e4client.ui.ShareFragment"
-        android:label="@string/menu_share"
-        tools:layout="@layout/fragment_share" />
-
-    <fragment
         android:id="@+id/nav_sync"
         android:name="com.jstappdev.e4client.ui.GoogleFitSessionsFragment"
         android:label="@string/menu_google_fit_sessions"

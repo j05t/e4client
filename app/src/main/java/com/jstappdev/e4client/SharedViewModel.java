@@ -401,6 +401,20 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         ibiWritten = false;
     }
 
+    public void flushFiles() {
+        //noinspection ConstantConditions
+        if (isConnected.getValue()) {
+            gsrWriter.flush();
+            tempWriter.flush();
+            bvpWriter.flush();
+            accWriter.flush();
+            ibiWriter.flush();
+            hrWriter.flush();
+            tagWriter.flush();
+            tagDescriptionWriter.flush();
+        }
+    }
+
     public LiveData getIsLoading() {
         return isLoading;
     }
@@ -435,10 +449,5 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
     public String getApiKey() {
         return this.apiKey;
-    }
-
-    public void setLastConnected(long timestamp) {
-        if (timestamp == 0) return;
-
     }
 }

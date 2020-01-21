@@ -29,10 +29,6 @@
     <item android:title="Cloud Storage">
         <menu>
             <item
-                android:id="@+id/nav_share_csv"
-                android:icon="@drawable/ic_menu_share"
-                android:title="@string/menu_share" />
-            <item
                 android:id="@+id/nav_sync"
                 android:icon="@drawable/ic_menu_google_fit_sessions"
                 android:title="@string/menu_google_fit_sessions" />
