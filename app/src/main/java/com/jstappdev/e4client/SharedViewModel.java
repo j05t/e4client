@@ -73,13 +73,7 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     private PrintWriter tagDescriptionWriter;
 
     private double firstIbiTimestamp;
-
-    long getTimeConnected() {
-        return timeConnected;
-    }
-
     private long timeConnected;
-
     private boolean tempWritten;
     private boolean accWritten;
     private boolean bvpWritten;
@@ -108,6 +102,10 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
         isLoading = new MutableLiveData<Boolean>(false);
         loadingProgress = new MutableLiveData<Integer>(0);
+    }
+
+    long getTimeConnected() {
+        return timeConnected;
     }
 
     public MutableLiveData<String> getCurrentStatus() {
@@ -443,11 +441,11 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
         return new File(getFilesDir(), e4Session.getZIPFilename()).exists();
     }
 
-    public void setApiKey(String key) {
-        this.apiKey = key;
-    }
-
     public String getApiKey() {
         return this.apiKey;
+    }
+
+    public void setApiKey(String key) {
+        this.apiKey = key;
     }
 }

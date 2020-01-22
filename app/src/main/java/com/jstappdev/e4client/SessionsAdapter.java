@@ -15,7 +15,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.FileProvider;
-import androidx.lifecycle.ViewModelProviders;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.jstappdev.e4client.data.E4Session;
@@ -125,8 +125,6 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
                     //noinspection unchecked
                     new DownloadSessions(instance, contextRef.get()).execute(downloadMe);
 
-                    instance.notifyItemChanged(position);
-
                     dialog.dismiss();
                 }
             }).create().show();
@@ -135,9 +133,9 @@ public class SessionsAdapter extends androidx.recyclerview.widget.RecyclerView.A
         }
     };
 
-    public SessionsAdapter(Context context) {
+    public SessionsAdapter(final Context context) {
         contextRef = new WeakReference<>((MainActivity) context);
-        sharedViewModel = ViewModelProviders.of((MainActivity) context).get(SharedViewModel.class);
+        sharedViewModel = new ViewModelProvider(contextRef.get()).get(SharedViewModel.class);
         instance = this;
     }
 

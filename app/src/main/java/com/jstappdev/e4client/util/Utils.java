@@ -245,7 +245,13 @@ public class Utils {
         return dir.delete();
     }
 
-    public static float magnitude(final int x, final int y, final int z) {
+    public static float magnitude(int x, int y, int z) {
+        // https://support.empatica.com/hc/en-us/articles/201608896-Data-export-and-formatting-from-E4-connect-
+        /*
+        x *= 2 / 128f;
+        y *= 2 / 128f;
+        z *= 2 / 128f;
+        */
         return (float) Math.sqrt(x * x + y * y + z * z);
     }
 }

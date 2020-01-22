@@ -216,7 +216,7 @@ public class E4SessionData {
     public void addTag(double tag) {
         this.tags.add(tag);
     }
-    
+
     public List<Float> getAccMag() {
         return accMag;
     }

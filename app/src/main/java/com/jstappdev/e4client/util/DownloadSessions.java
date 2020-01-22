@@ -5,7 +5,7 @@ import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import androidx.lifecycle.ViewModelProviders;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.jstappdev.e4client.MainActivity;
 import com.jstappdev.e4client.SessionsAdapter;
@@ -31,7 +31,7 @@ public class DownloadSessions extends AsyncTask<ArrayList<E4Session>, String, St
     public DownloadSessions(final SessionsAdapter sessionsAdapter, final Context context) {
         this.adapter = sessionsAdapter;
         contextRef = new WeakReference<>((MainActivity) context);
-        sharedViewModel = ViewModelProviders.of((MainActivity) context).get(SharedViewModel.class);
+        sharedViewModel = new ViewModelProvider(contextRef.get()).get(SharedViewModel.class);
     }
 
     @SuppressLint("DefaultLocale")
@@ -76,7 +76,10 @@ public class DownloadSessions extends AsyncTask<ArrayList<E4Session>, String, St
                             out.write(buf, 0, len);
                         }
 
+                        publishProgress("finished downloading session " + sessionId);
                     } else {
+                        publishProgress("FAILED downloading session " + sessionId);
+
                         Log.d(MainActivity.TAG, "unsuccessful download, redirect: " + response.isRedirect());
                         Log.d(MainActivity.TAG, response.toString());
                         Log.d(MainActivity.TAG, response.headers().toString());

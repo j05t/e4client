@@ -6,7 +6,7 @@ import android.os.SystemClock;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
-import androidx.lifecycle.ViewModelProviders;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.fitness.Fitness;
@@ -36,12 +36,12 @@ import java.util.concurrent.TimeUnit;
 
 public class UploadE4SessionsToGoogleFit extends AsyncTask<List<E4Session>, String, Void> {
 
-    private final SharedViewModel viewModel;
+    private final SharedViewModel sharedViewModel;
     private final WeakReference<MainActivity> contextRef;
 
     public UploadE4SessionsToGoogleFit(Context context) {
         contextRef = new WeakReference<MainActivity>((MainActivity) context);
-        viewModel = ViewModelProviders.of((MainActivity) context).get(SharedViewModel.class);
+        sharedViewModel = new ViewModelProvider(contextRef.get()).get(SharedViewModel.class);
     }
 
     @SafeVarargs
@@ -51,7 +51,7 @@ public class UploadE4SessionsToGoogleFit extends AsyncTask<List<E4Session>, Stri
 
         for (final E4Session e4Session : listOfSessions) {
 
-            if (!viewModel.isSessionDownloaded(e4Session)) {
+            if (!sharedViewModel.isSessionDownloaded(e4Session)) {
                 publishProgress("Session data not downloaded.");
                 return null;
             }
@@ -67,7 +67,7 @@ public class UploadE4SessionsToGoogleFit extends AsyncTask<List<E4Session>, Stri
                     .build();
 
 
-            if (!viewModel.getUploadedSessionIDs().contains(e4Session.getId())) {
+            if (!sharedViewModel.getUploadedSessionIDs().contains(e4Session.getId())) {
 
                 // Build a session insert request
                 final SessionInsertRequest insertRequest = new SessionInsertRequest.Builder()
@@ -85,7 +85,7 @@ public class UploadE4SessionsToGoogleFit extends AsyncTask<List<E4Session>, Stri
                 Log.d(MainActivity.TAG, "uploading " + fitSession.toString());
 
                 if (processFile(e4Session, fitSession)) {
-                    viewModel.getUploadedSessionIDs().add(e4Session.getId());
+                    sharedViewModel.getUploadedSessionIDs().add(e4Session.getId());
                 }
             }
 
@@ -408,6 +408,6 @@ The second column is the duration in seconds (s) of the detected inter-beat inte
     protected void onProgressUpdate(String... values) {
         super.onProgressUpdate(values);
 
-        if (values.length > 0) viewModel.getCurrentStatus().setValue(values[0]);
+        if (values.length > 0) sharedViewModel.getCurrentStatus().setValue(values[0]);
     }
 }
