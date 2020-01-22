@@ -92,12 +92,12 @@ public class ConnectionFragment extends Fragment {
             public void onClick(View v) {
                 ((MainActivity) requireContext()).disconnect();
                 dataArea.setVisibility(View.GONE);
+                ((MainActivity) requireContext()).openFragment(R.id.nav_home);
             }
         });
 
         //noinspection ConstantConditions
         if (!sharedViewModel.getIsConnected().getValue()) {
-            sharedViewModel.getCurrentStatus().postValue("Connecting using API key.");
             ((MainActivity) requireContext()).initEmpaticaDeviceManager();
         }
     }
@@ -187,8 +187,6 @@ public class ConnectionFragment extends Fragment {
         });
 
         sharedViewModel.getCurrentIbi().observe(owner, new Observer<Float>() {
-            int count = 0;
-
             @Override
             public void onChanged(Float ibi) {
                 ibiLabel.setText(String.format(Locale.getDefault(), "%.2f s", ibi));

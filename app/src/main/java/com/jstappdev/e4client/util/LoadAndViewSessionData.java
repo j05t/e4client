@@ -80,17 +80,21 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, Void, Boolean> 
 
                             String[] split = line.split(",");
 
-                            final int x = Integer.parseInt(split[0]);
-                            final int y = Integer.parseInt(split[1]);
-                            final int z = Integer.parseInt(split[2]);
-                            final float mag = Utils.magnitude(x, y, z);
+                            try {
+                                final int x = Integer.parseInt(split[0]);
+                                final int y = Integer.parseInt(split[1]);
+                                final int z = Integer.parseInt(split[2]);
+                                final float mag = Utils.magnitude(x, y, z);
 
-                            // we just load the average acceleration for every 55 data points
-                            sum += mag;
-                            if (lineNumber % 55 == 0) {
-                                E4SessionData.getInstance().getAccMagTimestamps().add(initialTime + (samplingRate * lineNumber));
-                                E4SessionData.getInstance().getAccMag().add(sum / 55);
-                                sum = 0;
+                                // we just load the average acceleration for every 55 data points
+                                sum += mag;
+                                if (lineNumber % 55 == 0) {
+                                    E4SessionData.getInstance().getAccMagTimestamps().add(initialTime + (samplingRate * lineNumber));
+                                    E4SessionData.getInstance().getAccMag().add(sum / 55);
+                                    sum = 0;
+                                }
+                            } catch (IndexOutOfBoundsException e) {
+                                sharedViewModel.getCurrentStatus().postValue("Corruption in ACC data detected");
                             }
                         }
                     } catch (IOException e) {
@@ -129,11 +133,15 @@ public class LoadAndViewSessionData extends AsyncTask<E4Session, Void, Boolean> 
 
                             while ((line = reader.readLine()) != null) {
                                 final String[] split = line.split(",");
-                                final double plusTime = Double.parseDouble(split[0]);
-                                final float ibi = Float.parseFloat(split[1]);
-                                timestamp = initialTime + plusTime;
+                                try {
+                                    final double plusTime = Double.parseDouble(split[0]);
+                                    final float ibi = Float.parseFloat(split[1]);
+                                    timestamp = initialTime + plusTime;
 
-                                E4SessionData.getInstance().getIbi().add(ibi);
+                                    E4SessionData.getInstance().getIbi().add(ibi);
+                                } catch (IndexOutOfBoundsException e) {
+                                    sharedViewModel.getCurrentStatus().postValue("Corruption in IBI data detected");
+                                }
                             }
                         }
 

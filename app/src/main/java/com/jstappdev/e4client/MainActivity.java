@@ -509,11 +509,11 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
             } catch (NullPointerException e) {
                 new AlertDialog.Builder(this)
                         .setTitle("Error")
-                        .setMessage("Unable to get device manager instance. Check your internet connection.")
+                        .setMessage("Device manager is unable to download label file and may reject connecting to your wristband. Enable internet connection or try again.")
                         .setNegativeButton("Close", new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
-                                // without device manager exit is the only way
-                                finish();
+                                dialog.dismiss();
+                                openFragment(R.id.nav_home);
                             }
                         })
                         .show();

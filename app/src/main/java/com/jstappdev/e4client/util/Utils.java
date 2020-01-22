@@ -16,7 +16,7 @@ public class Utils {
 
     public static boolean isUploading = false;
 
-    public static List<Float> removeAnomalies(final List<Float> values) {
+    private static List<Float> removeAnomalies(final List<Float> values) {
         return medianFilter(values, 23);
     }
 
@@ -247,6 +247,7 @@ public class Utils {
 
     public static float magnitude(int x, int y, int z) {
         // https://support.empatica.com/hc/en-us/articles/201608896-Data-export-and-formatting-from-E4-connect-
+        // a value of x = 64 is in practice 1g
         /*
         x *= 2 / 128f;
         y *= 2 / 128f;
