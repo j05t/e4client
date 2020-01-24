@@ -256,14 +256,11 @@ public class ChartsFragment extends Fragment {
         } else { // display live sensor data
             edaLineData.setFifoCapacity(256);
             tempLineData.setFifoCapacity(256);
-            hrLineData.setFifoCapacity(1024);
-            accLineData.setFifoCapacity(1024);
+            hrLineData.setFifoCapacity(256);
+            accLineData.setFifoCapacity(512);
 
             edaChart.getXAxes().getDefault().setAutoRange(AutoRange.Always);
             edaChart.getXAxes().getDefault().setVisibility(View.GONE);
-
-            // we are showing blood volume pulse while streaming instead of heart rate
-            hrChart.getYAxes().getDefault().setAxisTitle("BVP");
 
             // Create a watermark using a TextAnnotation
             final TextAnnotation annotation = sciChartBuilder.newTextAnnotation()
@@ -294,13 +291,10 @@ public class ChartsFragment extends Fragment {
                 }
             });
 
-            sharedViewModel.getCurrentBvp().observe(owner, new Observer<Float>() {
-                int count = 0;
-
+            sharedViewModel.getCurrentHr().observe(owner, new Observer<Float>() {
                 @Override
-                public void onChanged(Float lastBvp) {
-                    if (count++ % 2 == 0)
-                        hrLineData.append((double) Utils.getCurrentTimestamp(), lastBvp);
+                public void onChanged(Float lastHr) {
+                    hrLineData.append((double) Utils.getCurrentTimestamp(), lastHr);
                 }
             });
 

@@ -1,11 +1,11 @@
 package com.jstappdev.e4client.ui;
 
 import android.annotation.SuppressLint;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -41,7 +41,6 @@ public class ConnectionFragment extends Fragment {
     private TextView wristStatusLabel;
 
     private View dataArea;
-    private ImageView batteryImageView;
 
     private int currentBatteryDrawableId = R.drawable.ic_battery_full;
     private String microsiemens;
@@ -81,7 +80,6 @@ public class ConnectionFragment extends Fragment {
         batteryLabel = view.findViewById(R.id.battery);
         deviceNameLabel = view.findViewById(R.id.deviceName);
         wristStatusLabel = view.findViewById(R.id.wrist_status_label);
-        batteryImageView = view.findViewById(R.id.batteryImageView);
         dataArea = view.findViewById(R.id.dataArea);
 
         microsiemens = getString(R.string.microsiemens);
@@ -145,21 +143,15 @@ public class ConnectionFragment extends Fragment {
             @Override
             public void onChanged(Float battery) {
                 batteryLabel.setText(String.format(Locale.getDefault(), "%.0f %%", battery * 100));
-                int id = currentBatteryDrawableId;
 
                 if (battery > .87f)
-                    id = R.drawable.ic_battery_full;
+                    batteryLabel.setBackgroundColor(Color.GREEN);
                 else if (battery < .87f && battery > .49f)
-                    id = R.drawable.ic_battery66;
+                    batteryLabel.setBackgroundColor(Color.YELLOW);
                 else if (battery < .49f && battery > .1f)
-                    id = R.drawable.ic_battery33;
+                    batteryLabel.setBackgroundColor(Color.MAGENTA);
                 else if (battery < .1f)
-                    id = R.drawable.ic_battery_empty;
-
-                if (id != currentBatteryDrawableId) {
-                    batteryImageView.setImageResource(id);
-                    currentBatteryDrawableId = id;
-                }
+                    batteryLabel.setBackgroundColor(Color.RED);
             }
         });
 
@@ -190,8 +182,13 @@ public class ConnectionFragment extends Fragment {
             @Override
             public void onChanged(Float ibi) {
                 ibiLabel.setText(String.format(Locale.getDefault(), "%.2f s", ibi));
-                // heart rate is calculated from IBI
-                hrLabel.setText(String.format(Locale.getDefault(), "%.0f BPM", sharedViewModel.getCurrentHr().getValue()));
+            }
+        });
+
+        sharedViewModel.getCurrentHr().observe(owner, new Observer<Float>() {
+            @Override
+            public void onChanged(Float averageHr) {
+                hrLabel.setText(String.format(Locale.getDefault(), "%.0f BPM", averageHr));
             }
         });
 

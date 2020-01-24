@@ -22,6 +22,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
 
@@ -80,6 +83,9 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
     private boolean ibiWritten;
     private boolean gsrWritten;
     private String apiKey;
+
+    private ScheduledExecutorService scheduler;
+    private float averageHr = 0;
 
     public SharedViewModel() {
         uploadedSessionIDs = new ArrayList<>();
@@ -272,20 +278,30 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
             hrWriter.println(String.format("%.6f", timestamp));
             hrWriter.println("1.000000");
 
+            // start writing average heart rate from IBI every 1000ms
+            // todo: should be calculated from BVP
+            scheduler = Executors.newSingleThreadScheduledExecutor();
+            scheduler.scheduleAtFixedRate
+                    (new Runnable() {
+                        public void run() {
+                            if (isConnected.getValue()) {
+                                hrWriter.println(averageHr);
+                                currentHr.postValue(averageHr);
+                            } else {
+                                scheduler.shutdown();
+                            }
+                        }
+                    }, 0, 1000, TimeUnit.MILLISECONDS);
+
             return;
         }
 
-        // fixme: timeConnected?
         final double time = timestamp - firstIbiTimestamp;
         final float hr = 60.0f / ibi;
+        averageHr = (float) (averageHr * 0.8 + hr * 0.2);
 
         ibiWriter.println(String.format("%f,%f", time, ibi));
-
-        // fixme: log average HR calculated from BVP every second
-        hrWriter.println(hr);
-
         currentIbi.postValue(ibi);
-        currentHr.postValue(hr);
     }
 
     @Override
