@@ -143,15 +143,6 @@ public class ConnectionFragment extends Fragment {
             @Override
             public void onChanged(Float battery) {
                 batteryLabel.setText(String.format(Locale.getDefault(), "%.0f %%", battery * 100));
-
-                if (battery > .87f)
-                    batteryLabel.setBackgroundColor(Color.GREEN);
-                else if (battery < .87f && battery > .49f)
-                    batteryLabel.setBackgroundColor(Color.YELLOW);
-                else if (battery < .49f && battery > .1f)
-                    batteryLabel.setBackgroundColor(Color.MAGENTA);
-                else if (battery < .1f)
-                    batteryLabel.setBackgroundColor(Color.RED);
             }
         });
 

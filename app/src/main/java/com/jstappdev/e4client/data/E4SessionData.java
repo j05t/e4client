@@ -183,12 +183,14 @@ public class E4SessionData {
 
     public void addIbi(float ibi, double timestamp) {
 
-        final float currentHr = 60.0f / ibi;
+        // final float currentHr = 60.0f / ibi;
 
         this.ibi.add(ibi);
         this.ibiTimestamps.add(timestamp);
+    }
 
-        this.hr.add(currentHr);
+    public void addHr(float hr, double timestamp) {
+        this.hr.add(hr);
         this.hrTimestamps.add(timestamp);
     }
 

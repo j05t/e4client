@@ -285,8 +285,10 @@ public class SharedViewModel extends ViewModel implements EmpaDataDelegate {
                     (new Runnable() {
                         public void run() {
                             if (isConnected.getValue()) {
-                                hrWriter.println(averageHr);
-                                currentHr.postValue(averageHr);
+                                if (averageHr != 0) {
+                                    hrWriter.println(averageHr);
+                                    currentHr.postValue(averageHr);
+                                }
                             } else {
                                 scheduler.shutdown();
                             }
