@@ -42,7 +42,6 @@ public class ConnectionFragment extends Fragment {
 
     private View dataArea;
 
-    private int currentBatteryDrawableId = R.drawable.ic_battery_full;
     private String microsiemens;
     private String celsius;
 

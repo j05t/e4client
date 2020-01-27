@@ -509,11 +509,12 @@ public class MainActivity extends AppCompatActivity implements EmpaStatusDelegat
             } catch (NullPointerException e) {
                 new AlertDialog.Builder(this)
                         .setTitle("Error")
-                        .setMessage("Device manager is unable to download label file and may reject connecting to your wristband. Enable internet connection or try again.")
-                        .setNegativeButton("Close", new DialogInterface.OnClickListener() {
+                        .setIcon(android.R.drawable.ic_dialog_info)
+                        .setCancelable(true)
+                        .setMessage("Device manager is unable to download label file and may reject connecting to your device.")
+                        .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
                                 dialog.dismiss();
-                                openFragment(R.id.nav_home);
                             }
                         })
                         .show();
