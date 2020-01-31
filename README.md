@@ -5,7 +5,7 @@ Based on https://github.com/empatica/empalink-sample-project-android
 
 <img src="https://github.com/j05t/e4client/blob/master/Screenshot_0.jpg" alt="Screenshot" width="22%" height="22%" /> <img src="https://github.com/j05t/e4client/blob/master/Screenshot_1.jpg" alt="Screenshot" width="22%" height="22%" /> <img src="https://github.com/j05t/e4client/blob/master/Screenshot_3.jpg" alt="Screenshot" width="22%" height="22%" /> 
 
-<img src="https://github.com/j05t/e4client/blob/master/Screenshot_2.jpg" alt="Screenshot" width="22%" height="22%" /> <img src="https://github.com/j05t/e4client/blob/master/Screenshot_4.jpg" alt="Screenshot" width="22%" height="22%" /> <img src="https://github.com/j05t/e4client/blob/master/Screenshot_5.jpg" alt="Screenshot" width="22%" height="22%" />
+<img src="https://github.com/j05t/e4client/blob/master/Screenshot_4.jpg" alt="Screenshot" width="22%" height="22%" /> <img src="https://github.com/j05t/e4client/blob/master/Screenshot_2.jpg" alt="Screenshot" width="22%" height="22%" /> <img src="https://github.com/j05t/e4client/blob/master/Screenshot_5.jpg" alt="Screenshot" width="22%" height="22%" />
 
 ### Setup:
 
