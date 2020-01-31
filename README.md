@@ -14,8 +14,13 @@ Google Fit: https://console.cloud.google.com/apis/credentials
 Edit apikeys.properties
 * insert SciChart License: https://www.scichart.com/
 
-### TODO:
-Calculate average heart rate from blood volume pulse. Log average heart rate every 1000ms.
+### todo:
+* Calculate average heart rate from blood volume pulse. 
+* Log average heart rate every 1000ms.
+* Validate HRV metrics. 
+* Use foreground service for Bluetooth connection.
+* fix Google Fit integration.
+* Check filters for correctness.
 
 https://support.empatica.com/hc/en-us/articles/360030058011-E4-data-IBI-expected-signal
 
