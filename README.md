@@ -1,5 +1,7 @@
 # e4client
-Custom client for the E4 wristband from Empatica. Developed for https://www.fh-joanneum.at, based on https://github.com/empatica/empalink-sample-project-android.
+Custom client for the E4 wristband from Empatica. Developed for https://www.fh-joanneum.at.
+
+Based on https://github.com/empatica/empalink-sample-project-android.
 
 <img src="https://github.com/j05t/e4client/blob/master/Screenshot_0.jpg" alt="Screenshot" width="22%" height="22%" /> <img src="https://github.com/j05t/e4client/blob/master/Screenshot_1.jpg" alt="Screenshot" width="22%" height="22%" /> <img src="https://github.com/j05t/e4client/blob/master/Screenshot_3.jpg" alt="Screenshot" width="22%" height="22%" /> 
 
@@ -8,11 +10,12 @@ Custom client for the E4 wristband from Empatica. Developed for https://www.fh-j
 ### Setup:
 
 Google Fit: https://console.cloud.google.com/apis/credentials
-* Create OAuth2 key and insert Android Studio SHA1 fingerprint 
+* Create OAuth2 key and insert Android Studio SHA1 fingerprint
 * https://developers.google.com/android/guides/client-auth
+* Configure Google Fit Consent Screen
 
 Edit apikeys.properties
-* insert SciChart License: https://www.scichart.com/
+* Insert SciChart License: https://www.scichart.com/
 
 ### todo:
 * Calculate average heart rate from blood volume pulse. 
