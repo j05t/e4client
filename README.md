@@ -1,7 +1,5 @@
 # e4client
-Custom client for the E4 wristband from Empatica
-
-Based on https://github.com/empatica/empalink-sample-project-android
+Custom client for the E4 wristband from Empatica. Developed for https://www.fh-joanneum.at, based on https://github.com/empatica/empalink-sample-project-android.
 
 <img src="https://github.com/j05t/e4client/blob/master/Screenshot_0.jpg" alt="Screenshot" width="22%" height="22%" /> <img src="https://github.com/j05t/e4client/blob/master/Screenshot_1.jpg" alt="Screenshot" width="22%" height="22%" /> <img src="https://github.com/j05t/e4client/blob/master/Screenshot_3.jpg" alt="Screenshot" width="22%" height="22%" /> 
 
@@ -21,7 +19,7 @@ Edit apikeys.properties
 * Log average heart rate every 1000ms.
 * Validate HRV metrics. 
 * Use foreground service for Bluetooth connection.
-* fix Google Fit integration.
+* Fix Google Fit integration.
 * Check filters for correctness.
 
 https://support.empatica.com/hc/en-us/articles/360030058011-E4-data-IBI-expected-signal
