@@ -198,14 +198,10 @@ public class ChartsFragment extends Fragment {
             hrChart.getRenderableSeries().add(hrLineSeries);
 
             for (double tag : E4SessionData.getInstance().getTags()) {
-                VerticalLineAnnotation verticalLine = sciChartBuilder.newVerticalLineAnnotation()
-                        .withPosition(tag, 0.5d)
-                        .withStroke(2, ColorUtil.Orange)
-                        .withVerticalGravity(Gravity.FILL_VERTICAL)
-                        .withIsEditable(false)
-                        .build();
-
-                Collections.addAll(edaChart.getAnnotations(), verticalLine);
+                addTag(edaChart, tag);
+                addTag(hrChart, tag);
+                addTag(tempChart, tag);
+                addTag(accChart, tag);
             }
 
             Collections.addAll(edaChart.getAnnotations(),
@@ -274,20 +270,16 @@ public class ChartsFragment extends Fragment {
                     .withTextGravity(Gravity.CENTER)
                     .build();
             // axis markers showing current values for heart rate and temperature
-            Collections.addAll(edaChart.getAnnotations(), annotation);
-
-            Collections.addAll(tempChart.getAnnotations(), tempAxisMarker);
-
+            // Collections.addAll(edaChart.getAnnotations(), annotation);
+            //Collections.addAll(tempChart.getAnnotations(), tempAxisMarker);
 
             sharedViewModel.getTag().observe(owner, new Observer<Double>() {
                 @Override
                 public void onChanged(Double tag) {
-                    Collections.addAll(edaChart.getAnnotations(), sciChartBuilder.newVerticalLineAnnotation()
-                            .withPosition(tag, 0.5d)
-                            .withStroke(2, ColorUtil.Orange)
-                            .withVerticalGravity(Gravity.FILL_VERTICAL)
-                            .withIsEditable(false)
-                            .build());
+                    addTag(edaChart, tag);
+                    addTag(hrChart, tag);
+                    addTag(tempChart, tag);
+                    addTag(accChart, tag);
                 }
             });
 
@@ -323,6 +315,16 @@ public class ChartsFragment extends Fragment {
             edaChart.animateZoomExtents(500);
 
         }
+
+    }
+
+    private void addTag(SciChartSurface chartSurface, double tag) {
+        Collections.addAll(chartSurface.getAnnotations(), sciChartBuilder.newVerticalLineAnnotation()
+                .withPosition(tag, 0.5d)
+                .withStroke(1, ColorUtil.Orange)
+                .withVerticalGravity(Gravity.FILL_VERTICAL)
+                .withIsEditable(false)
+                .build());
     }
 
     public static class DateLabelProviderEx extends DateLabelProvider {
