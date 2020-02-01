@@ -1,5 +1,7 @@
 # e4client
-Custom client for the E4 wristband from Empatica. Developed for https://www.fh-joanneum.at. 
+Custom client for the E4 wristband from Empatica. Developed for https://www.fh-joanneum.at.
+
+Project description: https://github.com/j05t/e4client/blob/master/project_description.pdf
 
 Based on https://github.com/empatica/empalink-sample-project-android.
 
