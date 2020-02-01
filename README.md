@@ -1,21 +1,35 @@
 # e4client
-Custom client for the E4 wristband from Empatica
+Custom client for the E4 wristband from Empatica. Developed for https://www.fh-joanneum.at. 
 
-Based on https://github.com/empatica/empalink-sample-project-android
+Based on https://github.com/empatica/empalink-sample-project-android.
 
-<img src="https://github.com/j05t/e4client/blob/master/Screenshot_0.jpg" alt="Screenshot" width="22%" height="22%" /> <img src="https://github.com/j05t/e4client/blob/master/Screenshot_1.jpg" alt="Screenshot" width="22%" height="22%" /> <img src="https://github.com/j05t/e4client/blob/master/Screenshot_3.jpg" alt="Screenshot" width="22%" height="22%" /> <img src="https://github.com/j05t/e4client/blob/master/Screenshot_2.jpg" alt="Screenshot" width="22%" height="22%" />
+
+Version 0.1 available at 
+* https://github.com/j05t/e4client/releases/tag/0.1
+* https://play.google.com/store/apps/details?id=com.jstappdev.e4client
+
+
+<img src="https://github.com/j05t/e4client/blob/master/Screenshot_0.jpg" alt="Screenshot" width="22%" height="22%" /> <img src="https://github.com/j05t/e4client/blob/master/Screenshot_1.jpg" alt="Screenshot" width="22%" height="22%" /> <img src="https://github.com/j05t/e4client/blob/master/Screenshot_3.jpg" alt="Screenshot" width="22%" height="22%" /> 
+
+<img src="https://github.com/j05t/e4client/blob/master/Screenshot_4.jpg" alt="Screenshot" width="22%" height="22%" /> <img src="https://github.com/j05t/e4client/blob/master/Screenshot_2.jpg" alt="Screenshot" width="22%" height="22%" /> <img src="https://github.com/j05t/e4client/blob/master/Screenshot_5.jpg" alt="Screenshot" width="22%" height="22%" />
 
 ### Setup:
 
 Google Fit: https://console.cloud.google.com/apis/credentials
-* Create OAuth2 key and insert Android Studio SHA1 fingerprint 
+* Create OAuth2 key and insert Android Studio SHA1 fingerprint
 * https://developers.google.com/android/guides/client-auth
+* Configure Google Fit Consent Screen
 
 Edit apikeys.properties
-* insert SciChart License: https://www.scichart.com/
+* Insert SciChart License: https://www.scichart.com/
 
-### TODO:
-Calculate average heart rate from blood volume pulse. Log average heart rate every 1000ms.
+### todo:
+* Calculate average heart rate from blood volume pulse. 
+* Log average heart rate every 1000ms.
+* Validate HRV metrics. 
+* Use foreground service for Bluetooth connection.
+* Fix Google Fit integration.
+* Check filters for correctness.
 
 https://support.empatica.com/hc/en-us/articles/360030058011-E4-data-IBI-expected-signal
 
