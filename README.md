@@ -33,4 +33,6 @@ https://stackoverflow.com/questions/22583391/peak-signal-detection-in-realtime-t
 
 https://stackoverflow.com/questions/31753062/calculate-heart-rate-from-ecg-stream-java-nymi-band
 
+https://www.researchgate.net/figure/HRV-time-domain-measures_tbl1_320078994
+
 https://link.springer.com/article/10.1007%2Fs00521-019-04278-7
