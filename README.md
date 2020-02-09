@@ -36,3 +36,5 @@ https://stackoverflow.com/questions/31753062/calculate-heart-rate-from-ecg-strea
 https://www.researchgate.net/figure/HRV-time-domain-measures_tbl1_320078994
 
 https://link.springer.com/article/10.1007%2Fs00521-019-04278-7
+
+https://terpconnect.umd.edu/~toh/spectrum/Smoothing.html
